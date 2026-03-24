@@ -6,10 +6,9 @@ interface RecordingProps {
   onTranscript?: (text: string) => void;
   onVoiceInput?: (data: { categoryId?: string; accountId?: string; amount?: number; description: string }) => void;
   onVoiceEnd?: () => void;
-  onNoSpeechDetected?: () => void;
 }
 
-export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, onNoSpeechDetected }: RecordingProps) {
+export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
@@ -45,19 +44,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, onNo
     recognition.lang = "en-US";
 
     recognition.onstart = () => {
-      console.log("Speech recognition started");
+      console.log("Speech recognition started - waiting for speech");
       hasSpeechStartedRef.current = false;
-
-      // Set 4-second timeout to warn user if no speech detected
-      speechStartTimeoutRef.current = setTimeout(() => {
-        if (!hasSpeechStartedRef.current && isListeningRef.current) {
-          console.log("No speech detected after 4 seconds, prompting user to try again");
-          recognitionRef.current?.stop();
-          if (onNoSpeechDetected) {
-            onNoSpeechDetected();
-          }
-        }
-      }, 4000);
     };
 
     recognition.onresult = (event: any) => {
@@ -68,12 +56,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, onNo
           console.log("Final transcript:", transcriptPart);
           // Mark that speech has started
           hasSpeechStartedRef.current = true;
-
-          // Clear the initial 4-second timeout when speech is detected
-          if (speechStartTimeoutRef.current) {
-            clearTimeout(speechStartTimeoutRef.current);
-            speechStartTimeoutRef.current = undefined;
-          }
 
           setTranscript((prev) => prev + transcriptPart + " ");
           if (onTranscript) {
@@ -93,7 +75,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, onNo
           }
           silenceTimeoutRef.current = setTimeout(() => {
             if (isListeningRef.current && recognitionRef.current) {
-              console.log("No speech detected for 2 seconds, auto-stopping");
+              console.log("No speech detected for 2 seconds, finishing recording");
               recognitionRef.current.stop();
             }
           }, 2000);
@@ -106,11 +88,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, onNo
     recognition.onend = () => {
       console.log("Speech recognition ended");
 
-      // Clear all timeouts
-      if (speechStartTimeoutRef.current) {
-        clearTimeout(speechStartTimeoutRef.current);
-        speechStartTimeoutRef.current = undefined;
-      }
+      // Clear silence timeout
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current);
         silenceTimeoutRef.current = undefined;
@@ -174,11 +152,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, onNo
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current);
       }
-      if (speechStartTimeoutRef.current) {
-        clearTimeout(speechStartTimeoutRef.current);
-      }
     };
-  }, [onVoiceInput, onVoiceEnd, onNoSpeechDetected]);
+  }, [onVoiceInput, onVoiceEnd]);
 
   const handleToggleListening = () => {
     console.log("Toggle clicked, listening:", isListeningRef.current);

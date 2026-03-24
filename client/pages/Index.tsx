@@ -251,17 +251,6 @@ export default function Index() {
     voiceAccumulatorRef.current = {};
   };
 
-  const handleNoSpeechDetected = () => {
-    // Show the "No Match" popup when no speech was detected
-    setVoiceResultData({
-      isSuccess: false,
-      categoryName: undefined,
-      accountName: undefined,
-      amount: undefined,
-    });
-    setShowVoiceResult(true);
-  };
-
   const handleAccountSelect = (accountId: string) => {
     if (!isAccountPageReorderMode) {
       setSelectedAccount(accountId);
@@ -433,7 +422,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} onNoSpeechDetected={handleNoSpeechDetected} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
                   </div>
                 </div>
                 <Carousel
@@ -725,7 +714,7 @@ export default function Index() {
                       </button>
                     ) : (
                       <div className="rounded-lg bg-green-100 border-2 border-green-500 flex items-center justify-center flex-1 p-2">
-                        <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} onNoSpeechDetected={handleNoSpeechDetected} />
+                        <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
                       </div>
                     )}
                     <button
