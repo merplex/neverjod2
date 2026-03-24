@@ -8,6 +8,7 @@ type TimeRange = "week" | "month" | "all";
 interface Transaction {
   id: string;
   date: Date;
+  time: string; // HH:MM format
   category: string;
   amount: number;
   description: string;
@@ -65,9 +66,15 @@ const generateDemoTransactions = (): Transaction[] => {
         amount = Math.random() * 5000 + 100; // 100-5100 for expenses
       }
 
+      // Random time between 06:00 and 23:59
+      const hours = Math.floor(Math.random() * 18) + 6;
+      const minutes = Math.floor(Math.random() * 60);
+      const time = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+
       transactions.push({
         id: id.toString(),
         date: new Date(date),
+        time,
         category,
         amount: Math.round(amount),
         description,
@@ -343,7 +350,13 @@ export default function Transactions() {
                               ? "bg-indigo-100 border-2 border-indigo-500"
                               : "bg-slate-50 hover:bg-slate-100"
                           }`}
-                          onClick={() => isSelectMode && handleSelectTransaction(transaction.id)}
+                          onClick={() => {
+                            if (isSelectMode) {
+                              handleSelectTransaction(transaction.id);
+                            } else {
+                              navigate(`/account/${accountId}/transactions/${transaction.id}`);
+                            }
+                          }}
                         >
                           {/* Number / Checkbox */}
                           <div className="w-8 flex-shrink-0">
@@ -364,9 +377,14 @@ export default function Transactions() {
 
                           {/* Transaction Info */}
                           <div className="flex-1">
-                            <p className="font-semibold text-slate-900">
-                              {transaction.category}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-slate-900">
+                                {transaction.category}
+                              </p>
+                              <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                                {transaction.time}
+                              </span>
+                            </div>
                             <p className="text-xs text-slate-600">
                               {transaction.description}
                             </p>
