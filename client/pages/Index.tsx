@@ -249,26 +249,24 @@ export default function Index() {
 
             {/* Up/Down Buttons - Aligned right with numpad rows, moves with numpad */}
             <div
-              className="flex flex-col"
+              className="flex flex-col gap-3"
               style={{
                 transform: `translateY(${numpadOffset}px)`,
                 transition: "transform 0.1s ease-out",
-                marginTop: "calc(2.5rem + 16px)",
-                gap: "12px",
               }}
             >
               <button
                 onClick={handleMoveUp}
-                className="px-4 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-shrink-0"
-                style={{ height: "calc(2 * 3.25rem + 12px)" }}
+                className="flex-1 px-4 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                style={{ minHeight: "7rem" }}
                 title="Move up (5px)"
               >
                 <ChevronUp size={32} />
               </button>
               <button
                 onClick={handleMoveDown}
-                className="px-4 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-shrink-0"
-                style={{ height: "calc(2 * 3.25rem + 12px)" }}
+                className="flex-1 px-4 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                style={{ minHeight: "7rem" }}
                 title="Move down (5px)"
               >
                 <ChevronDown size={32} />
