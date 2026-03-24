@@ -164,10 +164,10 @@ export default function Index() {
               {/* Bottom Row */}
               <div className="grid grid-cols-4 gap-3">
                 <button
-                  onClick={handleDecimal}
-                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                  onClick={handleConfirm}
+                  className="py-4 px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
                 >
-                  .
+                  Save
                 </button>
                 <button
                   onClick={() => handleNumberClick(0)}
@@ -176,26 +176,18 @@ export default function Index() {
                   0
                 </button>
                 <button
+                  onClick={handleDecimal}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  .
+                </button>
+                <button
                   onClick={handleDelete}
                   className="py-4 px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
                 >
                   ⌫
                 </button>
-                <button
-                  onClick={handleClear}
-                  className="py-4 px-2 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
-                >
-                  C
-                </button>
               </div>
-
-              {/* Confirm Button */}
-              <button
-                onClick={handleConfirm}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-lg rounded-xl transition-all active:scale-95 shadow-lg"
-              >
-                Add Expense
-              </button>
             </div>
           </div>
         </div>
