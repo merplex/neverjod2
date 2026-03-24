@@ -7,6 +7,7 @@ export default function Index() {
   const [numpadSize, setNumpadSize] = useState(80);
   const [numpadOffset, setNumpadOffset] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
+  const [isRightMode, setIsRightMode] = useState(false);
 
   const handleNumberClick = (num: number) => {
     if (display === "0") {
@@ -135,7 +136,12 @@ export default function Index() {
 
               {/* Right Toggle Button */}
               <button
-                className="flex-1 py-2 rounded-lg font-semibold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
+                onClick={() => setIsRightMode(!isRightMode)}
+                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  isRightMode
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
                 title="Toggle right position"
               >
                 Right
@@ -157,7 +163,7 @@ export default function Index() {
           </div>
 
           {/* Numpad Section */}
-          <div className="relative px-6 py-2 flex gap-4">
+          <div className={`relative px-6 py-2 flex gap-4 ${isRightMode ? "flex-row-reverse" : ""}`}>
             {/* Numpad Container with dynamic sizing and positioning */}
             <div
               style={{
