@@ -30,7 +30,13 @@ export default function TransactionDetail() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [currentDate, setCurrentDate] = useState(transaction?.date || new Date());
-  const [currentTime, setCurrentTime] = useState(transaction?.time || "00:00");
+  const [currentTime, setCurrentTime] = useState(() => {
+    const time = transaction?.time || "00:00";
+    const [hours, minutes] = time.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes);
+    return date;
+  });
 
   if (!account || !transaction) {
     return (
@@ -56,10 +62,11 @@ export default function TransactionDetail() {
     setShowDatePicker(false);
   };
 
-  const handleTimeSelect = (time: string) => {
-    setCurrentTime(time);
+  const handleTimeSelect = (timeDate: Date) => {
+    setCurrentTime(timeDate);
+    const timeString = `${timeDate.getHours().toString().padStart(2, "0")}:${timeDate.getMinutes().toString().padStart(2, "0")}`;
     if (transaction && transactionId) {
-      updateTransaction(transactionId, { time });
+      updateTransaction(transactionId, { time: timeString });
     }
     setShowTimePicker(false);
   };
@@ -118,7 +125,9 @@ export default function TransactionDetail() {
                 className="space-y-2 text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <h3 className="text-sm font-semibold text-slate-600">Time</h3>
-                <p className="text-lg font-bold text-slate-900">{currentTime}</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {currentTime.getHours().toString().padStart(2, "0")}:{currentTime.getMinutes().toString().padStart(2, "0")}
+                </p>
               </button>
             </div>
 
@@ -210,7 +219,7 @@ export default function TransactionDetail() {
       {showTimePicker && (
         <TimePicker
           value={currentTime}
-          onSelect={handleTimeSelect}
+          onChange={handleTimeSelect}
           onClose={() => setShowTimePicker(false)}
         />
       )}
