@@ -15,8 +15,8 @@ export default function BottomNav() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-2xl z-50">
-      <div className="max-w-md mx-auto px-4 py-3 flex justify-around items-center">
+    <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-slate-200 shadow-2xl z-50">
+      <div className="px-4 py-3 flex justify-around items-center">
         {navItems.map((item) => {
           const IconComponent = item.icon;
           const active = isActive(item.path);
