@@ -17,6 +17,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
   const isListeningRef = useRef(false);
   const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
   const hasSpeechStartedRef = useRef(false);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     // Initialize Web Speech API with multiple fallbacks
@@ -46,21 +47,10 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
       console.log("Speech recognition started");
       hasSpeechStartedRef.current = false;
 
-      // Set 4-second timeout for initial speech detection
+      // Set 4-second timeout to warn user if no speech detected
       speechStartTimeoutRef.current = setTimeout(() => {
-        // If no speech detected within 4 seconds, reset and restart listening
-        if (!hasSpeechStartedRef.current && isListeningRef.current && recognition) {
-          console.log("No speech detected, restarting...");
-          try {
-            recognition.stop();
-            setTimeout(() => {
-              if (isListeningRef.current) {
-                recognition.start();
-              }
-            }, 100);
-          } catch (error) {
-            console.log("Recognition already stopped");
-          }
+        if (!hasSpeechStartedRef.current && isListeningRef.current) {
+          console.log("Listening... waiting for speech (4+ seconds, user can speak longer)");
         }
       }, 4000);
     };
@@ -91,6 +81,17 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
             console.log("Voice data detected:", voiceData);
             onVoiceInput(voiceData);
           }
+
+          // Auto-stop after 2 seconds of silence (user finished speaking)
+          if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+          }
+          silenceTimeoutRef.current = setTimeout(() => {
+            if (isListeningRef.current && recognitionRef.current) {
+              console.log("No speech detected for 2 seconds, auto-stopping");
+              recognitionRef.current.stop();
+            }
+          }, 2000);
         } else {
           interim += transcriptPart;
         }
@@ -100,19 +101,25 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     recognition.onend = () => {
       console.log("Speech recognition ended");
 
-      // Clear timeout on end
+      // Clear all timeouts
       if (speechStartTimeoutRef.current) {
         clearTimeout(speechStartTimeoutRef.current);
         speechStartTimeoutRef.current = undefined;
       }
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+        silenceTimeoutRef.current = undefined;
+      }
 
-      // Call onVoiceEnd when speech ends (only if speech was detected)
+      // Call onVoiceEnd callback when speech ends (if speech was detected)
       if (hasSpeechStartedRef.current && onVoiceEnd) {
+        console.log("Calling onVoiceEnd callback");
         onVoiceEnd();
       }
 
-      // Only reset listening state if user clicked stop
+      // Reset state to match reality - listening has stopped
       if (isListeningRef.current) {
+        console.log("Syncing UI state - recognition ended");
         setIsListening(false);
         isListeningRef.current = false;
       }
@@ -121,64 +128,93 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     };
 
     recognition.onerror = (event: any) => {
-      // Ignore abort errors - they happen when restarting recognition
+      // Ignore these expected errors
       if (event.error === "aborted") {
-        console.log("Recognition aborted (normal operation)");
+        console.log("Recognition stopped (user clicked stop)");
         return;
       }
 
-      // Log other errors
-      if (event.error !== "no-speech") {
-        console.error("Speech recognition error:", event.error);
+      if (event.error === "no-speech") {
+        console.log("No speech detected, keep listening or click mic to stop");
+        return;
       }
+
+      if (event.error === "network") {
+        console.error("Network error - check your internet connection");
+        return;
+      }
+
+      // Log unexpected errors
+      console.error("Speech recognition error:", event.error);
     };
 
     recognitionRef.current = recognition;
 
+    // Handle app focus/blur - stop recording when user switches away
+    const handleBlur = () => {
+      if (isListeningRef.current && recognition) {
+        console.log("App lost focus, stopping recording");
+        recognition.stop();
+      }
+    };
+
+    window.addEventListener("blur", handleBlur);
+
     // Cleanup
     return () => {
+      window.removeEventListener("blur", handleBlur);
       if (recognition) {
         recognition.stop();
+      }
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+      }
+      if (speechStartTimeoutRef.current) {
+        clearTimeout(speechStartTimeoutRef.current);
       }
     };
   }, [onVoiceInput, onVoiceEnd]);
 
   const handleToggleListening = () => {
-    console.log("Toggle clicked, recognition available:", !!recognitionRef.current);
+    console.log("Toggle clicked, listening:", isListeningRef.current);
 
     if (!recognitionRef.current) {
       console.error("Speech Recognition not available");
       return;
     }
 
-    if (isListeningRef.current) {
-      // Stop listening
-      console.log("Stopping listening...");
-      try {
+    try {
+      if (isListeningRef.current) {
+        // Stop listening
+        console.log("User clicked stop - stopping listening");
         recognitionRef.current.stop();
-      } catch (error) {
-        console.log("Error stopping recognition:", error);
-      }
-      setIsListening(false);
-      isListeningRef.current = false;
+        // Don't update state here - let onend handler do it
+      } else {
+        // Start listening
+        console.log("User clicked start - starting recognition");
 
-      // Clear timeout
-      if (speechStartTimeoutRef.current) {
-        clearTimeout(speechStartTimeoutRef.current);
-        speechStartTimeoutRef.current = undefined;
-      }
-    } else {
-      // Start listening
-      console.log("Starting listening...");
-      setTranscript("");
-      hasSpeechStartedRef.current = false;
-      try {
-        recognitionRef.current.start();
+        // Reset state
+        setTranscript("");
+        hasSpeechStartedRef.current = false;
+
+        // Clear any pending timeout
+        if (speechStartTimeoutRef.current) {
+          clearTimeout(speechStartTimeoutRef.current);
+          speechStartTimeoutRef.current = undefined;
+        }
+
+        // Update state before starting (this is what the user sees)
         setIsListening(true);
         isListeningRef.current = true;
-      } catch (error) {
-        console.error("Error starting recognition:", error);
+
+        // Start recognition
+        recognitionRef.current.start();
       }
+    } catch (error) {
+      console.error("Error toggling recognition:", (error as Error).message);
+      // Sync state if there was an error
+      setIsListening(false);
+      isListeningRef.current = false;
     }
   };
 
