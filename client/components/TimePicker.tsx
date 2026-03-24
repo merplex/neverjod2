@@ -8,8 +8,11 @@ interface TimePickerProps {
 }
 
 export default function TimePicker({ value, onChange, onClose }: TimePickerProps) {
-  const [hours, setHours] = useState(value.getHours());
-  const [minutes, setMinutes] = useState(value.getMinutes());
+  // Ensure value is a Date object
+  const dateValue = value instanceof Date ? value : new Date();
+
+  const [hours, setHours] = useState(dateValue.getHours());
+  const [minutes, setMinutes] = useState(dateValue.getMinutes());
   const [mode, setMode] = useState<"hours" | "minutes">("hours");
 
   const handleClockClick = (num: number) => {
@@ -23,7 +26,7 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
   };
 
   const handleConfirm = () => {
-    const newDate = new Date(value);
+    const newDate = new Date(dateValue);
     newDate.setHours(hours);
     newDate.setMinutes(minutes);
     onChange(newDate);
@@ -51,9 +54,13 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
           className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-center py-4 rounded-lg mb-4 cursor-pointer hover:opacity-90 transition-opacity"
         >
           <div className="text-5xl font-bold font-mono tracking-tight">
-            <span className={mode === "hours" ? "text-indigo-200" : ""}>{hours.toString().padStart(2, "0")}</span>
+            <span className={mode === "hours" ? "text-indigo-200" : ""}>
+              {hours < 10 ? `0${hours}` : `${hours}`}
+            </span>
             <span>:</span>
-            <span className={mode === "minutes" ? "text-indigo-200" : ""}>{minutes.toString().padStart(2, "0")}</span>
+            <span className={mode === "minutes" ? "text-indigo-200" : ""}>
+              {minutes < 10 ? `0${minutes}` : `${minutes}`}
+            </span>
           </div>
         </div>
 

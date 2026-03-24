@@ -8,8 +8,11 @@ interface DatePickerProps {
 }
 
 export default function DatePicker({ value, onChange, onClose }: DatePickerProps) {
-  const [currentDate, setCurrentDate] = useState(new Date(value));
-  const [displayMonth, setDisplayMonth] = useState(new Date(value));
+  // Ensure value is a Date object
+  const dateValue = value instanceof Date ? value : new Date();
+
+  const [currentDate, setCurrentDate] = useState(new Date(dateValue));
+  const [displayMonth, setDisplayMonth] = useState(new Date(dateValue));
 
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
