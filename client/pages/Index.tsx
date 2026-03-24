@@ -100,7 +100,7 @@ export default function Index() {
           </div>
 
           {/* Controls Section */}
-          <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between gap-4">
+          <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-start gap-4">
             {/* Size Controls */}
             <div className="flex gap-2">
               {[75, 80, 85].map((size) => (
@@ -117,24 +117,6 @@ export default function Index() {
                 </button>
               ))}
             </div>
-
-            {/* Movement Controls */}
-            <div className="flex flex-col gap-1">
-              <button
-                onClick={handleMoveUp}
-                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                title="Move up (5px)"
-              >
-                <ChevronUp size={18} />
-              </button>
-              <button
-                onClick={handleMoveDown}
-                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                title="Move down (5px)"
-              >
-                <ChevronDown size={18} />
-              </button>
-            </div>
           </div>
 
           {/* Numpad Section */}
@@ -146,23 +128,88 @@ export default function Index() {
                 transform: `translateY(${numpadOffset}px)`,
                 transition: "transform 0.1s ease-out",
               }}
-              className="flex flex-col gap-4"
             >
-              {/* Number Grid */}
-              <div className="grid grid-cols-3 gap-3">
-                {numpadButtons.map((btn) => (
-                  <button
-                    key={btn.label}
-                    onClick={() => handleNumberClick(btn.value)}
-                    className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                  >
-                    {btn.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Bottom Row */}
+              {/* Complete Numpad Grid with Up/Down buttons */}
               <div className="grid grid-cols-4 gap-3">
+                {/* Row 1: 7, 8, 9 */}
+                <button
+                  onClick={() => handleNumberClick(7)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  7
+                </button>
+                <button
+                  onClick={() => handleNumberClick(8)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  8
+                </button>
+                <button
+                  onClick={() => handleNumberClick(9)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  9
+                </button>
+
+                {/* Up Button - spans 2 rows */}
+                <button
+                  onClick={handleMoveUp}
+                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                  title="Move up (5px)"
+                >
+                  <ChevronUp size={24} />
+                </button>
+
+                {/* Row 2: 4, 5, 6 */}
+                <button
+                  onClick={() => handleNumberClick(4)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  4
+                </button>
+                <button
+                  onClick={() => handleNumberClick(5)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  5
+                </button>
+                <button
+                  onClick={() => handleNumberClick(6)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  6
+                </button>
+
+                {/* Row 3: 1, 2, 3 */}
+                <button
+                  onClick={() => handleNumberClick(1)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  1
+                </button>
+                <button
+                  onClick={() => handleNumberClick(2)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  2
+                </button>
+                <button
+                  onClick={() => handleNumberClick(3)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  3
+                </button>
+
+                {/* Down Button - spans 2 rows */}
+                <button
+                  onClick={handleMoveDown}
+                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                  title="Move down (5px)"
+                >
+                  <ChevronDown size={24} />
+                </button>
+
+                {/* Row 4: Save, 0, ., DEL */}
                 <button
                   onClick={handleConfirm}
                   className="py-4 px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
