@@ -166,10 +166,10 @@ export default function Index() {
     if (categoryId || accountId || amount) {
       // Get category and account names for display
       const categoryName = categoryId
-        ? categories.find((c) => c.id === categoryId)?.name
+        ? categoriesList.find((c) => c.id === categoryId)?.name
         : undefined;
       const accountName = accountId
-        ? accounts.find((a) => a.id === accountId)?.name
+        ? accountsList.find((a) => a.id === accountId)?.name
         : undefined;
 
       // Check if all 3 parts are detected
@@ -217,6 +217,17 @@ export default function Index() {
     // Return to first page to speak again
     setCurrentPage("category");
     voiceAccumulatorRef.current = {};
+  };
+
+  const handleNoSpeechDetected = () => {
+    // Show the "No Match" popup when no speech was detected
+    setVoiceResultData({
+      isSuccess: false,
+      categoryName: undefined,
+      accountName: undefined,
+      amount: undefined,
+    });
+    setShowVoiceResult(true);
   };
 
   const handleAccountSelect = (accountId: string) => {
@@ -390,7 +401,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} onNoSpeechDetected={handleNoSpeechDetected} />
                   </div>
                 </div>
                 <Carousel
@@ -682,7 +693,7 @@ export default function Index() {
                       </button>
                     ) : (
                       <div className="rounded-lg bg-green-100 border-2 border-green-500 flex items-center justify-center flex-1 p-2">
-                        <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
+                        <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} onNoSpeechDetected={handleNoSpeechDetected} />
                       </div>
                     )}
                     <button

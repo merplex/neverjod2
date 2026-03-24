@@ -6,9 +6,10 @@ interface RecordingProps {
   onTranscript?: (text: string) => void;
   onVoiceInput?: (data: { categoryId?: string; accountId?: string; amount?: number; description: string }) => void;
   onVoiceEnd?: () => void;
+  onNoSpeechDetected?: () => void;
 }
 
-export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: RecordingProps) {
+export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, onNoSpeechDetected }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
@@ -50,7 +51,11 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
       // Set 4-second timeout to warn user if no speech detected
       speechStartTimeoutRef.current = setTimeout(() => {
         if (!hasSpeechStartedRef.current && isListeningRef.current) {
-          console.log("Listening... waiting for speech (4+ seconds, user can speak longer)");
+          console.log("No speech detected after 4 seconds, prompting user to try again");
+          recognitionRef.current?.stop();
+          if (onNoSpeechDetected) {
+            onNoSpeechDetected();
+          }
         }
       }, 4000);
     };
@@ -173,7 +178,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
         clearTimeout(speechStartTimeoutRef.current);
       }
     };
-  }, [onVoiceInput, onVoiceEnd]);
+  }, [onVoiceInput, onVoiceEnd, onNoSpeechDetected]);
 
   const handleToggleListening = () => {
     console.log("Toggle clicked, listening:", isListeningRef.current);
