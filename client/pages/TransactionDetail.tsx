@@ -35,7 +35,7 @@ export default function TransactionDetail() {
 
   if (!account || !transaction) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center p-4 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center p-4 pb-32">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-slate-900">Transaction not found</h1>
         </div>

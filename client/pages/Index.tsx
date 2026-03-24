@@ -200,8 +200,8 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4 pb-24">
-      <div className="w-full max-w-md mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4 pb-32">
+      <div className="w-full max-w-md mx-auto relative">
         {/* Persistent Account Section - Top */}
         <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
           <div className="flex justify-between items-center mb-3">
