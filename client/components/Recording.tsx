@@ -11,6 +11,7 @@ interface RecordingProps {
 export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [isSupported, setIsSupported] = useState(true);
   const recognitionRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isListeningRef = useRef(false);
@@ -18,13 +19,23 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
   const hasSpeechStartedRef = useRef(false);
 
   useEffect(() => {
-    // Initialize Web Speech API
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // Initialize Web Speech API with multiple fallbacks
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition ||
+      (window as any).mozSpeechRecognition ||
+      (window as any).msSpeechRecognition;
 
     if (!SpeechRecognition) {
       console.warn("Speech Recognition not supported in this browser");
+      console.warn("Your browser doesn't support Web Speech API");
+      console.warn("Supported browsers: Chrome, Edge, Safari, Firefox");
+      setIsSupported(false);
       return;
     }
+
+    console.log("Speech Recognition API found");
+    setIsSupported(true);
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -141,14 +152,35 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     isListeningRef.current = isListening;
   }, [isListening]);
 
+  if (!isSupported) {
+    return (
+      <div ref={containerRef} title="Speech Recognition not supported in this browser">
+        <button
+          disabled
+          className="relative p-2 rounded-lg transition-colors text-slate-300 cursor-not-allowed"
+          title="Speech Recognition not supported. Try Chrome, Edge, Safari, or Firefox"
+        >
+          <Mic size={24} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef}>
       <button
         onClick={handleToggleListening}
+        disabled={!isSupported}
         className={`relative p-2 hover:bg-slate-200 rounded-lg transition-colors ${
           isListening ? "text-red-500" : "text-slate-600"
-        } hover:text-slate-900`}
-        title={isListening ? "Stop recording" : "Start recording"}
+        } hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50`}
+        title={
+          isListening
+            ? "Stop recording"
+            : isSupported
+            ? "Start recording"
+            : "Speech Recognition not supported"
+        }
       >
         <Mic size={24} />
 
