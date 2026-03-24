@@ -120,7 +120,7 @@ export default function Index() {
           </div>
 
           {/* Numpad Section */}
-          <div className="relative px-6 py-8 min-h-96 flex gap-4">
+          <div className="relative px-6 py-8 min-h-96">
             {/* Numpad Container with dynamic sizing and positioning */}
             <div
               style={{
@@ -129,9 +129,9 @@ export default function Index() {
                 transition: "transform 0.1s ease-out",
               }}
             >
-              {/* Numpad Grid */}
+              {/* Complete Numpad Grid with Up/Down buttons */}
               <div className="grid grid-cols-4 gap-3">
-                {/* Row 1: 7, 8, 9, . */}
+                {/* Row 1: 7, 8, 9 */}
                 <button
                   onClick={() => handleNumberClick(7)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -150,14 +150,17 @@ export default function Index() {
                 >
                   9
                 </button>
+
+                {/* Up Button - spans 2 rows */}
                 <button
-                  onClick={handleDecimal}
-                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                  onClick={handleMoveUp}
+                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                  title="Move up (5px)"
                 >
-                  .
+                  <ChevronUp size={24} />
                 </button>
 
-                {/* Row 2: 4, 5, 6, 0 */}
+                {/* Row 2: 4, 5, 6 */}
                 <button
                   onClick={() => handleNumberClick(4)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -176,14 +179,8 @@ export default function Index() {
                 >
                   6
                 </button>
-                <button
-                  onClick={() => handleNumberClick(0)}
-                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                >
-                  0
-                </button>
 
-                {/* Row 3: 1, 2, 3, DEL */}
+                {/* Row 3: 1, 2, 3 */}
                 <button
                   onClick={() => handleNumberClick(1)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -202,39 +199,42 @@ export default function Index() {
                 >
                   3
                 </button>
+
+                {/* Down Button - spans 2 rows */}
+                <button
+                  onClick={handleMoveDown}
+                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                  title="Move down (5px)"
+                >
+                  <ChevronDown size={24} />
+                </button>
+
+                {/* Row 4: Save, 0, ., DEL */}
+                <button
+                  onClick={handleConfirm}
+                  className="py-4 px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => handleNumberClick(0)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  0
+                </button>
+                <button
+                  onClick={handleDecimal}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  .
+                </button>
                 <button
                   onClick={handleDelete}
                   className="py-4 px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
                 >
                   ⌫
                 </button>
-
-                {/* Row 4: Save (full width) */}
-                <button
-                  onClick={handleConfirm}
-                  className="col-span-4 py-4 px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
-                >
-                  Save
-                </button>
               </div>
-            </div>
-
-            {/* Up/Down Buttons - Outside numpad, aligned right */}
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleMoveUp}
-                className="py-4 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                title="Move up (5px)"
-              >
-                <ChevronUp size={24} />
-              </button>
-              <button
-                onClick={handleMoveDown}
-                className="py-4 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                title="Move down (5px)"
-              >
-                <ChevronDown size={24} />
-              </button>
             </div>
           </div>
         </div>
