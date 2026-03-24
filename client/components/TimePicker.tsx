@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Keyboard } from "lucide-react";
 
 interface TimePickerProps {
   value: Date;
@@ -14,7 +14,7 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
 
   const handleClockClick = (num: number) => {
     if (mode === "hours") {
-      setHours(num % 24);
+      setHours(num);
       setMode("minutes");
     } else {
       setMinutes(num * 5);
@@ -39,119 +39,157 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
       <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-slate-900">Set Time</h2>
+          <h2 className="text-lg font-bold text-slate-900">Select Time</h2>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded">
             <X size={20} />
           </button>
         </div>
 
         {/* Time Display */}
-        <div className="bg-teal-600 text-white text-center py-4 rounded-lg mb-4">
-          <div className="text-4xl font-bold font-mono">{formatTime()}</div>
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-center py-4 rounded-lg mb-4">
+          <div className="text-5xl font-bold font-mono tracking-tight">{formatTime()}</div>
         </div>
 
         {/* Clock */}
         <div className="flex justify-center mb-6">
-          <svg viewBox="0 0 200 200" className="w-64 h-64">
-            {/* Clock circle */}
-            <circle cx="100" cy="100" r="95" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="2" />
+          <svg viewBox="0 0 240 240" className="w-72 h-72">
+            {/* Outer clock circle */}
+            <circle cx="120" cy="120" r="110" fill="#f1f5f9" stroke="#e2e8f0" strokeWidth="1" />
+
+            {/* Inner clock circle */}
+            <circle cx="120" cy="120" r="70" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
 
             {/* Center dot */}
-            <circle cx="100" cy="100" r="6" fill="#14b8a6" />
+            <circle cx="120" cy="120" r="5" fill="#4f46e5" />
 
             {/* Pointer */}
             {mode === "hours" ? (
               <line
-                x1="100"
-                y1="100"
-                x2="100"
-                y2="40"
-                stroke="#14b8a6"
+                x1="120"
+                y1="120"
+                x2="120"
+                y2={hours > 12 ? 70 : 50}
+                stroke="#4f46e5"
                 strokeWidth="3"
                 strokeLinecap="round"
                 style={{
                   transform: `rotate(${(hours % 12) * 30}deg)`,
-                  transformOrigin: "100px 100px",
+                  transformOrigin: "120px 120px",
                   transition: "transform 0.2s",
                 }}
               />
             ) : (
               <line
-                x1="100"
-                y1="100"
-                x2="100"
+                x1="120"
+                y1="120"
+                x2="120"
                 y2="30"
-                stroke="#14b8a6"
+                stroke="#4f46e5"
                 strokeWidth="2"
                 strokeLinecap="round"
                 style={{
                   transform: `rotate(${minutes * 6}deg)`,
-                  transformOrigin: "100px 100px",
+                  transformOrigin: "120px 120px",
                   transition: "transform 0.2s",
                 }}
               />
             )}
 
-            {/* Hour markers */}
+            {/* Hour markers - 24 hours format */}
             {mode === "hours" ? (
-              // Show 12 hours
-              Array.from({ length: 12 }).map((_, i) => {
-                const hour = i === 0 ? 12 : i;
-                const angle = (i * 30) * (Math.PI / 180);
-                const x = 100 + 70 * Math.sin(angle);
-                const y = 100 - 70 * Math.cos(angle);
-                const isSelected = hours === hour || (hours >= 12 && hour === hours - 12);
+              <>
+                {/* Outer ring: 1-12 */}
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const hour = i === 0 ? 12 : i;
+                  const angle = (i * 30) * (Math.PI / 180);
+                  const x = 120 + 95 * Math.sin(angle);
+                  const y = 120 - 95 * Math.cos(angle);
+                  const isSelected = hours === hour;
 
-                return (
-                  <g key={i} onClick={() => handleClockClick(hour)}>
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="8"
-                      fill={isSelected ? "#14b8a6" : "transparent"}
-                      className="cursor-pointer"
-                    />
-                    <text
-                      x={x}
-                      y={y}
-                      textAnchor="middle"
-                      dy="0.3em"
-                      fontSize="14"
-                      fontWeight="500"
-                      fill={isSelected ? "white" : "#475569"}
-                      className="cursor-pointer"
-                    >
-                      {hour}
-                    </text>
-                  </g>
-                );
-              })
+                  return (
+                    <g key={`outer-${i}`} onClick={() => handleClockClick(hour)}>
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r="7"
+                        fill={isSelected ? "#4f46e5" : "transparent"}
+                        className="cursor-pointer hover:fill-indigo-100"
+                      />
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor="middle"
+                        dy="0.35em"
+                        fontSize="13"
+                        fontWeight="600"
+                        fill={isSelected ? "white" : "#1e293b"}
+                        className="cursor-pointer font-semibold"
+                      >
+                        {hour}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Inner ring: 13-24 */}
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const hour = 13 + i;
+                  const angle = (i * 30) * (Math.PI / 180);
+                  const x = 120 + 55 * Math.sin(angle);
+                  const y = 120 - 55 * Math.cos(angle);
+                  const isSelected = hours === hour;
+
+                  return (
+                    <g key={`inner-${i}`} onClick={() => handleClockClick(hour)}>
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r="6"
+                        fill={isSelected ? "#4f46e5" : "transparent"}
+                        className="cursor-pointer hover:fill-indigo-100"
+                      />
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor="middle"
+                        dy="0.35em"
+                        fontSize="11"
+                        fontWeight="500"
+                        fill={isSelected ? "white" : "#64748b"}
+                        className="cursor-pointer"
+                      >
+                        {hour}
+                      </text>
+                    </g>
+                  );
+                })}
+              </>
             ) : (
               // Show 12 minutes (0, 5, 10, ... 55)
               Array.from({ length: 12 }).map((_, i) => {
                 const minute = i * 5;
                 const angle = (i * 30) * (Math.PI / 180);
-                const x = 100 + 70 * Math.sin(angle);
-                const y = 100 - 70 * Math.cos(angle);
+                const x = 120 + 95 * Math.sin(angle);
+                const y = 120 - 95 * Math.cos(angle);
                 const isSelected = minutes === minute;
 
                 return (
-                  <g key={i} onClick={() => handleClockClick(i)}>
+                  <g key={`minute-${i}`} onClick={() => handleClockClick(i)}>
                     <circle
                       cx={x}
                       cy={y}
-                      r="8"
-                      fill={isSelected ? "#14b8a6" : "transparent"}
-                      className="cursor-pointer"
+                      r="7"
+                      fill={isSelected ? "#4f46e5" : "transparent"}
+                      className="cursor-pointer hover:fill-indigo-100"
                     />
                     <text
                       x={x}
                       y={y}
                       textAnchor="middle"
-                      dy="0.3em"
+                      dy="0.35em"
                       fontSize="12"
-                      fontWeight="500"
-                      fill={isSelected ? "white" : "#475569"}
+                      fontWeight="600"
+                      fill={isSelected ? "white" : "#1e293b"}
                       className="cursor-pointer"
                     >
                       {minute.toString().padStart(2, "0")}
@@ -164,19 +202,27 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-3 justify-between items-center mt-6">
           <button
-            onClick={handleConfirm}
-            className="flex-1 px-3 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+            title="Keyboard input"
           >
-            OK
+            <Keyboard size={20} />
           </button>
-          <button
-            onClick={onClose}
-            className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
-          >
-            Cancel
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors text-sm"
+            >
+              CANCEL
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="px-4 py-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors text-sm"
+            >
+              OK
+            </button>
+          </div>
         </div>
       </div>
     </div>
