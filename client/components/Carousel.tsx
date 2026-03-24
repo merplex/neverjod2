@@ -10,10 +10,9 @@ interface CarouselProps {
 
 export default function Carousel({ items, itemsPerPage, renderItem, cols }: CarouselProps) {
   const [currentPage, setCurrentPage] = useState(0);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragStartX = useRef(0);
+  const isDraggingRef = useRef(false);
 
   const totalPages = Math.ceil(items.length / itemsPerPage);
   const startIndex = currentPage * itemsPerPage;
@@ -21,12 +20,12 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   const currentItems = items.slice(startIndex, endIndex);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
+    dragStartX.current = e.targetTouches[0].clientX;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     const endX = e.changedTouches[0].clientX;
-    const distance = touchStart - endX;
+    const distance = dragStartX.current - endX;
     const isLeftSwipe = distance > 50;
 
     if (isLeftSwipe && currentPage < totalPages - 1) {
@@ -35,26 +34,37 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
       setCurrentPage(currentPage - 1);
     }
 
-    // Reset touch values
-    setTouchStart(0);
-    setTouchEnd(0);
+    dragStartX.current = 0;
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setTouchStart(e.clientX);
+    // Don't start drag if clicking on a button
+    if ((e.target as HTMLElement).tagName === 'BUTTON' ||
+        (e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    isDraggingRef.current = true;
+    dragStartX.current = e.clientX;
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setTouchEnd(e.clientX);
+    if (!isDraggingRef.current) return;
+    // Update cursor during drag
+    if (containerRef.current) {
+      containerRef.current.style.cursor = 'grabbing';
+    }
   };
 
-  const handleMouseUp = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+
+    isDraggingRef.current = false;
+    if (containerRef.current) {
+      containerRef.current.style.cursor = 'grab';
+    }
+
     // Only treat as swipe if there was significant movement
-    const distance = touchStart - touchEnd;
+    const distance = dragStartX.current - (e.clientX || 0);
     const isLeftSwipe = distance > 50;
 
     if (isLeftSwipe && currentPage < totalPages - 1) {
@@ -63,9 +73,7 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
       setCurrentPage(currentPage - 1);
     }
 
-    // Reset touch values
-    setTouchStart(0);
-    setTouchEnd(0);
+    dragStartX.current = 0;
   };
 
   const gridColsClass = {
@@ -83,8 +91,8 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      className={isDragging ? "cursor-grabbing" : "cursor-grab"}
-      style={{ userSelect: isDragging ? "none" : "auto" }}
+      className="cursor-grab"
+      style={{ userSelect: "auto" }}
     >
       {/* Grid */}
       <div className={`grid gap-3 ${gridColsClass}`}>
