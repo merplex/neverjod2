@@ -130,8 +130,8 @@ export default function Index() {
               }}
             >
               {/* Numpad Grid */}
-              <div className="grid grid-cols-3 gap-3">
-                {/* Row 1: 7, 8, 9 */}
+              <div className="grid grid-cols-4 gap-3">
+                {/* Row 1: 7, 8, 9, [empty] */}
                 <button
                   onClick={() => handleNumberClick(7)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -150,8 +150,9 @@ export default function Index() {
                 >
                   9
                 </button>
+                <div></div>
 
-                {/* Row 2: 4, 5, 6 */}
+                {/* Row 2: 4, 5, 6, [empty] */}
                 <button
                   onClick={() => handleNumberClick(4)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -170,8 +171,9 @@ export default function Index() {
                 >
                   6
                 </button>
+                <div></div>
 
-                {/* Row 3: 1, 2, 3 */}
+                {/* Row 3: 1, 2, 3, [empty] */}
                 <button
                   onClick={() => handleNumberClick(1)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -190,6 +192,7 @@ export default function Index() {
                 >
                   3
                 </button>
+                <div></div>
 
                 {/* Row 4: Save, 0, ., DEL */}
                 <button
