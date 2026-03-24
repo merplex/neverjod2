@@ -141,7 +141,7 @@ export default function Index() {
         </div>
 
         {/* Main Input Area - Full Screen */}
-        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col min-h-96">
+        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col flex-1">
           {/* Dynamic Main Input Area */}
           <div className="px-6 py-6 bg-white flex flex-col flex-1">
             {/* Category Input Page (4 rows × 4 columns) - Bottom Aligned */}
