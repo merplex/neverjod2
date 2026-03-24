@@ -49,10 +49,18 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
       // Set 4-second timeout for initial speech detection
       speechStartTimeoutRef.current = setTimeout(() => {
         // If no speech detected within 4 seconds, reset and restart listening
-        if (!hasSpeechStartedRef.current && recognition) {
+        if (!hasSpeechStartedRef.current && isListeningRef.current && recognition) {
           console.log("No speech detected, restarting...");
-          recognition.abort();
-          setTimeout(() => recognition.start(), 100);
+          try {
+            recognition.stop();
+            setTimeout(() => {
+              if (isListeningRef.current) {
+                recognition.start();
+              }
+            }, 100);
+          } catch (error) {
+            console.log("Recognition already stopped");
+          }
         }
       }, 4000);
     };
@@ -91,21 +99,38 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
 
     recognition.onend = () => {
       console.log("Speech recognition ended");
-      // Call onVoiceEnd when speech ends
-      if (hasSpeechStartedRef.current && onVoiceEnd) {
-        onVoiceEnd();
-      }
 
       // Clear timeout on end
       if (speechStartTimeoutRef.current) {
         clearTimeout(speechStartTimeoutRef.current);
+        speechStartTimeoutRef.current = undefined;
+      }
+
+      // Call onVoiceEnd when speech ends (only if speech was detected)
+      if (hasSpeechStartedRef.current && onVoiceEnd) {
+        onVoiceEnd();
+      }
+
+      // Only reset listening state if user clicked stop
+      if (isListeningRef.current) {
+        setIsListening(false);
+        isListeningRef.current = false;
       }
 
       hasSpeechStartedRef.current = false;
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
+      // Ignore abort errors - they happen when restarting recognition
+      if (event.error === "aborted") {
+        console.log("Recognition aborted (normal operation)");
+        return;
+      }
+
+      // Log other errors
+      if (event.error !== "no-speech") {
+        console.error("Speech recognition error:", event.error);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -129,9 +154,19 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     if (isListeningRef.current) {
       // Stop listening
       console.log("Stopping listening...");
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (error) {
+        console.log("Error stopping recognition:", error);
+      }
       setIsListening(false);
       isListeningRef.current = false;
+
+      // Clear timeout
+      if (speechStartTimeoutRef.current) {
+        clearTimeout(speechStartTimeoutRef.current);
+        speechStartTimeoutRef.current = undefined;
+      }
     } else {
       // Start listening
       console.log("Starting listening...");
