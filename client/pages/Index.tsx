@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronUp, ChevronDown, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X } from "lucide-react";
 import Carousel from "../components/Carousel";
@@ -62,6 +62,10 @@ export default function Index() {
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [accountsList, setAccountsList] = useState(accounts);
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [draggedAccount, setDraggedAccount] = useState<string | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Amount input state
   const [display, setDisplay] = useState("0");
@@ -134,6 +138,52 @@ export default function Index() {
     setIsLocked(!isLocked);
   };
 
+  // Long-press handlers for account reordering
+  const handleAccountMouseDown = (accountId: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      setIsReorderMode(true);
+      setDraggedAccount(accountId);
+    }, 500); // 500ms long press
+  };
+
+  const handleAccountMouseUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+  };
+
+  const handleAccountDragStart = (accountId: string) => {
+    if (isReorderMode) {
+      setDraggedAccount(accountId);
+    }
+  };
+
+  const handleAccountDragOver = (e: React.DragEvent) => {
+    if (isReorderMode) {
+      e.preventDefault();
+    }
+  };
+
+  const handleAccountDrop = (targetAccountId: string) => {
+    if (!draggedAccount || draggedAccount === targetAccountId || !isReorderMode) return;
+
+    const draggedIndex = accountsList.findIndex((a) => a.id === draggedAccount);
+    const targetIndex = accountsList.findIndex((a) => a.id === targetAccountId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newList = [...accountsList];
+    const [draggedItem] = newList.splice(draggedIndex, 1);
+    newList.splice(targetIndex, 0, draggedItem);
+
+    setAccountsList(newList);
+  };
+
+  const exitReorderMode = () => {
+    setIsReorderMode(false);
+    setDraggedAccount(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4">
       <div className="w-full max-w-md mx-auto">
@@ -141,7 +191,7 @@ export default function Index() {
         <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
           <h3 className="text-sm font-semibold text-slate-600 mb-3">Accounts</h3>
           <Carousel
-            items={accounts}
+            items={accountsList}
             itemsPerPage={6}
             cols={2}
             renderItem={(account) => {
@@ -149,16 +199,42 @@ export default function Index() {
               return (
                 <button
                   key={account.id}
-                  onClick={() => navigate(`/account/${account.id}/transactions`)}
-                  className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs"
+                  draggable={isReorderMode}
+                  onMouseDown={() => handleAccountMouseDown(account.id)}
+                  onMouseUp={handleAccountMouseUp}
+                  onDragStart={() => handleAccountDragStart(account.id)}
+                  onDragOver={handleAccountDragOver}
+                  onDrop={() => handleAccountDrop(account.id)}
+                  onClick={() => {
+                    if (isReorderMode) {
+                      exitReorderMode();
+                    } else {
+                      navigate(`/account/${account.id}/transactions`);
+                    }
+                  }}
+                  className={`py-2 px-3 rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold ${
+                    isReorderMode
+                      ? draggedAccount === account.id
+                        ? "bg-indigo-400 text-white shadow-lg opacity-70"
+                        : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 cursor-move border-2 border-indigo-300"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  }`}
                 >
                   <IconComponent size={20} />
                   <span className="font-bold text-xs">{account.name}</span>
-                  <span className="text-xs text-slate-600 font-normal">{account.type}</span>
+                  <span className="text-xs font-normal opacity-75">{account.type}</span>
                 </button>
               );
             }}
           />
+          {isReorderMode && (
+            <button
+              onClick={exitReorderMode}
+              className="mt-3 w-full py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors text-sm"
+            >
+              Done Reordering
+            </button>
+          )}
         </div>
 
         {/* Main Input Area - Full Screen */}
@@ -206,7 +282,7 @@ export default function Index() {
                   </button>
                 </div>
                 <Carousel
-                  items={accounts}
+                  items={accountsList}
                   itemsPerPage={12}
                   cols={4}
                   renderItem={(account) => {
