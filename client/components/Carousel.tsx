@@ -25,8 +25,19 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    setTouchEnd(e.changedTouches[0].clientX);
-    handleSwipe();
+    const endX = e.changedTouches[0].clientX;
+    const distance = touchStart - endX;
+    const isLeftSwipe = distance > 50;
+
+    if (isLeftSwipe && currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    } else if (!isLeftSwipe && distance < -50 && currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+
+    // Reset touch values
+    setTouchStart(0);
+    setTouchEnd(0);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -42,13 +53,9 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   const handleMouseUp = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    handleSwipe();
-  };
-
-  const handleSwipe = () => {
-    if (touchStart === 0) return;
+    // Only treat as swipe if there was significant movement
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50; // Swipe distance threshold
+    const isLeftSwipe = distance > 50;
 
     if (isLeftSwipe && currentPage < totalPages - 1) {
       setCurrentPage(currentPage + 1);
