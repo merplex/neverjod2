@@ -13,19 +13,74 @@ interface Transaction {
   description: string;
 }
 
-// Sample transaction data
-const sampleTransactions: Transaction[] = [
-  { id: "1", date: new Date(2024, 2, 24), category: "Food", amount: 250, description: "Lunch" },
-  { id: "2", date: new Date(2024, 2, 24), category: "Transport", amount: 50, description: "Taxi" },
-  { id: "3", date: new Date(2024, 2, 23), category: "Shopping", amount: 1200, description: "Clothes" },
-  { id: "4", date: new Date(2024, 2, 23), category: "Food", amount: 180, description: "Dinner" },
-  { id: "5", date: new Date(2024, 2, 22), category: "Bills", amount: 5000, description: "Electricity" },
-  { id: "6", date: new Date(2024, 2, 21), category: "Food", amount: 320, description: "Groceries" },
-  { id: "7", date: new Date(2024, 2, 20), category: "Entertainment", amount: 600, description: "Movie" },
-  { id: "8", date: new Date(2024, 2, 19), category: "Transport", amount: 80, description: "BTS Card" },
-  { id: "9", date: new Date(2024, 2, 18), category: "Food", amount: 150, description: "Coffee" },
-  { id: "10", date: new Date(2024, 2, 17), category: "Shopping", amount: 2500, description: "Electronics" },
+const categories = [
+  "Food",
+  "Transport",
+  "Entertainment",
+  "Shopping",
+  "Bills",
+  "Health",
+  "Education",
+  "Utilities",
+  "Salary",
+  "Bonus",
 ];
+
+const descriptions: Record<string, string[]> = {
+  Food: ["Breakfast", "Lunch", "Dinner", "Coffee", "Snacks", "Groceries"],
+  Transport: ["Taxi", "BTS Card", "Uber", "Bus Fare", "Parking", "Gas"],
+  Entertainment: ["Movie", "Concert", "Gaming", "Streaming", "Sports"],
+  Shopping: ["Clothes", "Electronics", "Books", "Home Decor", "Shoes"],
+  Bills: ["Electricity", "Water", "Internet", "Phone Bill", "Rent"],
+  Health: ["Doctor", "Medicine", "Gym", "Pharmacy", "Haircut"],
+  Education: ["Course", "Books", "Tuition", "Workshop", "Training"],
+  Utilities: ["Maintenance", "Repair", "Cleaning", "Service", "Subscription"],
+  Salary: ["Monthly Salary", "Paycheck", "Income", "Advance"],
+  Bonus: ["Bonus", "Commission", "Tip", "Refund"],
+};
+
+// Generate 6 weeks of demo transactions (5 per day)
+const generateDemoTransactions = (): Transaction[] => {
+  const transactions: Transaction[] = [];
+  let id = 1;
+  const today = new Date();
+
+  // Generate for 6 weeks (42 days)
+  for (let i = 41; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+
+    // 5 transactions per day
+    for (let j = 0; j < 5; j++) {
+      const category = categories[Math.floor(Math.random() * categories.length)];
+      const categoryDescriptions = descriptions[category];
+      const description =
+        categoryDescriptions[Math.floor(Math.random() * categoryDescriptions.length)];
+
+      // Random amount based on category
+      let amount = 0;
+      if (category === "Salary" || category === "Bonus") {
+        amount = Math.random() * 20000 + 10000; // 10k-30k for income
+      } else {
+        amount = Math.random() * 5000 + 100; // 100-5100 for expenses
+      }
+
+      transactions.push({
+        id: id.toString(),
+        date: new Date(date),
+        category,
+        amount: Math.round(amount),
+        description,
+      });
+
+      id++;
+    }
+  }
+
+  return transactions;
+};
+
+const sampleTransactions = generateDemoTransactions();
 
 const accountData: Record<string, { name: string; type: string }> = {
   uob: { name: "UOB", type: "credit card" },
