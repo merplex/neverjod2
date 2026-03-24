@@ -146,10 +146,9 @@ export default function Index() {
           <div className="px-6 py-6 bg-white flex flex-col flex-1">
             {/* Category Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "category" && (
-              <div className="flex flex-col flex-1 justify-end">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
-                  <div className="grid grid-cols-4 gap-3">
+              <div className="flex flex-col flex-1">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
+                <div className="grid grid-cols-4 gap-3 flex-1">
                     {categories.map((category) => {
                       const IconComponent = category.icon;
                       return (
@@ -163,14 +162,13 @@ export default function Index() {
                         </button>
                       );
                     })}
-                  </div>
                 </div>
               </div>
             )}
 
             {/* Account Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "account" && (
-              <div className="flex flex-col flex-1 justify-end">
+              <div className="flex flex-col flex-1">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-bold text-slate-900">Select Account</h2>
                   <button
@@ -180,7 +178,7 @@ export default function Index() {
                     <X size={24} />
                   </button>
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 gap-3 flex-1">
                   {accounts.map((account) => {
                     const IconComponent = account.icon;
                     return (
