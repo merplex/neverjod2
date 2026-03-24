@@ -65,16 +65,6 @@ export default function Index() {
       <div className="w-full max-w-md">
         {/* Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-6 py-8">
-            <h1 className="text-white text-sm font-semibold opacity-80 mb-2">
-              Enter Amount
-            </h1>
-            <div className="text-5xl font-bold text-white font-mono tracking-tight">
-              ${display}
-            </div>
-          </div>
-
           {/* Display Buttons Section */}
           <div className="px-6 py-6 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
             <div className="grid grid-cols-2 gap-3">
@@ -141,6 +131,22 @@ export default function Index() {
               >
                 Right
               </button>
+            </div>
+          </div>
+
+          {/* Header Section - Moved between percentage controls and numpad, moves with numpad */}
+          <div
+            style={{
+              transform: `translateY(${numpadOffset}px)`,
+              transition: "transform 0.1s ease-out",
+            }}
+            className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-6 py-8"
+          >
+            <h1 className="text-white text-sm font-semibold opacity-80 mb-2">
+              Enter Amount
+            </h1>
+            <div className="text-5xl font-bold text-white font-mono tracking-tight">
+              ${display}
             </div>
           </div>
 
