@@ -1,0 +1,80 @@
+import { useState, useRef } from "react";
+import { ChevronRight } from "lucide-react";
+
+interface CarouselProps {
+  items: React.ReactNode[];
+  itemsPerPage: number;
+  renderItem: (item: any, index: number) => React.ReactNode;
+  cols: number;
+}
+
+export default function Carousel({ items, itemsPerPage, renderItem, cols }: CarouselProps) {
+  const [currentPage, setCurrentPage] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const totalPages = Math.ceil(items.length / itemsPerPage);
+  const startIndex = currentPage * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = items.slice(startIndex, endIndex);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setTouchEnd(e.changedTouches[0].clientX);
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    if (touchStart === 0) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50; // Swipe distance threshold
+
+    if (isLeftSwipe && currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    } else if (!isLeftSwipe && distance < -50 && currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const gridColsClass = {
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    4: "grid-cols-4",
+  }[cols] || "grid-cols-4";
+
+  return (
+    <div ref={containerRef} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      {/* Grid */}
+      <div className={`grid gap-3 ${gridColsClass}`}>
+        {currentItems.map((item, index) => renderItem(item, startIndex + index))}
+      </div>
+
+      {/* Page Indicators - Only show if more than 1 page */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentPage(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === currentPage ? "bg-indigo-600" : "bg-slate-300"
+                }`}
+              />
+            ))}
+          </div>
+          {currentPage < totalPages - 1 && (
+            <div className="text-xs text-slate-500 flex items-center gap-1">
+              <span>Swipe left for more</span>
+              <ChevronRight size={14} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

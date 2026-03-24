@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronUp, ChevronDown, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X } from "lucide-react";
+import Carousel from "../components/Carousel";
 
 type InputPage = "category" | "account" | "amount";
 
@@ -117,8 +118,11 @@ export default function Index() {
         {/* Persistent Account Section - Top */}
         <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
           <h3 className="text-sm font-semibold text-slate-600 mb-3">Accounts</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {accounts.slice(0, 6).map((account) => {
+          <Carousel
+            items={accounts}
+            itemsPerPage={6}
+            cols={2}
+            renderItem={(account) => {
               const IconComponent = account.icon;
               return (
                 <button
@@ -131,8 +135,8 @@ export default function Index() {
                   <span className="text-xs text-slate-600 font-normal">{account.type}</span>
                 </button>
               );
-            })}
-          </div>
+            }}
+          />
         </div>
 
         {/* Main Input Area - Full Screen */}
@@ -144,8 +148,11 @@ export default function Index() {
               <div className="flex flex-col flex-1 justify-end">
                 <div>
                   <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
-                  <div className="grid grid-cols-4 gap-3">
-                    {categories.map((category) => {
+                  <Carousel
+                    items={categories}
+                    itemsPerPage={12}
+                    cols={4}
+                    renderItem={(category) => {
                       const IconComponent = category.icon;
                       return (
                         <button
@@ -157,8 +164,8 @@ export default function Index() {
                           <span className="font-bold text-xs text-center">{category.name}</span>
                         </button>
                       );
-                    })}
-                  </div>
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -175,8 +182,11 @@ export default function Index() {
                     <X size={24} />
                   </button>
                 </div>
-                <div className="grid grid-cols-4 gap-3">
-                  {accounts.map((account) => {
+                <Carousel
+                  items={accounts}
+                  itemsPerPage={12}
+                  cols={4}
+                  renderItem={(account) => {
                     const IconComponent = account.icon;
                     return (
                       <button
@@ -188,8 +198,8 @@ export default function Index() {
                         <span className="font-bold text-xs text-center">{account.name}</span>
                       </button>
                     );
-                  })}
-                </div>
+                  }}
+                />
               </div>
             )}
 
