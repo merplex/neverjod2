@@ -106,3 +106,10 @@ export const getTransaction = (id: string): Transaction | undefined => {
 export const getTransactionsList = (): Transaction[] => {
   return Object.values(getTransactions());
 };
+
+export const updateTransaction = (id: string, updates: Partial<Transaction>): void => {
+  const transactions = getTransactions();
+  if (transactions[id]) {
+    transactions[id] = { ...transactions[id], ...updates };
+  }
+};

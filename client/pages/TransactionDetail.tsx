@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { getTransaction, type Transaction } from "../utils/transactionData";
+import { getTransaction, updateTransaction, type Transaction } from "../utils/transactionData";
+import DatePicker from "../components/DatePicker";
+import TimePicker from "../components/TimePicker";
 
 const accountData: Record<string, { name: string; type: string }> = {
   uob: { name: "UOB", type: "credit card" },
@@ -25,6 +27,10 @@ export default function TransactionDetail() {
   const transaction = transactionId ? getTransaction(transactionId) : null;
   const [isEditing, setIsEditing] = useState(false);
   const [editedDescription, setEditedDescription] = useState(transaction?.description || "");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [currentDate, setCurrentDate] = useState(transaction?.date || new Date());
+  const [currentTime, setCurrentTime] = useState(transaction?.time || "00:00");
 
   if (!account || !transaction) {
     return (
@@ -40,6 +46,22 @@ export default function TransactionDetail() {
     // In a real app, this would update the backend
     console.log("Updated description:", editedDescription);
     setIsEditing(false);
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setCurrentDate(date);
+    if (transaction && transactionId) {
+      updateTransaction(transactionId, { date });
+    }
+    setShowDatePicker(false);
+  };
+
+  const handleTimeSelect = (time: string) => {
+    setCurrentTime(time);
+    if (transaction && transactionId) {
+      updateTransaction(transactionId, { time });
+    }
+    setShowTimePicker(false);
   };
 
   const handleDelete = () => {
@@ -77,21 +99,27 @@ export default function TransactionDetail() {
 
             {/* Date & Time */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <button
+                onClick={() => setShowDatePicker(true)}
+                className="space-y-2 text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
+              >
                 <h3 className="text-sm font-semibold text-slate-600">Date</h3>
                 <p className="text-lg font-bold text-slate-900">
-                  {transaction.date.toLocaleDateString("en-US", {
+                  {currentDate.toLocaleDateString("en-US", {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                   })}
                 </p>
-              </div>
-              <div className="space-y-2">
+              </button>
+              <button
+                onClick={() => setShowTimePicker(true)}
+                className="space-y-2 text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
+              >
                 <h3 className="text-sm font-semibold text-slate-600">Time</h3>
-                <p className="text-lg font-bold text-slate-900">{transaction.time}</p>
-              </div>
+                <p className="text-lg font-bold text-slate-900">{currentTime}</p>
+              </button>
             </div>
 
             {/* Amount */}
@@ -168,6 +196,24 @@ export default function TransactionDetail() {
           </div>
         </div>
       </div>
+
+      {/* Date Picker Modal */}
+      {showDatePicker && (
+        <DatePicker
+          value={currentDate}
+          onSelect={handleDateSelect}
+          onClose={() => setShowDatePicker(false)}
+        />
+      )}
+
+      {/* Time Picker Modal */}
+      {showTimePicker && (
+        <TimePicker
+          value={currentTime}
+          onSelect={handleTimeSelect}
+          onClose={() => setShowTimePicker(false)}
+        />
+      )}
     </div>
   );
 }
