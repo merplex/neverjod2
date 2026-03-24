@@ -66,8 +66,10 @@ export default function Index() {
   const [accountsList, setAccountsList] = useState(accounts);
   const [isCategoryReorderMode, setIsCategoryReorderMode] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [isAccountPageReorderMode, setIsAccountPageReorderMode] = useState(false);
   const [selectedCategoryForSwap, setSelectedCategoryForSwap] = useState<string | null>(null);
   const [selectedForSwap, setSelectedForSwap] = useState<string | null>(null);
+  const [selectedAccountForSwap, setSelectedAccountForSwap] = useState<string | null>(null);
 
   // Amount input state
   const [display, setDisplay] = useState("0");
@@ -90,8 +92,15 @@ export default function Index() {
   };
 
   const handleAccountSelect = (accountId: string) => {
-    setSelectedAccount(accountId);
-    setCurrentPage("amount");
+    if (!isAccountPageReorderMode) {
+      setSelectedAccount(accountId);
+      setCurrentPage("amount");
+    }
+  };
+
+  const exitAccountReorderMode = () => {
+    setIsAccountPageReorderMode(false);
+    setSelectedAccountForSwap(null);
   };
 
   const handleNumberClick = (num: number) => {
@@ -310,12 +319,22 @@ export default function Index() {
               <div className="flex flex-col flex-1 justify-end">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-bold text-slate-900">Select Account</h2>
-                  <button
-                    onClick={() => setCurrentPage("category")}
-                    className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
-                  >
-                    <X size={24} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {!isAccountPageReorderMode && (
+                      <button
+                        onClick={() => setIsAccountPageReorderMode(true)}
+                        className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded font-semibold hover:bg-indigo-200 transition-colors"
+                      >
+                        Reorder
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setCurrentPage("category")}
+                      className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
+                    >
+                      <X size={24} />
+                    </button>
+                  </div>
                 </div>
                 <Carousel
                   items={accountsList}
@@ -323,11 +342,40 @@ export default function Index() {
                   cols={4}
                   renderItem={(account) => {
                     const IconComponent = account.icon;
+                    const accountIndex = accountsList.findIndex((a) => a.id === account.id);
+                    const isSelected = selectedAccountForSwap === account.id;
+
                     return (
                       <button
                         key={account.id}
-                        onClick={() => handleAccountSelect(account.id)}
-                        className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
+                        onClick={() => {
+                          if (isAccountPageReorderMode) {
+                            if (selectedAccountForSwap === null) {
+                              // First selection - select this account
+                              setSelectedAccountForSwap(account.id);
+                            } else if (selectedAccountForSwap === account.id) {
+                              // Deselect if clicking the same account
+                              setSelectedAccountForSwap(null);
+                            } else {
+                              // Second selection - swap the two accounts
+                              const firstIndex = accountsList.findIndex((a) => a.id === selectedAccountForSwap);
+                              const newList = [...accountsList];
+                              [newList[firstIndex], newList[accountIndex]] = [newList[accountIndex], newList[firstIndex]];
+                              setAccountsList(newList);
+                              setSelectedAccountForSwap(null);
+                            }
+                          } else {
+                            // Normal mode - select account
+                            handleAccountSelect(account.id);
+                          }
+                        }}
+                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28 font-semibold ${
+                          isAccountPageReorderMode
+                            ? isSelected
+                              ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
+                              : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
+                            : "bg-indigo-50 hover:bg-indigo-200 text-indigo-900"
+                        }`}
                       >
                         <IconComponent size={32} />
                         <span className="font-bold text-xs text-center">{account.name}</span>
@@ -335,6 +383,14 @@ export default function Index() {
                     );
                   }}
                 />
+                {isAccountPageReorderMode && (
+                  <button
+                    onClick={exitAccountReorderMode}
+                    className="mt-3 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors text-sm"
+                  >
+                    Done Reordering
+                  </button>
+                )}
               </div>
             )}
 
