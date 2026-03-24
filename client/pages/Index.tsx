@@ -436,7 +436,7 @@ export default function Index() {
               <div className="flex flex-col flex-1">
                 {/* Section A: Size Controls */}
                 <div className="flex gap-4 items-center mb-3">
-                  {[75, 80, 85].map((size) => (
+                  {[70, 75, 80, 85].map((size) => (
                     <button
                       key={size}
                       onClick={() => setNumpadSize(size)}
@@ -449,16 +449,6 @@ export default function Index() {
                       {size}%
                     </button>
                   ))}
-                  <button
-                    onClick={() => setNumpadSize(100)}
-                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      numpadSize === 100
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    Full
-                  </button>
                   <button
                     onClick={() => setIsRightMode(!isRightMode)}
                     className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
