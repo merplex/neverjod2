@@ -27,6 +27,7 @@ export default function TransactionDetail() {
   const transaction = transactionId ? getTransaction(transactionId) : null;
   const [isEditing, setIsEditing] = useState(false);
   const [editedDescription, setEditedDescription] = useState(transaction?.description || "");
+  const [editedAmount, setEditedAmount] = useState(transaction?.amount.toString() || "0");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [currentDate, setCurrentDate] = useState(transaction?.date || new Date());
@@ -50,7 +51,11 @@ export default function TransactionDetail() {
 
   const handleSaveEdit = () => {
     // In a real app, this would update the backend
-    console.log("Updated description:", editedDescription);
+    const amount = parseFloat(editedAmount) || 0;
+    console.log("Updated description:", editedDescription, "amount:", amount);
+    if (transaction && transactionId) {
+      updateTransaction(transactionId, { description: editedDescription, amount });
+    }
     setIsEditing(false);
   };
 
@@ -133,9 +138,24 @@ export default function TransactionDetail() {
             {/* Amount */}
             <div className="space-y-2 p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg">
               <h3 className="text-sm font-semibold text-indigo-700">Amount</h3>
-              <p className="text-3xl font-bold text-indigo-900">
-                {transaction.amount > 0 ? "+" : ""}{transaction.amount}฿
-              </p>
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-indigo-900">
+                    {transaction.type === "income" ? "+" : "-"}
+                  </span>
+                  <input
+                    type="number"
+                    value={editedAmount}
+                    onChange={(e) => setEditedAmount(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-2xl font-bold"
+                  />
+                  <span className="text-2xl font-bold text-indigo-900">฿</span>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold text-indigo-900">
+                  {transaction.type === "income" ? "+" : "-"}{Math.abs(transaction.amount)}฿
+                </p>
+              )}
             </div>
 
             {/* Description */}
@@ -160,6 +180,7 @@ export default function TransactionDetail() {
                       onClick={() => {
                         setIsEditing(false);
                         setEditedDescription(transaction.description);
+                        setEditedAmount(transaction.amount.toString());
                       }}
                       className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
                     >
