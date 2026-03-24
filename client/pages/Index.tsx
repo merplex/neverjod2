@@ -218,8 +218,14 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Up/Down Buttons - Aligned right with category buttons */}
-            <div className="flex flex-col gap-3">
+            {/* Up/Down Buttons - Aligned right with category buttons, moves with numpad */}
+            <div
+              className="flex flex-col gap-3"
+              style={{
+                transform: `translateY(${numpadOffset}px)`,
+                transition: "transform 0.1s ease-out",
+              }}
+            >
               <button
                 onClick={handleMoveUp}
                 className="h-[calc(2*2.75rem+12px)] px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
