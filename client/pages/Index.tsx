@@ -49,6 +49,11 @@ const accounts = [
   { id: "crypto", name: "Crypto", type: "cryptocurrency", icon: TrendingUp },
   { id: "baht_pay", name: "Baht Pay", type: "digital wallet", icon: Smartphone },
   { id: "other_acc", name: "Other", type: "other", icon: MoreHorizontal },
+  { id: "kbank", name: "K-Bank", type: "digital bank", icon: Smartphone },
+  { id: "revolut", name: "Revolut", type: "digital wallet", icon: CreditCard },
+  { id: "wise", name: "Wise", type: "digital bank", icon: Wallet },
+  { id: "stripe", name: "Stripe", type: "payment gateway", icon: CreditCard },
+  { id: "paypal", name: "PayPal", type: "digital wallet", icon: Banknote },
 ];
 
 export default function Index() {
