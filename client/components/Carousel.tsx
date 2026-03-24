@@ -6,10 +6,9 @@ interface CarouselProps {
   itemsPerPage: number;
   renderItem: (item: any, index: number) => React.ReactNode;
   cols: number;
-  disableDrag?: boolean;
 }
 
-export default function Carousel({ items, itemsPerPage, renderItem, cols, disableDrag }: CarouselProps) {
+export default function Carousel({ items, itemsPerPage, renderItem, cols }: CarouselProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef(0);
@@ -39,35 +38,19 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols, disabl
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Skip if drag is disabled or clicking on a button/draggable element
-    if (disableDrag) return;
+    // Don't start drag if clicking on a button
     if ((e.target as HTMLElement).tagName === 'BUTTON' ||
         (e.target as HTMLElement).closest('button')) {
-      return;
-    }
-    if ((e.target as HTMLElement).draggable ||
-        (e.target as HTMLElement).closest('[draggable="true"]')) {
       return;
     }
     isDraggingRef.current = true;
     dragStartX.current = e.clientX;
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (disableDrag || !isDraggingRef.current) return;
-    // Update cursor during drag
-    if (containerRef.current) {
-      containerRef.current.style.cursor = 'grabbing';
-    }
-  };
-
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (disableDrag || !isDraggingRef.current) return;
+    if (!isDraggingRef.current) return;
 
     isDraggingRef.current = false;
-    if (containerRef.current) {
-      containerRef.current.style.cursor = 'grab';
-    }
 
     // Only treat as swipe if there was significant movement
     const distance = dragStartX.current - (e.clientX || 0);
@@ -94,7 +77,6 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols, disabl
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       className="cursor-grab"

@@ -64,8 +64,7 @@ export default function Index() {
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [accountsList, setAccountsList] = useState(accounts);
   const [isReorderMode, setIsReorderMode] = useState(false);
-  const [draggedAccount, setDraggedAccount] = useState<string | null>(null);
-  const [dragOverPosition, setDragOverPosition] = useState<number | null>(null);
+  const [selectedForSwap, setSelectedForSwap] = useState<string | null>(null);
 
   // Amount input state
   const [display, setDisplay] = useState("0");
@@ -140,7 +139,7 @@ export default function Index() {
 
   const exitReorderMode = () => {
     setIsReorderMode(false);
-    setDraggedAccount(null);
+    setSelectedForSwap(null);
   };
 
   return (
@@ -155,7 +154,7 @@ export default function Index() {
                 onClick={() => setIsReorderMode(true)}
                 className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded font-semibold hover:bg-indigo-200 transition-colors"
               >
-                Edit
+                Reorder
               </button>
             )}
           </div>
@@ -163,92 +162,47 @@ export default function Index() {
             items={accountsList}
             itemsPerPage={6}
             cols={2}
-            disableDrag={isReorderMode}
             renderItem={(account) => {
               const IconComponent = account.icon;
               const accountIndex = accountsList.findIndex((a) => a.id === account.id);
+              const isSelected = selectedForSwap === account.id;
 
               return (
-                <div
+                <button
                   key={account.id}
-                  draggable={isReorderMode}
-                  onDragStart={(e) => {
-                    if (isReorderMode && e.dataTransfer) {
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData("text/html", account.id);
-                      setDraggedAccount(account.id);
-                    }
-                  }}
-                  onDragEnter={(e) => {
-                    if (isReorderMode && e.dataTransfer) {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
-                      setDragOverPosition(accountIndex);
-                    }
-                  }}
-                  onDragOver={(e) => {
-                    if (isReorderMode && e.dataTransfer) {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
-                    }
-                  }}
-                  onDragLeave={(e) => {
+                  onClick={() => {
                     if (isReorderMode) {
-                      e.stopPropagation();
-                      setDragOverPosition(null);
-                    }
-                  }}
-                  onDrop={(e) => {
-                    if (isReorderMode && e.dataTransfer) {
-                      e.preventDefault();
-                      setDragOverPosition(null);
-
-                      const draggedId = e.dataTransfer.getData("text/html");
-
-                      if (draggedId && draggedId !== account.id) {
-                        const draggedIndex = accountsList.findIndex((a) => a.id === draggedId);
-
-                        if (draggedIndex !== -1 && accountIndex !== -1 && draggedIndex !== accountIndex) {
-                          const newList = [...accountsList];
-                          const [draggedItem] = newList.splice(draggedIndex, 1);
-
-                          // Insert at target position
-                          if (draggedIndex < accountIndex) {
-                            newList.splice(accountIndex - 1, 0, draggedItem);
-                          } else {
-                            newList.splice(accountIndex, 0, draggedItem);
-                          }
-
-                          setAccountsList(newList);
-                          setDraggedAccount(null);
-                        }
+                      if (selectedForSwap === null) {
+                        // First selection - select this account
+                        setSelectedForSwap(account.id);
+                      } else if (selectedForSwap === account.id) {
+                        // Deselect if clicking the same account
+                        setSelectedForSwap(null);
+                      } else {
+                        // Second selection - swap the two accounts
+                        const firstIndex = accountsList.findIndex((a) => a.id === selectedForSwap);
+                        const newList = [...accountsList];
+                        [newList[firstIndex], newList[accountIndex]] = [newList[accountIndex], newList[firstIndex]];
+                        setAccountsList(newList);
+                        setSelectedForSwap(null);
                       }
+                    } else {
+                      // Normal mode - navigate to transactions
+                      navigate(`/account/${account.id}/transactions`);
                     }
                   }}
-                  className={`${isReorderMode ? "cursor-move" : ""} ${
-                    dragOverPosition === accountIndex ? "bg-indigo-200 rounded" : ""
+                  className={`w-full py-2 px-3 rounded-lg transition-all flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold ${
+                    isReorderMode
+                      ? isSelected
+                        ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
+                        : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                   }`}
                 >
-                  <button
-                    onClick={() => {
-                      if (!isReorderMode) {
-                        navigate(`/account/${account.id}/transactions`);
-                      }
-                    }}
-                    className={`w-full py-2 px-3 rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold ${
-                      isReorderMode
-                        ? draggedAccount === account.id
-                          ? "bg-indigo-400 text-white shadow-lg opacity-70"
-                          : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                    }`}
-                    disabled={isReorderMode}
-                  >
-                    <IconComponent size={20} />
-                    <span className="font-bold text-xs">{account.name}</span>
-                    <span className="text-xs font-normal opacity-75">{account.type}</span>
-                  </button>
-                </div>
+                  <IconComponent size={20} />
+                  <span className="font-bold text-xs">{account.name}</span>
+                  <span className="text-xs font-normal opacity-75">{account.type}</span>
+                </button>
               );
             }}
           />
