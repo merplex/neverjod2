@@ -257,14 +257,16 @@ export default function Index() {
             >
               <button
                 onClick={handleMoveUp}
-                className="px-3 py-6 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                className="px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                style={{ height: "calc(2 * 3.5rem + 12px)" }}
                 title="Move up (5px)"
               >
                 <ChevronUp size={32} />
               </button>
               <button
                 onClick={handleMoveDown}
-                className="px-3 py-6 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                className="px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                style={{ height: "calc(2 * 3.5rem + 12px)" }}
                 title="Move down (5px)"
               >
                 <ChevronDown size={32} />
