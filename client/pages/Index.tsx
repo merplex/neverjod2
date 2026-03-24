@@ -171,32 +171,49 @@ export default function Index() {
                   draggable={isReorderMode}
                   onDragStart={(e) => {
                     if (isReorderMode) {
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData("text/plain", account.id);
+                      e.stopPropagation();
+                      e.dataTransfer!.effectAllowed = "move";
+                      e.dataTransfer!.setData("text/html", account.id);
                       setDraggedAccount(account.id);
-                    } else {
+                    }
+                  }}
+                  onDragEnter={(e) => {
+                    if (isReorderMode) {
                       e.preventDefault();
+                      e.stopPropagation();
                     }
                   }}
                   onDragOver={(e) => {
                     if (isReorderMode) {
                       e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
+                      e.stopPropagation();
+                      e.dataTransfer!.dropEffect = "move";
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (isReorderMode) {
+                      e.stopPropagation();
                     }
                   }}
                   onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (isReorderMode) {
-                      e.preventDefault();
-                      const draggedId = e.dataTransfer.getData("text/plain");
+                      const draggedId = e.dataTransfer!.getData("text/html");
+                      console.log("Drop event - draggedId:", draggedId, "targetId:", account.id);
+
                       if (draggedId && draggedId !== account.id) {
                         const draggedIndex = accountsList.findIndex((a) => a.id === draggedId);
                         const targetIndex = accountsList.findIndex((a) => a.id === account.id);
+
+                        console.log("Indices - dragged:", draggedIndex, "target:", targetIndex);
 
                         if (draggedIndex !== -1 && targetIndex !== -1) {
                           const newList = [...accountsList];
                           const [draggedItem] = newList.splice(draggedIndex, 1);
                           newList.splice(targetIndex, 0, draggedItem);
                           setAccountsList(newList);
+                          console.log("Accounts reordered");
                         }
                       }
                     }
