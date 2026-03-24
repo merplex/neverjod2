@@ -6,9 +6,10 @@ interface CarouselProps {
   itemsPerPage: number;
   renderItem: (item: any, index: number) => React.ReactNode;
   cols: number;
+  disableDrag?: boolean;
 }
 
-export default function Carousel({ items, itemsPerPage, renderItem, cols }: CarouselProps) {
+export default function Carousel({ items, itemsPerPage, renderItem, cols, disableDrag }: CarouselProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef(0);
@@ -38,9 +39,14 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Don't start drag if clicking on a button
+    // Skip if drag is disabled or clicking on a button/draggable element
+    if (disableDrag) return;
     if ((e.target as HTMLElement).tagName === 'BUTTON' ||
         (e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    if ((e.target as HTMLElement).draggable ||
+        (e.target as HTMLElement).closest('[draggable="true"]')) {
       return;
     }
     isDraggingRef.current = true;
@@ -48,7 +54,7 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current) return;
+    if (disableDrag || !isDraggingRef.current) return;
     // Update cursor during drag
     if (containerRef.current) {
       containerRef.current.style.cursor = 'grabbing';
@@ -56,7 +62,7 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current) return;
+    if (disableDrag || !isDraggingRef.current) return;
 
     isDraggingRef.current = false;
     if (containerRef.current) {

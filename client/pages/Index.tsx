@@ -203,6 +203,7 @@ export default function Index() {
             items={accountsList}
             itemsPerPage={6}
             cols={2}
+            disableDrag={isReorderMode}
             renderItem={(account) => {
               const IconComponent = account.icon;
               return (
