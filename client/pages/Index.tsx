@@ -41,7 +41,7 @@ export default function Index() {
   };
 
   const handleMoveUp = () => {
-    setNumpadOffset((prev) => prev - 5);
+    setNumpadOffset(0);
   };
 
   const handleMoveDown = () => {
