@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 
 interface CarouselProps {
   items: React.ReactNode[];
@@ -86,7 +86,8 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
 
       {/* Page Indicators - Only show if more than 1 page */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex flex-col items-center gap-3 mt-4">
+          {/* Dots - Centered */}
           <div className="flex gap-1">
             {Array.from({ length: totalPages }).map((_, index) => (
               <button
@@ -98,12 +99,22 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
               />
             ))}
           </div>
-          {currentPage < totalPages - 1 && (
-            <div className="text-xs text-slate-500 flex items-center gap-1">
-              <span>Swipe left for more</span>
-              <ChevronRight size={14} />
-            </div>
-          )}
+
+          {/* Swipe Hints */}
+          <div className="flex gap-2">
+            {currentPage > 0 && (
+              <div className="text-xs text-slate-500 flex items-center gap-1">
+                <ChevronLeft size={14} />
+                <span>Swipe right</span>
+              </div>
+            )}
+            {currentPage < totalPages - 1 && (
+              <div className="text-xs text-slate-500 flex items-center gap-1">
+                <span>Swipe left</span>
+                <ChevronRight size={14} />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
