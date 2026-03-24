@@ -120,7 +120,7 @@ export default function Index() {
           </div>
 
           {/* Numpad Section */}
-          <div className="relative px-6 py-8 min-h-96">
+          <div className="relative px-6 py-8 min-h-96 flex gap-4">
             {/* Numpad Container with dynamic sizing and positioning */}
             <div
               style={{
@@ -129,8 +129,8 @@ export default function Index() {
                 transition: "transform 0.1s ease-out",
               }}
             >
-              {/* Complete Numpad Grid with Up/Down buttons */}
-              <div className="grid grid-cols-4 gap-3">
+              {/* Numpad Grid */}
+              <div className="grid grid-cols-3 gap-3">
                 {/* Row 1: 7, 8, 9 */}
                 <button
                   onClick={() => handleNumberClick(7)}
@@ -149,15 +149,6 @@ export default function Index() {
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                 >
                   9
-                </button>
-
-                {/* Up Button - spans 2 rows */}
-                <button
-                  onClick={handleMoveUp}
-                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                  title="Move up (5px)"
-                >
-                  <ChevronUp size={24} />
                 </button>
 
                 {/* Row 2: 4, 5, 6 */}
@@ -200,15 +191,6 @@ export default function Index() {
                   3
                 </button>
 
-                {/* Down Button - spans 2 rows */}
-                <button
-                  onClick={handleMoveDown}
-                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                  title="Move down (5px)"
-                >
-                  <ChevronDown size={24} />
-                </button>
-
                 {/* Row 4: Save, 0, ., DEL */}
                 <button
                   onClick={handleConfirm}
@@ -235,6 +217,24 @@ export default function Index() {
                   ⌫
                 </button>
               </div>
+            </div>
+
+            {/* Up/Down Buttons - Aligned to right edge of screen */}
+            <div className="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4">
+              <button
+                onClick={handleMoveUp}
+                className="py-4 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                title="Move up (5px)"
+              >
+                <ChevronUp size={24} />
+              </button>
+              <button
+                onClick={handleMoveDown}
+                className="py-4 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                title="Move down (5px)"
+              >
+                <ChevronDown size={24} />
+              </button>
             </div>
           </div>
         </div>
