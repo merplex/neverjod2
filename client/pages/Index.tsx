@@ -295,14 +295,15 @@ export default function Index() {
               </button>
               <button
                 onClick={handleToggleLock}
-                className={`px-3 py-3 rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold ${
+                className={`px-3 rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold ${
                   isLocked
                     ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
                     : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
                 }`}
+                style={{ height: "calc(1 * 3.5rem + 12px)" }}
                 title={isLocked ? "Unlock position" : "Lock position"}
               >
-                {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
+                {isLocked ? <Lock size={28} /> : <LockOpen size={28} />}
               </button>
             </div>
           </div>
