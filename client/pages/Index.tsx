@@ -129,18 +129,25 @@ export default function Index() {
       return;
     }
 
-    // Accumulate voice data over 4 seconds
+    // Accumulate voice data
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
     if (voiceData.amount) voiceAccumulatorRef.current.amount = voiceData.amount;
 
-    // Clear previous timeout
-    if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
+    // If speech has started (has any data), always clear the initial 4-second wait timer
+    // This allows users to speak for as long as needed once they start
+    if (voiceTimeoutRef.current) {
+      clearTimeout(voiceTimeoutRef.current);
+      voiceTimeoutRef.current = undefined;
+    }
+  };
 
-    // Set 4-second timeout to check if all 3 parts are matched
-    voiceTimeoutRef.current = setTimeout(() => {
-      const { categoryId, accountId, amount } = voiceAccumulatorRef.current;
+  // Handle voice recognition end - show result when speech ends
+  const handleVoiceEnd = () => {
+    const { categoryId, accountId, amount } = voiceAccumulatorRef.current;
 
+    // Only show result if any data was detected
+    if (categoryId || accountId || amount) {
       // Get category and account names for display
       const categoryName = categoryId
         ? categories.find((c) => c.id === categoryId)?.name
@@ -162,10 +169,10 @@ export default function Index() {
       });
 
       setShowVoiceResult(true);
+    }
 
-      // Reset accumulator
-      voiceAccumulatorRef.current = {};
-    }, 4000);
+    // Reset accumulator
+    voiceAccumulatorRef.current = {};
   };
 
   const handleVoiceResultConfirm = () => {
@@ -367,7 +374,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
                   </div>
                 </div>
                 <Carousel
@@ -659,7 +666,7 @@ export default function Index() {
                       </button>
                     ) : (
                       <div className="rounded-lg bg-green-100 border-2 border-green-500 flex items-center justify-center flex-1 p-2">
-                        <Recording onVoiceInput={handleVoiceInput} />
+                        <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
                       </div>
                     )}
                     <button

@@ -5,14 +5,17 @@ import { parseVoiceInput } from "../utils/keywordMatch";
 interface RecordingProps {
   onTranscript?: (text: string) => void;
   onVoiceInput?: (data: { categoryId?: string; accountId?: string; amount?: number; description: string }) => void;
+  onVoiceEnd?: () => void;
 }
 
-export default function Recording({ onTranscript }: RecordingProps) {
+export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: RecordingProps) {
   const [isListening, setIsListening] = useState(true);
   const [transcript, setTranscript] = useState("");
   const recognitionRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isListeningRef = useRef(true);
+  const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
+  const hasSpeechStartedRef = useRef(false);
 
   useEffect(() => {
     // Initialize Web Speech API
@@ -31,6 +34,16 @@ export default function Recording({ onTranscript }: RecordingProps) {
     recognitionRef.current.onstart = () => {
       setIsListening(true);
       isListeningRef.current = true;
+      hasSpeechStartedRef.current = false;
+
+      // Set 4-second timeout for initial speech detection
+      speechStartTimeoutRef.current = setTimeout(() => {
+        // If no speech detected within 4 seconds, reset and restart listening
+        if (!hasSpeechStartedRef.current) {
+          recognitionRef.current.abort();
+          recognitionRef.current.start();
+        }
+      }, 4000);
     };
 
     recognitionRef.current.onresult = (event: any) => {
@@ -38,6 +51,15 @@ export default function Recording({ onTranscript }: RecordingProps) {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcriptPart = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
+          // Mark that speech has started
+          hasSpeechStartedRef.current = true;
+
+          // Clear the initial 4-second timeout when speech is detected
+          if (speechStartTimeoutRef.current) {
+            clearTimeout(speechStartTimeoutRef.current);
+            speechStartTimeoutRef.current = undefined;
+          }
+
           setTranscript((prev) => prev + transcriptPart + " ");
           if (onTranscript) {
             onTranscript(transcriptPart);
@@ -57,6 +79,18 @@ export default function Recording({ onTranscript }: RecordingProps) {
     recognitionRef.current.onend = () => {
       setIsListening(false);
       isListeningRef.current = false;
+
+      // Call onVoiceEnd when speech ends
+      if (hasSpeechStartedRef.current && onVoiceEnd) {
+        onVoiceEnd();
+      }
+
+      // Clear timeout on end
+      if (speechStartTimeoutRef.current) {
+        clearTimeout(speechStartTimeoutRef.current);
+      }
+
+      hasSpeechStartedRef.current = false;
     };
 
     recognitionRef.current.onerror = (event: any) => {
@@ -71,7 +105,7 @@ export default function Recording({ onTranscript }: RecordingProps) {
         recognitionRef.current.stop();
       }
     };
-  }, [onTranscript]);
+  }, [onVoiceInput, onVoiceEnd]);
 
   const handleStop = () => {
     if (recognitionRef.current) {
