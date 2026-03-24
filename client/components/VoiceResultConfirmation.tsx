@@ -20,7 +20,7 @@ export default function VoiceResultConfirmation({
   onEdit,
   onClose,
 }: VoiceResultConfirmationProps) {
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     if (!isSuccess) return;
