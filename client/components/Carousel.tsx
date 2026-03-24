@@ -86,7 +86,12 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
 
       {/* Page Indicators - Only show if more than 1 page */}
       {totalPages > 1 && (
-        <div className="flex flex-col items-center gap-3 mt-4">
+        <div className="flex items-center justify-center gap-4 mt-4">
+          {/* Left Arrow - Show only if not on first page */}
+          {currentPage > 0 && (
+            <ChevronLeft size={14} className="text-slate-500" />
+          )}
+
           {/* Dots - Centered */}
           <div className="flex gap-1">
             {Array.from({ length: totalPages }).map((_, index) => (
@@ -100,21 +105,10 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
             ))}
           </div>
 
-          {/* Swipe Hints */}
-          <div className="flex gap-2">
-            {currentPage > 0 && (
-              <div className="text-xs text-slate-500 flex items-center gap-1">
-                <ChevronLeft size={14} />
-                <span>Swipe right</span>
-              </div>
-            )}
-            {currentPage < totalPages - 1 && (
-              <div className="text-xs text-slate-500 flex items-center gap-1">
-                <span>Swipe left</span>
-                <ChevronRight size={14} />
-              </div>
-            )}
-          </div>
+          {/* Right Arrow - Show only if not on last page */}
+          {currentPage < totalPages - 1 && (
+            <ChevronRight size={14} className="text-slate-500" />
+          )}
         </div>
       )}
     </div>
