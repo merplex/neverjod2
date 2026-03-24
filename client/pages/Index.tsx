@@ -201,20 +201,13 @@ export default function Index() {
             {/* Amount Input Page (Numpad A-B-C-D) */}
             {currentPage === "amount" && (
               <div className="flex flex-col flex-1">
-                <button
-                  onClick={() => setCurrentPage("account")}
-                  className="mb-4 text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
-                >
-                  ← Back
-                </button>
-
                 {/* Section A: Size Controls */}
                 <div
                   style={{
                     transform: `translateY(${numpadOffset}px)`,
                     transition: "transform 0.1s ease-out",
                   }}
-                  className="flex gap-4 items-center mb-4"
+                  className="flex gap-4 items-center mb-3"
                 >
                   {[75, 80, 85].map((size) => (
                     <button
@@ -257,11 +250,17 @@ export default function Index() {
                     transform: `translateY(${numpadOffset}px)`,
                     transition: "transform 0.1s ease-out",
                   }}
-                  className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-4 rounded-lg mb-4"
+                  className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-2 rounded-lg mb-4 flex justify-between items-center"
                 >
-                  <div className="text-2xl font-bold text-white font-mono tracking-tight">
+                  <div className="text-xl font-bold text-white font-mono tracking-tight">
                     ฿{display}
                   </div>
+                  <button
+                    onClick={() => setCurrentPage("account")}
+                    className="p-2 hover:bg-indigo-500 rounded-lg transition-colors text-white"
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
 
                 {/* Section C-D: Numpad and Controls */}
