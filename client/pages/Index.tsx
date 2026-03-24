@@ -105,7 +105,7 @@ export default function Index() {
               transform: `translateY(${numpadOffset}px)`,
               transition: "transform 0.1s ease-out",
             }}
-            className="-mx-6 px-6 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 py-4 mb-4"
+            className="px-6 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 py-4 mb-4"
           >
             <div className="flex gap-4 items-center">
               {[75, 80, 85].map((size) => (
