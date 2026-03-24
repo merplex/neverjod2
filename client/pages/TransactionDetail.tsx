@@ -59,7 +59,6 @@ export default function TransactionDetail() {
     if (transaction && transactionId) {
       updateTransaction(transactionId, { date });
     }
-    setShowDatePicker(false);
   };
 
   const handleTimeSelect = (timeDate: Date) => {
@@ -174,12 +173,6 @@ export default function TransactionDetail() {
                 </p>
               )}
             </div>
-
-            {/* Transaction ID */}
-            <div className="space-y-2 text-sm">
-              <h3 className="font-semibold text-slate-600">Transaction ID</h3>
-              <p className="text-slate-600 font-mono">{transaction.id}</p>
-            </div>
           </div>
 
           {/* Action Buttons */}
@@ -210,7 +203,7 @@ export default function TransactionDetail() {
       {showDatePicker && (
         <DatePicker
           value={currentDate}
-          onSelect={handleDateSelect}
+          onChange={handleDateSelect}
           onClose={() => setShowDatePicker(false)}
         />
       )}

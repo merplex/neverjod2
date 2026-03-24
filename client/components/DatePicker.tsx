@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 interface DatePickerProps {
   value: Date;
-  onSelect: (date: Date) => void;
+  onChange: (date: Date) => void;
   onClose: () => void;
 }
 
-export default function DatePicker({ value, onSelect, onClose }: DatePickerProps) {
+export default function DatePicker({ value, onChange, onClose }: DatePickerProps) {
   const [currentDate, setCurrentDate] = useState(new Date(value));
   const [displayMonth, setDisplayMonth] = useState(new Date(value));
 
@@ -30,7 +30,8 @@ export default function DatePicker({ value, onSelect, onClose }: DatePickerProps
   const selectDay = (day: number) => {
     const selected = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day);
     setCurrentDate(selected);
-    onSelect(selected);
+    onChange(selected);
+    onClose();
   };
 
   const daysInMonth = getDaysInMonth(displayMonth);
@@ -52,23 +53,43 @@ export default function DatePicker({ value, onSelect, onClose }: DatePickerProps
     year: "numeric",
   });
 
+  const formattedDate = currentDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+      <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold text-slate-900">Select Date</h2>
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Date Display */}
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-center py-4 rounded-lg mb-4">
+          <div className="text-2xl font-bold font-mono">{formattedDate}</div>
+        </div>
+
         {/* Month Navigation */}
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={prevMonth}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={20} className="text-slate-700" />
           </button>
-          <h2 className="font-bold text-lg text-slate-900">{monthName}</h2>
+          <h3 className="font-bold text-lg text-slate-900">{monthName}</h3>
           <button
             onClick={nextMonth}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={20} className="text-slate-700" />
           </button>
         </div>
 
@@ -82,42 +103,36 @@ export default function DatePicker({ value, onSelect, onClose }: DatePickerProps
         </div>
 
         {/* Calendar Days */}
-        <div className="grid grid-cols-7 gap-1 mb-4">
+        <div className="grid grid-cols-7 gap-1 mb-6">
           {days.map((day, index) => (
             <div key={index}>
               {day ? (
                 <button
                   onClick={() => selectDay(day)}
-                  className={`w-8 h-8 rounded-lg text-sm font-semibold transition-colors ${
+                  className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${
                     currentDate.getDate() === day &&
                     currentDate.getMonth() === displayMonth.getMonth() &&
                     currentDate.getFullYear() === displayMonth.getFullYear()
-                      ? "bg-indigo-600 text-white"
-                      : "hover:bg-slate-100 text-slate-900"
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : "hover:bg-indigo-50 text-slate-900"
                   }`}
                 >
                   {day}
                 </button>
               ) : (
-                <div className="w-8 h-8" />
+                <div className="w-9 h-9" />
               )}
             </div>
           ))}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
+            className="px-4 py-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors text-sm"
           >
-            Cancel
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-          >
-            Done
+            CANCEL
           </button>
         </div>
       </div>
