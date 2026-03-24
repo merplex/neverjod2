@@ -171,26 +171,24 @@ export default function Index() {
                   key={account.id}
                   draggable={isReorderMode}
                   onDragStart={(e) => {
-                    if (isReorderMode) {
-                      e.stopPropagation();
-                      e.dataTransfer!.effectAllowed = "move";
-                      e.dataTransfer!.setData("text/html", account.id);
+                    if (isReorderMode && e.dataTransfer) {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/html", account.id);
                       setDraggedAccount(account.id);
                     }
                   }}
                   onDragEnter={(e) => {
-                    if (isReorderMode) {
+                    if (isReorderMode && e.dataTransfer) {
                       e.preventDefault();
-                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = "move";
                       const targetIndex = accountsList.findIndex((a) => a.id === account.id);
                       setDragOverPosition(targetIndex);
                     }
                   }}
                   onDragOver={(e) => {
-                    if (isReorderMode) {
+                    if (isReorderMode && e.dataTransfer) {
                       e.preventDefault();
-                      e.stopPropagation();
-                      e.dataTransfer!.dropEffect = "move";
+                      e.dataTransfer.dropEffect = "move";
                     }
                   }}
                   onDragLeave={(e) => {
@@ -200,12 +198,11 @@ export default function Index() {
                     }
                   }}
                   onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDragOverPosition(null);
+                    if (isReorderMode && e.dataTransfer) {
+                      e.preventDefault();
+                      setDragOverPosition(null);
 
-                    if (isReorderMode) {
-                      const draggedId = e.dataTransfer!.getData("text/html");
+                      const draggedId = e.dataTransfer.getData("text/html");
 
                       if (draggedId && draggedId !== account.id) {
                         const draggedIndex = accountsList.findIndex((a) => a.id === draggedId);
