@@ -247,24 +247,25 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Up/Down Buttons - Aligned right with 7, 8, 9 row, moves with numpad */}
+            {/* Up/Down Buttons - Aligned right with numpad rows, moves with numpad */}
             <div
-              className="flex flex-col gap-3 pt-[calc(2.5rem+12px)]"
+              className="flex flex-col gap-3"
               style={{
                 transform: `translateY(${numpadOffset}px)`,
                 transition: "transform 0.1s ease-out",
+                marginTop: "calc(2.5rem + 12px)",
               }}
             >
               <button
                 onClick={handleMoveUp}
-                className="h-[calc(4*2.75rem+21px)] px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                className="h-[calc(2*2.75rem+12px)] px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Move up (5px)"
               >
                 <ChevronUp size={24} />
               </button>
               <button
                 onClick={handleMoveDown}
-                className="h-[calc(4*2.75rem+21px)] px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                className="h-[calc(2*2.75rem+12px)] px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Move down (5px)"
               >
                 <ChevronDown size={24} />
