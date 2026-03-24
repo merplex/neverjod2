@@ -46,8 +46,15 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
         </div>
 
         {/* Time Display */}
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-center py-4 rounded-lg mb-4">
-          <div className="text-5xl font-bold font-mono tracking-tight">{formatTime()}</div>
+        <div
+          onClick={() => setMode(mode === "hours" ? "minutes" : "hours")}
+          className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-center py-4 rounded-lg mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+        >
+          <div className="text-5xl font-bold font-mono tracking-tight">
+            <span className={mode === "hours" ? "text-indigo-200" : ""}>{hours.toString().padStart(2, "0")}</span>
+            <span>:</span>
+            <span className={mode === "minutes" ? "text-indigo-200" : ""}>{minutes.toString().padStart(2, "0")}</span>
+          </div>
         </div>
 
         {/* Clock */}
