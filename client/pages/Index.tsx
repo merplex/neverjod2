@@ -120,7 +120,7 @@ export default function Index() {
           </div>
 
           {/* Numpad Section */}
-          <div className="relative px-6 py-8 min-h-96">
+          <div className="relative px-6 py-8 min-h-96 flex gap-4">
             {/* Numpad Container with dynamic sizing and positioning */}
             <div
               style={{
@@ -129,9 +129,9 @@ export default function Index() {
                 transition: "transform 0.1s ease-out",
               }}
             >
-              {/* Numpad Grid with Up/Down buttons */}
-              <div className="grid grid-cols-4 gap-3">
-                {/* Row 1: 7, 8, 9, UP */}
+              {/* Numpad Grid */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* Row 1: 7, 8, 9 */}
                 <button
                   onClick={() => handleNumberClick(7)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -149,13 +149,6 @@ export default function Index() {
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                 >
                   9
-                </button>
-                <button
-                  onClick={handleMoveUp}
-                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                  title="Move up (5px)"
-                >
-                  <ChevronUp size={24} />
                 </button>
 
                 {/* Row 2: 4, 5, 6 */}
@@ -178,7 +171,7 @@ export default function Index() {
                   6
                 </button>
 
-                {/* Row 3: 1, 2, 3, DOWN */}
+                {/* Row 3: 1, 2, 3 */}
                 <button
                   onClick={() => handleNumberClick(1)}
                   className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
@@ -197,15 +190,8 @@ export default function Index() {
                 >
                   3
                 </button>
-                <button
-                  onClick={handleMoveDown}
-                  className="row-span-2 py-4 px-2 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                  title="Move down (5px)"
-                >
-                  <ChevronDown size={24} />
-                </button>
 
-                {/* Row 4: Save, 0, . */}
+                {/* Row 4: Save, 0, ., DEL */}
                 <button
                   onClick={handleConfirm}
                   className="py-4 px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
@@ -231,6 +217,24 @@ export default function Index() {
                   ⌫
                 </button>
               </div>
+            </div>
+
+            {/* Up/Down Buttons - Aligned right with category buttons */}
+            <div className="flex flex-col gap-3 justify-start pt-1">
+              <button
+                onClick={handleMoveUp}
+                className="py-3 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                title="Move up (5px)"
+              >
+                <ChevronUp size={20} />
+              </button>
+              <button
+                onClick={handleMoveDown}
+                className="py-3 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                title="Move down (5px)"
+              >
+                <ChevronDown size={20} />
+              </button>
             </div>
           </div>
         </div>
