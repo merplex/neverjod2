@@ -4,6 +4,7 @@ import { useState } from "react";
 import { getTransaction, updateTransaction, type Transaction } from "../utils/transactionData";
 import DatePicker from "../components/DatePicker";
 import TimePicker from "../components/TimePicker";
+import BottomNav from "../components/BottomNav";
 
 const accountData: Record<string, { name: string; type: string }> = {
   uob: { name: "UOB", type: "credit card" },
@@ -34,7 +35,7 @@ export default function TransactionDetail() {
 
   if (!account || !transaction) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center p-4 pb-24">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-slate-900">Transaction not found</h1>
         </div>
@@ -214,6 +215,8 @@ export default function TransactionDetail() {
           onClose={() => setShowTimePicker(false)}
         />
       )}
+
+      <BottomNav />
     </div>
   );
 }
