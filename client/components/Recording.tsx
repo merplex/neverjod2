@@ -10,6 +10,7 @@ export default function Recording({ onTranscript }: RecordingProps) {
   const [transcript, setTranscript] = useState("");
   const recognitionRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isListeningRef = useRef(true);
 
   useEffect(() => {
     // Initialize Web Speech API
@@ -27,6 +28,7 @@ export default function Recording({ onTranscript }: RecordingProps) {
 
     recognitionRef.current.onstart = () => {
       setIsListening(true);
+      isListeningRef.current = true;
     };
 
     recognitionRef.current.onresult = (event: any) => {
@@ -46,6 +48,7 @@ export default function Recording({ onTranscript }: RecordingProps) {
 
     recognitionRef.current.onend = () => {
       setIsListening(false);
+      isListeningRef.current = false;
     };
 
     recognitionRef.current.onerror = (event: any) => {
@@ -66,16 +69,29 @@ export default function Recording({ onTranscript }: RecordingProps) {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
+      isListeningRef.current = false;
     }
   };
+
+  // Update ref when state changes
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   // Listen for any button clicks to stop recording
   useEffect(() => {
     const handleGlobalClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
+      const button = target.closest("button");
+
+      // Don't stop if clicking the recording button itself
+      if (button === containerRef.current?.querySelector("button")) {
+        return;
+      }
+
       // Check if clicked element is a button or inside a button
-      if (target.tagName === "BUTTON" || target.closest("button")) {
-        if (isListening) {
+      if (target.tagName === "BUTTON" || button) {
+        if (isListeningRef.current) {
           handleStop();
         }
       }
@@ -86,20 +102,20 @@ export default function Recording({ onTranscript }: RecordingProps) {
     return () => {
       document.removeEventListener("click", handleGlobalClick);
     };
-  }, [isListening]);
+  }, []);
 
   return (
-    <div ref={containerRef} className="fixed top-6 right-6 z-50">
+    <div ref={containerRef} className="relative">
       <button
         onClick={handleStop}
-        className={`flex items-center justify-center w-16 h-16 rounded-full font-bold text-white text-sm transition-all ${
+        className={`flex items-center justify-center w-14 h-14 rounded-full font-bold text-white text-sm transition-all ${
           isListening
-            ? "bg-red-500 hover:bg-red-600 shadow-2xl"
+            ? "bg-red-500 hover:bg-red-600 shadow-lg"
             : "bg-slate-400 hover:bg-slate-500"
         }`}
       >
-        <div className="flex flex-col items-center gap-1">
-          <Mic size={24} />
+        <div className="flex flex-col items-center gap-0.5">
+          <Mic size={20} />
           <span className="text-xs">REC</span>
         </div>
       </button>

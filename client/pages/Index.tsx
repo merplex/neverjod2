@@ -136,9 +136,6 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4">
-      {/* Recording Button */}
-      <Recording />
-
       <div className="w-full max-w-md mx-auto">
         {/* Persistent Account Section - Top */}
         <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
@@ -165,7 +162,12 @@ export default function Index() {
         </div>
 
         {/* Main Input Area - Full Screen */}
-        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col flex-1">
+        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col flex-1 relative">
+          {/* Recording Button */}
+          <div className="absolute top-4 right-4 z-50">
+            <Recording />
+          </div>
+
           {/* Dynamic Main Input Area */}
           <div className="px-6 py-6 bg-white flex flex-col flex-1">
             {/* Category Input Page (4 rows × 4 columns) - Bottom Aligned */}
