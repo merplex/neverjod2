@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronUp, ChevronDown, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote } from "lucide-react";
+import { ChevronUp, ChevronDown, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X } from "lucide-react";
 
 type InputPage = "category" | "account" | "amount";
 
@@ -171,29 +171,29 @@ export default function Index() {
             {/* Account Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "account" && (
               <div className="flex flex-col flex-1 justify-end">
-                <button
-                  onClick={() => setCurrentPage("category")}
-                  className="mb-4 text-indigo-600 hover:text-indigo-700 font-semibold text-sm self-start"
-                >
-                  ← Back
-                </button>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 mb-4">Select Account</h2>
-                  <div className="grid grid-cols-4 gap-3">
-                    {accounts.map((account) => {
-                      const IconComponent = account.icon;
-                      return (
-                        <button
-                          key={account.id}
-                          onClick={() => handleAccountSelect(account.id)}
-                          className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
-                        >
-                          <IconComponent size={32} />
-                          <span className="font-bold text-xs text-center">{account.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-slate-900">Select Account</h2>
+                  <button
+                    onClick={() => setCurrentPage("category")}
+                    className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {accounts.map((account) => {
+                    const IconComponent = account.icon;
+                    return (
+                      <button
+                        key={account.id}
+                        onClick={() => handleAccountSelect(account.id)}
+                        className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
+                      >
+                        <IconComponent size={32} />
+                        <span className="font-bold text-xs text-center">{account.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
