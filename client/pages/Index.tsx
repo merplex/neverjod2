@@ -216,7 +216,7 @@ export default function Index() {
           </div>
           <Carousel
             items={accountsList}
-            itemsPerPage={6}
+            itemsPerPage={4}
             cols={2}
             renderItem={(account) => {
               const IconComponent = account.icon;
