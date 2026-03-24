@@ -139,7 +139,8 @@ export default function Index() {
   };
 
   // Long-press handlers for account reordering
-  const handleAccountMouseDown = (accountId: string) => {
+  const handleAccountMouseDown = (e: React.MouseEvent, accountId: string) => {
+    e.preventDefault();
     longPressTimerRef.current = setTimeout(() => {
       setIsReorderMode(true);
       setDraggedAccount(accountId);
@@ -149,11 +150,13 @@ export default function Index() {
   const handleAccountMouseUp = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
   };
 
-  const handleAccountDragStart = (accountId: string) => {
+  const handleAccountDragStart = (e: React.DragEvent, accountId: string) => {
     if (isReorderMode) {
+      e.dataTransfer.effectAllowed = "move";
       setDraggedAccount(accountId);
     }
   };
@@ -161,10 +164,12 @@ export default function Index() {
   const handleAccountDragOver = (e: React.DragEvent) => {
     if (isReorderMode) {
       e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
     }
   };
 
-  const handleAccountDrop = (targetAccountId: string) => {
+  const handleAccountDrop = (e: React.DragEvent, targetAccountId: string) => {
+    e.preventDefault();
     if (!draggedAccount || draggedAccount === targetAccountId || !isReorderMode) return;
 
     const draggedIndex = accountsList.findIndex((a) => a.id === draggedAccount);
@@ -182,6 +187,10 @@ export default function Index() {
   const exitReorderMode = () => {
     setIsReorderMode(false);
     setDraggedAccount(null);
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
   };
 
   return (
@@ -200,11 +209,12 @@ export default function Index() {
                 <button
                   key={account.id}
                   draggable={isReorderMode}
-                  onMouseDown={() => handleAccountMouseDown(account.id)}
+                  onMouseDown={(e) => handleAccountMouseDown(e, account.id)}
                   onMouseUp={handleAccountMouseUp}
-                  onDragStart={() => handleAccountDragStart(account.id)}
+                  onMouseLeave={handleAccountMouseUp}
+                  onDragStart={(e) => handleAccountDragStart(e, account.id)}
                   onDragOver={handleAccountDragOver}
-                  onDrop={() => handleAccountDrop(account.id)}
+                  onDrop={(e) => handleAccountDrop(e, account.id)}
                   onClick={() => {
                     if (isReorderMode) {
                       exitReorderMode();
