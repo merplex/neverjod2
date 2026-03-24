@@ -166,6 +166,8 @@ export default function Index() {
             disableDrag={isReorderMode}
             renderItem={(account) => {
               const IconComponent = account.icon;
+              const accountIndex = accountsList.findIndex((a) => a.id === account.id);
+
               return (
                 <div
                   key={account.id}
@@ -181,8 +183,7 @@ export default function Index() {
                     if (isReorderMode && e.dataTransfer) {
                       e.preventDefault();
                       e.dataTransfer.dropEffect = "move";
-                      const targetIndex = accountsList.findIndex((a) => a.id === account.id);
-                      setDragOverPosition(targetIndex);
+                      setDragOverPosition(accountIndex);
                     }
                   }}
                   onDragOver={(e) => {
@@ -206,17 +207,16 @@ export default function Index() {
 
                       if (draggedId && draggedId !== account.id) {
                         const draggedIndex = accountsList.findIndex((a) => a.id === draggedId);
-                        const targetIndex = accountsList.findIndex((a) => a.id === account.id);
 
-                        if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+                        if (draggedIndex !== -1 && accountIndex !== -1 && draggedIndex !== accountIndex) {
                           const newList = [...accountsList];
                           const [draggedItem] = newList.splice(draggedIndex, 1);
 
                           // Insert at target position
-                          if (draggedIndex < targetIndex) {
-                            newList.splice(targetIndex - 1, 0, draggedItem);
+                          if (draggedIndex < accountIndex) {
+                            newList.splice(accountIndex - 1, 0, draggedItem);
                           } else {
-                            newList.splice(targetIndex, 0, draggedItem);
+                            newList.splice(accountIndex, 0, draggedItem);
                           }
 
                           setAccountsList(newList);
@@ -226,9 +226,7 @@ export default function Index() {
                     }
                   }}
                   className={`${isReorderMode ? "cursor-move" : ""} ${
-                    dragOverPosition !== null && dragOverPosition === accountsList.findIndex((a) => a.id === account.id)
-                      ? "bg-indigo-200 rounded"
-                      : ""
+                    dragOverPosition === accountIndex ? "bg-indigo-200 rounded" : ""
                   }`}
                 >
                   <button
