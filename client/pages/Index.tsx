@@ -72,16 +72,21 @@ export default function Index() {
       if (stored) {
         const storedCategories = JSON.parse(stored);
         // Restore icons from default categories since they can't be serialized
-        return storedCategories.map((cat: any) => {
-          const defaultCat = categories.find((d) => d.id === cat.id);
-          return {
-            ...cat,
-            icon: defaultCat?.icon || MoreHorizontal,
-          };
-        });
+        return storedCategories
+          .map((cat: any) => {
+            if (!cat || !cat.id) return null;
+            const defaultCat = categories.find((d) => d.id === cat.id);
+            if (!defaultCat) return null;
+            return {
+              ...cat,
+              icon: defaultCat.icon,
+            };
+          })
+          .filter((cat: any) => cat !== null);
       }
       return categories;
-    } catch {
+    } catch (e) {
+      console.error("Error loading categories from localStorage:", e);
       return categories;
     }
   });
@@ -92,16 +97,21 @@ export default function Index() {
       if (stored) {
         const storedAccounts = JSON.parse(stored);
         // Restore icons from default accounts since they can't be serialized
-        return storedAccounts.map((acc: any) => {
-          const defaultAcc = accounts.find((d) => d.id === acc.id);
-          return {
-            ...acc,
-            icon: defaultAcc?.icon || MoreHorizontal,
-          };
-        });
+        return storedAccounts
+          .map((acc: any) => {
+            if (!acc || !acc.id) return null;
+            const defaultAcc = accounts.find((d) => d.id === acc.id);
+            if (!defaultAcc) return null;
+            return {
+              ...acc,
+              icon: defaultAcc.icon,
+            };
+          })
+          .filter((acc: any) => acc !== null);
       }
       return accounts;
-    } catch {
+    } catch (e) {
+      console.error("Error loading accounts from localStorage:", e);
       return accounts;
     }
   });

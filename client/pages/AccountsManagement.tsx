@@ -42,16 +42,21 @@ export default function AccountsManagement() {
       if (stored) {
         const storedAccounts = JSON.parse(stored);
         // Restore icons from defaultAccounts since they can't be serialized
-        return storedAccounts.map((acc: any) => {
-          const defaultAcc = defaultAccounts.find((d) => d.id === acc.id);
-          return {
-            ...acc,
-            icon: defaultAcc?.icon || MoreHorizontal,
-          };
-        });
+        return storedAccounts
+          .map((acc: any) => {
+            if (!acc || !acc.id) return null;
+            const defaultAcc = defaultAccounts.find((d) => d.id === acc.id);
+            if (!defaultAcc) return null;
+            return {
+              ...acc,
+              icon: defaultAcc.icon,
+            };
+          })
+          .filter((acc: any) => acc !== null);
       }
       return defaultAccounts;
-    } catch {
+    } catch (e) {
+      console.error("Error loading accounts from localStorage:", e);
       return defaultAccounts;
     }
   });

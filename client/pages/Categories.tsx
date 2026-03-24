@@ -51,16 +51,21 @@ export default function Categories() {
       if (stored) {
         const storedCategories = JSON.parse(stored);
         // Restore icons from defaultCategories since they can't be serialized
-        return storedCategories.map((cat: any) => {
-          const defaultCat = defaultCategories.find((d) => d.id === cat.id);
-          return {
-            ...cat,
-            icon: defaultCat?.icon || MoreHorizontal,
-          };
-        });
+        return storedCategories
+          .map((cat: any) => {
+            if (!cat || !cat.id) return null;
+            const defaultCat = defaultCategories.find((d) => d.id === cat.id);
+            if (!defaultCat) return null;
+            return {
+              ...cat,
+              icon: defaultCat.icon,
+            };
+          })
+          .filter((cat: any) => cat !== null);
       }
       return defaultCategories;
-    } catch {
+    } catch (e) {
+      console.error("Error loading categories from localStorage:", e);
       return defaultCategories;
     }
   });
