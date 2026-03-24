@@ -79,6 +79,7 @@ export default function Index() {
   const [isLocked, setIsLocked] = useState(false);
   const [isRightMode, setIsRightMode] = useState(false);
   const [isVoiceCalculatorMode, setIsVoiceCalculatorMode] = useState(false);
+  const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
 
   const handleCategorySelect = (categoryId: string) => {
     if (!isCategoryReorderMode) {
@@ -280,7 +281,28 @@ export default function Index() {
             {currentPage === "category" && (
               <div className="flex flex-col flex-1 justify-end">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-bold text-slate-900">Select Category</h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCategoryType("expense")}
+                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                        categoryType === "expense"
+                          ? "bg-indigo-600 text-white shadow-md"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      Expense
+                    </button>
+                    <button
+                      onClick={() => setCategoryType("income")}
+                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                        categoryType === "income"
+                          ? "bg-indigo-600 text-white shadow-md"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      Income
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     {!isCategoryReorderMode && (
                       <button
@@ -294,7 +316,7 @@ export default function Index() {
                   </div>
                 </div>
                 <Carousel
-                  items={categoriesList}
+                  items={categoriesList.filter((c) => c.type === categoryType)}
                   itemsPerPage={12}
                   cols={4}
                   renderItem={(category) => {
