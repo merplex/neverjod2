@@ -326,7 +326,7 @@ export default function Index() {
                             handleCategorySelect(category.id);
                           }
                         }}
-                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28 font-semibold ${
+                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-22 font-semibold ${
                           isCategoryReorderMode
                             ? isSelected
                               ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
@@ -406,7 +406,7 @@ export default function Index() {
                             handleAccountSelect(account.id);
                           }
                         }}
-                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28 font-semibold ${
+                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-22 font-semibold ${
                           isAccountPageReorderMode
                             ? isSelected
                               ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
