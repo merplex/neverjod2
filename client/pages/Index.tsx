@@ -62,8 +62,11 @@ export default function Index() {
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [categoriesList, setCategoriesList] = useState(categories);
   const [accountsList, setAccountsList] = useState(accounts);
+  const [isCategoryReorderMode, setIsCategoryReorderMode] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [selectedCategoryForSwap, setSelectedCategoryForSwap] = useState<string | null>(null);
   const [selectedForSwap, setSelectedForSwap] = useState<string | null>(null);
 
   // Amount input state
@@ -75,8 +78,15 @@ export default function Index() {
   const [isRightMode, setIsRightMode] = useState(false);
 
   const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    setCurrentPage("account");
+    if (!isCategoryReorderMode) {
+      setSelectedCategory(categoryId);
+      setCurrentPage("account");
+    }
+  };
+
+  const exitCategoryReorderMode = () => {
+    setIsCategoryReorderMode(false);
+    setSelectedCategoryForSwap(null);
   };
 
   const handleAccountSelect = (accountId: string) => {
@@ -225,19 +235,58 @@ export default function Index() {
               <div className="flex flex-col flex-1 justify-end">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-bold text-slate-900">Select Category</h2>
-                  <Recording />
+                  <div className="flex items-center gap-2">
+                    {!isCategoryReorderMode && (
+                      <button
+                        onClick={() => setIsCategoryReorderMode(true)}
+                        className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded font-semibold hover:bg-indigo-200 transition-colors"
+                      >
+                        Reorder
+                      </button>
+                    )}
+                    <Recording />
+                  </div>
                 </div>
                 <Carousel
-                  items={categories}
+                  items={categoriesList}
                   itemsPerPage={12}
                   cols={4}
                   renderItem={(category) => {
                     const IconComponent = category.icon;
+                    const categoryIndex = categoriesList.findIndex((c) => c.id === category.id);
+                    const isSelected = selectedCategoryForSwap === category.id;
+
                     return (
                       <button
                         key={category.id}
-                        onClick={() => handleCategorySelect(category.id)}
-                        className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
+                        onClick={() => {
+                          if (isCategoryReorderMode) {
+                            if (selectedCategoryForSwap === null) {
+                              // First selection - select this category
+                              setSelectedCategoryForSwap(category.id);
+                            } else if (selectedCategoryForSwap === category.id) {
+                              // Deselect if clicking the same category
+                              setSelectedCategoryForSwap(null);
+                            } else {
+                              // Second selection - swap the two categories
+                              const firstIndex = categoriesList.findIndex((c) => c.id === selectedCategoryForSwap);
+                              const newList = [...categoriesList];
+                              [newList[firstIndex], newList[categoryIndex]] = [newList[categoryIndex], newList[firstIndex]];
+                              setCategoriesList(newList);
+                              setSelectedCategoryForSwap(null);
+                            }
+                          } else {
+                            // Normal mode - select category
+                            handleCategorySelect(category.id);
+                          }
+                        }}
+                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28 font-semibold ${
+                          isCategoryReorderMode
+                            ? isSelected
+                              ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
+                              : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
+                            : "bg-indigo-50 hover:bg-indigo-200 text-indigo-900"
+                        }`}
                       >
                         <IconComponent size={32} />
                         <span className="font-bold text-xs text-center">{category.name}</span>
@@ -245,6 +294,14 @@ export default function Index() {
                     );
                   }}
                 />
+                {isCategoryReorderMode && (
+                  <button
+                    onClick={exitCategoryReorderMode}
+                    className="mt-3 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors text-sm"
+                  >
+                    Done Reordering
+                  </button>
+                )}
               </div>
             )}
 
