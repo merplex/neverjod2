@@ -87,12 +87,29 @@ export default function Transactions() {
       return t.date >= startDate && t.date <= today;
     });
 
-    // Sort transactions
+    // Sort transactions by date, then by time within each day
     const sorted = [...filtered].sort((a, b) => {
+      const dateCompare = a.date.getTime() - b.date.getTime();
+
+      // If dates are different, sort by date
+      if (dateCompare !== 0) {
+        if (sortOrder === "asc") {
+          return dateCompare;
+        } else {
+          return -dateCompare;
+        }
+      }
+
+      // If dates are the same, sort by time
+      const aTime = a.time.split(":").map(Number);
+      const bTime = b.time.split(":").map(Number);
+      const aMinutes = aTime[0] * 60 + aTime[1];
+      const bMinutes = bTime[0] * 60 + bTime[1];
+
       if (sortOrder === "asc") {
-        return a.date.getTime() - b.date.getTime();
+        return aMinutes - bMinutes;
       } else {
-        return b.date.getTime() - a.date.getTime();
+        return bMinutes - aMinutes;
       }
     });
 
