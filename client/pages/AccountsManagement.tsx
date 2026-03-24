@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import TimePicker from "../components/TimePicker";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal } from "lucide-react";
 
 interface Account {
@@ -40,10 +41,12 @@ export default function AccountsManagement() {
   const [editBalance, setEditBalance] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
   const [transferToId, setTransferToId] = useState<string | null>(null);
   const [transferAmount, setTransferAmount] = useState("");
-  const [transferDate, setTransferDate] = useState(new Date());
+  const [transferDate, setTransferDate] = useState(new Date().toISOString().split("T")[0]);
+  const [transferTime, setTransferTime] = useState(new Date());
 
   const startEditing = (account: Account) => {
     setEditingId(account.id);
@@ -92,6 +95,7 @@ export default function AccountsManagement() {
 
   const closeTransferModal = () => {
     setShowTransferModal(false);
+    setShowTimePicker(false);
     setTransferFromId(null);
     setTransferToId(null);
     setTransferAmount("");
@@ -140,10 +144,11 @@ export default function AccountsManagement() {
           </div>
           <button
             onClick={openTransferModal}
-            className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 hover:bg-indigo-500 rounded-lg transition-colors text-sm font-semibold"
             title="Transfer between accounts"
           >
-            <ArrowRightLeft size={24} />
+            <span>Transfer</span>
+            <ArrowRightLeft size={20} />
           </button>
         </div>
       </div>
@@ -307,17 +312,34 @@ export default function AccountsManagement() {
               />
             </div>
 
-            {/* Date & Time */}
+            {/* Date */}
             <div className="mb-4">
               <label className="text-xs font-semibold text-slate-600 mb-2 block">
-                Date & Time
+                Date
               </label>
               <input
-                type="datetime-local"
-                value={transferDate.toISOString().slice(0, 16)}
-                onChange={(e) => setTransferDate(new Date(e.target.value))}
+                type="date"
+                value={transferDate}
+                onChange={(e) => setTransferDate(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
               />
+            </div>
+
+            {/* Time */}
+            <div className="mb-4">
+              <label className="text-xs font-semibold text-slate-600 mb-2 block">
+                Time
+              </label>
+              <button
+                onClick={() => setShowTimePicker(true)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-left bg-white hover:bg-slate-50 transition-colors"
+              >
+                {transferTime.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })}
+              </button>
             </div>
 
             {/* Action Buttons */}
@@ -337,6 +359,15 @@ export default function AccountsManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Time Picker Modal */}
+      {showTimePicker && (
+        <TimePicker
+          value={transferTime}
+          onChange={setTransferTime}
+          onClose={() => setShowTimePicker(false)}
+        />
       )}
     </div>
   );
