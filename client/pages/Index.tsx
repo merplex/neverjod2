@@ -250,19 +250,18 @@ export default function Index() {
                     transform: `translateY(${numpadOffset}px)`,
                     transition: "transform 0.1s ease-out",
                   }}
-                  className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-4 rounded-lg mb-4"
+                  className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-4 rounded-lg mb-4 flex justify-between items-center"
                 >
                   <div className="text-2xl font-bold text-white font-mono tracking-tight">
                     ฿{display}
                   </div>
+                  <button
+                    onClick={() => setCurrentPage("account")}
+                    className="p-2 hover:bg-indigo-500 rounded-lg transition-colors text-white flex-shrink-0"
+                  >
+                    <X size={24} />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => setCurrentPage("account")}
-                  className="mb-4 text-indigo-600 hover:text-indigo-700 font-semibold text-sm self-start"
-                >
-                  ← Back
-                </button>
 
                 {/* Section C-D: Numpad and Controls */}
                 <div className={`flex gap-4 ${isRightMode ? "flex-row-reverse" : ""}`}>
