@@ -65,6 +65,7 @@ export default function Index() {
   const [accountsList, setAccountsList] = useState(accounts);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [draggedAccount, setDraggedAccount] = useState<string | null>(null);
+  const [dragOverPosition, setDragOverPosition] = useState<number | null>(null);
 
   // Amount input state
   const [display, setDisplay] = useState("0");
@@ -181,6 +182,8 @@ export default function Index() {
                     if (isReorderMode) {
                       e.preventDefault();
                       e.stopPropagation();
+                      const targetIndex = accountsList.findIndex((a) => a.id === account.id);
+                      setDragOverPosition(targetIndex);
                     }
                   }}
                   onDragOver={(e) => {
@@ -193,32 +196,43 @@ export default function Index() {
                   onDragLeave={(e) => {
                     if (isReorderMode) {
                       e.stopPropagation();
+                      setDragOverPosition(null);
                     }
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    setDragOverPosition(null);
+
                     if (isReorderMode) {
                       const draggedId = e.dataTransfer!.getData("text/html");
-                      console.log("Drop event - draggedId:", draggedId, "targetId:", account.id);
 
                       if (draggedId && draggedId !== account.id) {
                         const draggedIndex = accountsList.findIndex((a) => a.id === draggedId);
                         const targetIndex = accountsList.findIndex((a) => a.id === account.id);
 
-                        console.log("Indices - dragged:", draggedIndex, "target:", targetIndex);
-
-                        if (draggedIndex !== -1 && targetIndex !== -1) {
+                        if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
                           const newList = [...accountsList];
                           const [draggedItem] = newList.splice(draggedIndex, 1);
-                          newList.splice(targetIndex, 0, draggedItem);
+
+                          // Insert at target position
+                          if (draggedIndex < targetIndex) {
+                            newList.splice(targetIndex - 1, 0, draggedItem);
+                          } else {
+                            newList.splice(targetIndex, 0, draggedItem);
+                          }
+
                           setAccountsList(newList);
-                          console.log("Accounts reordered");
+                          setDraggedAccount(null);
                         }
                       }
                     }
                   }}
-                  className={isReorderMode ? "cursor-move" : ""}
+                  className={`${isReorderMode ? "cursor-move" : ""} ${
+                    dragOverPosition !== null && dragOverPosition === accountsList.findIndex((a) => a.id === account.id)
+                      ? "bg-indigo-200 rounded"
+                      : ""
+                  }`}
                 >
                   <button
                     onClick={() => {
