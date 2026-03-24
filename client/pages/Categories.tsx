@@ -48,7 +48,18 @@ export default function Categories() {
     // Load from localStorage if available, otherwise use defaults
     try {
       const stored = localStorage.getItem("app_categories");
-      return stored ? JSON.parse(stored) : defaultCategories;
+      if (stored) {
+        const storedCategories = JSON.parse(stored);
+        // Restore icons from defaultCategories since they can't be serialized
+        return storedCategories.map((cat: any) => {
+          const defaultCat = defaultCategories.find((d) => d.id === cat.id);
+          return {
+            ...cat,
+            icon: defaultCat?.icon || MoreHorizontal,
+          };
+        });
+      }
+      return defaultCategories;
     } catch {
       return defaultCategories;
     }

@@ -39,7 +39,18 @@ export default function AccountsManagement() {
     // Load from localStorage if available, otherwise use defaults
     try {
       const stored = localStorage.getItem("app_accounts");
-      return stored ? JSON.parse(stored) : defaultAccounts;
+      if (stored) {
+        const storedAccounts = JSON.parse(stored);
+        // Restore icons from defaultAccounts since they can't be serialized
+        return storedAccounts.map((acc: any) => {
+          const defaultAcc = defaultAccounts.find((d) => d.id === acc.id);
+          return {
+            ...acc,
+            icon: defaultAcc?.icon || MoreHorizontal,
+          };
+        });
+      }
+      return defaultAccounts;
     } catch {
       return defaultAccounts;
     }

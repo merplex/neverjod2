@@ -69,7 +69,18 @@ export default function Index() {
     // Load from localStorage if available, otherwise use defaults
     try {
       const stored = localStorage.getItem("app_categories");
-      return stored ? JSON.parse(stored) : categories;
+      if (stored) {
+        const storedCategories = JSON.parse(stored);
+        // Restore icons from default categories since they can't be serialized
+        return storedCategories.map((cat: any) => {
+          const defaultCat = categories.find((d) => d.id === cat.id);
+          return {
+            ...cat,
+            icon: defaultCat?.icon || MoreHorizontal,
+          };
+        });
+      }
+      return categories;
     } catch {
       return categories;
     }
@@ -78,7 +89,18 @@ export default function Index() {
     // Load from localStorage if available, otherwise use defaults
     try {
       const stored = localStorage.getItem("app_accounts");
-      return stored ? JSON.parse(stored) : accounts;
+      if (stored) {
+        const storedAccounts = JSON.parse(stored);
+        // Restore icons from default accounts since they can't be serialized
+        return storedAccounts.map((acc: any) => {
+          const defaultAcc = accounts.find((d) => d.id === acc.id);
+          return {
+            ...acc,
+            icon: defaultAcc?.icon || MoreHorizontal,
+          };
+        });
+      }
+      return accounts;
     } catch {
       return accounts;
     }
