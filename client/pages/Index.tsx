@@ -249,7 +249,7 @@ export default function Index() {
 
             {/* Up/Down Buttons - Aligned right with numpad rows, moves with numpad */}
             <div
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-3 w-16"
               style={{
                 transform: `translateY(${numpadOffset}px)`,
                 transition: "transform 0.1s ease-out",
@@ -257,16 +257,14 @@ export default function Index() {
             >
               <button
                 onClick={handleMoveUp}
-                className="flex-1 px-4 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                style={{ minHeight: "7rem" }}
+                className="px-3 py-6 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Move up (5px)"
               >
                 <ChevronUp size={32} />
               </button>
               <button
                 onClick={handleMoveDown}
-                className="flex-1 px-4 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
-                style={{ minHeight: "7rem" }}
+                className="px-3 py-6 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Move down (5px)"
               >
                 <ChevronDown size={32} />
