@@ -219,8 +219,8 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Up/Down Buttons - Aligned to right edge of screen */}
-            <div className="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4">
+            {/* Up/Down Buttons - Right side of visible mobile screen */}
+            <div className="flex flex-col gap-4 justify-center">
               <button
                 onClick={handleMoveUp}
                 className="py-4 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm flex items-center justify-center"
