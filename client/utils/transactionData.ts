@@ -5,6 +5,9 @@ export interface Transaction {
   category: string;
   amount: number;
   description: string;
+  accountName: string;
+  accountId: string;
+  type: "income" | "expense";
 }
 
 const categories = [
@@ -18,6 +21,18 @@ const categories = [
   "Utilities",
   "Salary",
   "Bonus",
+];
+
+const accounts = [
+  { id: "uob", name: "UOB" },
+  { id: "banka", name: "BankA" },
+  { id: "krungsri", name: "Krungsri" },
+  { id: "bangkok", name: "Bangkok Bank" },
+  { id: "kasikorn", name: "Kasikornbank" },
+  { id: "tmb", name: "TMB" },
+  { id: "scb", name: "SCB" },
+  { id: "acme", name: "ACME" },
+  { id: "cash", name: "Cash" },
 ];
 
 const descriptions: Record<string, string[]> = {
@@ -55,14 +70,21 @@ export const generateAllTransactions = (): Record<string, Transaction> => {
       
       const categoryIndex = Math.floor(seededRandom(seed) * categories.length);
       const category = categories[categoryIndex];
-      
+
       const categoryDescriptions = descriptions[category];
       const descIndex = Math.floor(seededRandom(seed + 1) * categoryDescriptions.length);
       const description = categoryDescriptions[descIndex];
 
+      // Account based on seed
+      const accountIndex = Math.floor(seededRandom(seed + 5) * accounts.length);
+      const account = accounts[accountIndex];
+
+      // Type (income or expense)
+      const type: "income" | "expense" = (category === "Salary" || category === "Bonus") ? "income" : "expense";
+
       // Amount based on category
       let amount = 0;
-      if (category === "Salary" || category === "Bonus") {
+      if (type === "income") {
         amount = Math.floor(seededRandom(seed + 2) * 20000 + 10000);
       } else {
         amount = Math.floor(seededRandom(seed + 2) * 5000 + 100);
@@ -80,6 +102,9 @@ export const generateAllTransactions = (): Record<string, Transaction> => {
         category,
         amount,
         description,
+        accountName: account.name,
+        accountId: account.id,
+        type,
       };
 
       id++;
