@@ -1,15 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
-
-interface Transaction {
-  id: string;
-  date: Date;
-  time: string;
-  category: string;
-  amount: number;
-  description: string;
-}
+import { getTransaction, type Transaction } from "../utils/transactionData";
 
 const accountData: Record<string, { name: string; type: string }> = {
   uob: { name: "UOB", type: "credit card" },
@@ -26,82 +18,11 @@ const accountData: Record<string, { name: string; type: string }> = {
   other_acc: { name: "Other", type: "other" },
 };
 
-const categories = [
-  "Food",
-  "Transport",
-  "Entertainment",
-  "Shopping",
-  "Bills",
-  "Health",
-  "Education",
-  "Utilities",
-  "Salary",
-  "Bonus",
-];
-
-const descriptions: Record<string, string[]> = {
-  Food: ["Breakfast", "Lunch", "Dinner", "Coffee", "Snacks", "Groceries"],
-  Transport: ["Taxi", "BTS Card", "Uber", "Bus Fare", "Parking", "Gas"],
-  Entertainment: ["Movie", "Concert", "Gaming", "Streaming", "Sports"],
-  Shopping: ["Clothes", "Electronics", "Books", "Home Decor", "Shoes"],
-  Bills: ["Electricity", "Water", "Internet", "Phone Bill", "Rent"],
-  Health: ["Doctor", "Medicine", "Gym", "Pharmacy", "Haircut"],
-  Education: ["Course", "Books", "Tuition", "Workshop", "Training"],
-  Utilities: ["Maintenance", "Repair", "Cleaning", "Service", "Subscription"],
-  Salary: ["Monthly Salary", "Paycheck", "Income", "Advance"],
-  Bonus: ["Bonus", "Commission", "Tip", "Refund"],
-};
-
-// Generate sample transactions for finding by ID
-const generateSampleTransactions = (): Record<string, Transaction> => {
-  const transactions: Record<string, Transaction> = {};
-  let id = 1;
-  const today = new Date();
-
-  for (let i = 41; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-
-    for (let j = 0; j < 5; j++) {
-      const category = categories[Math.floor(Math.random() * categories.length)];
-      const categoryDescriptions = descriptions[category];
-      const description =
-        categoryDescriptions[Math.floor(Math.random() * categoryDescriptions.length)];
-
-      let amount = 0;
-      if (category === "Salary" || category === "Bonus") {
-        amount = Math.random() * 20000 + 10000;
-      } else {
-        amount = Math.random() * 5000 + 100;
-      }
-
-      const hours = Math.floor(Math.random() * 18) + 6;
-      const minutes = Math.floor(Math.random() * 60);
-      const time = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-
-      transactions[id.toString()] = {
-        id: id.toString(),
-        date: new Date(date),
-        time,
-        category,
-        amount: Math.round(amount),
-        description,
-      };
-
-      id++;
-    }
-  }
-
-  return transactions;
-};
-
-const allTransactions = generateSampleTransactions();
-
 export default function TransactionDetail() {
   const { accountId, transactionId } = useParams();
   const navigate = useNavigate();
   const account = accountData[accountId || ""];
-  const transaction = transactionId ? allTransactions[transactionId] : null;
+  const transaction = transactionId ? getTransaction(transactionId) : null;
   const [isEditing, setIsEditing] = useState(false);
   const [editedDescription, setEditedDescription] = useState(transaction?.description || "");
 

@@ -1,93 +1,12 @@
 import { useState } from "react";
 import { ChevronLeft, ArrowUpDown, ArrowDownUp } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getTransactionsList, type Transaction } from "../utils/transactionData";
 
 type SortOrder = "asc" | "desc";
 type TimeRange = "week" | "month" | "all";
 
-interface Transaction {
-  id: string;
-  date: Date;
-  time: string; // HH:MM format
-  category: string;
-  amount: number;
-  description: string;
-}
-
-const categories = [
-  "Food",
-  "Transport",
-  "Entertainment",
-  "Shopping",
-  "Bills",
-  "Health",
-  "Education",
-  "Utilities",
-  "Salary",
-  "Bonus",
-];
-
-const descriptions: Record<string, string[]> = {
-  Food: ["Breakfast", "Lunch", "Dinner", "Coffee", "Snacks", "Groceries"],
-  Transport: ["Taxi", "BTS Card", "Uber", "Bus Fare", "Parking", "Gas"],
-  Entertainment: ["Movie", "Concert", "Gaming", "Streaming", "Sports"],
-  Shopping: ["Clothes", "Electronics", "Books", "Home Decor", "Shoes"],
-  Bills: ["Electricity", "Water", "Internet", "Phone Bill", "Rent"],
-  Health: ["Doctor", "Medicine", "Gym", "Pharmacy", "Haircut"],
-  Education: ["Course", "Books", "Tuition", "Workshop", "Training"],
-  Utilities: ["Maintenance", "Repair", "Cleaning", "Service", "Subscription"],
-  Salary: ["Monthly Salary", "Paycheck", "Income", "Advance"],
-  Bonus: ["Bonus", "Commission", "Tip", "Refund"],
-};
-
-// Generate 6 weeks of demo transactions (5 per day)
-const generateDemoTransactions = (): Transaction[] => {
-  const transactions: Transaction[] = [];
-  let id = 1;
-  const today = new Date();
-
-  // Generate for 6 weeks (42 days)
-  for (let i = 41; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-
-    // 5 transactions per day
-    for (let j = 0; j < 5; j++) {
-      const category = categories[Math.floor(Math.random() * categories.length)];
-      const categoryDescriptions = descriptions[category];
-      const description =
-        categoryDescriptions[Math.floor(Math.random() * categoryDescriptions.length)];
-
-      // Random amount based on category
-      let amount = 0;
-      if (category === "Salary" || category === "Bonus") {
-        amount = Math.random() * 20000 + 10000; // 10k-30k for income
-      } else {
-        amount = Math.random() * 5000 + 100; // 100-5100 for expenses
-      }
-
-      // Random time between 06:00 and 23:59
-      const hours = Math.floor(Math.random() * 18) + 6;
-      const minutes = Math.floor(Math.random() * 60);
-      const time = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-
-      transactions.push({
-        id: id.toString(),
-        date: new Date(date),
-        time,
-        category,
-        amount: Math.round(amount),
-        description,
-      });
-
-      id++;
-    }
-  }
-
-  return transactions;
-};
-
-const sampleTransactions = generateDemoTransactions();
+const sampleTransactions = getTransactionsList();
 
 const accountData: Record<string, { name: string; type: string }> = {
   uob: { name: "UOB", type: "credit card" },
