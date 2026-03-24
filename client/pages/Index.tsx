@@ -1,9 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Mic } from "lucide-react";
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import { calculateFromVoice } from "../utils/voiceCalculator";
+import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
+import { matchCategory, matchAccount } from "../utils/keywordMatch";
 
 type InputPage = "category" | "account" | "amount";
 
@@ -81,6 +83,23 @@ export default function Index() {
   const [isVoiceCalculatorMode, setIsVoiceCalculatorMode] = useState(false);
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
 
+  // Voice result confirmation state
+  const [showVoiceResult, setShowVoiceResult] = useState(false);
+  const [voiceResultData, setVoiceResultData] = useState<{
+    categoryId?: string;
+    accountId?: string;
+    amount?: number;
+    categoryName?: string;
+    accountName?: string;
+    isSuccess: boolean;
+  }>({ isSuccess: false });
+  const voiceTimeoutRef = useRef<NodeJS.Timeout>();
+  const voiceAccumulatorRef = useRef<{
+    categoryId?: string;
+    accountId?: string;
+    amount?: number;
+  }>({});
+
   const handleCategorySelect = (categoryId: string) => {
     if (!isCategoryReorderMode) {
       setSelectedCategory(categoryId);
@@ -110,35 +129,71 @@ export default function Index() {
       return;
     }
 
-    // If category is matched
-    if (voiceData.categoryId) {
-      setSelectedCategory(voiceData.categoryId);
+    // Accumulate voice data over 4 seconds
+    if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
+    if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
+    if (voiceData.amount) voiceAccumulatorRef.current.amount = voiceData.amount;
 
-      // If account is also matched, go directly to amount input
-      if (voiceData.accountId) {
-        setSelectedAccount(voiceData.accountId);
-        if (voiceData.amount) {
-          setDisplay(voiceData.amount.toString());
-          setValue(voiceData.amount);
-        }
-        setCurrentPage("amount");
-      } else {
-        // Only category matched, go to account selection
-        setCurrentPage("account");
-      }
-    } else if (voiceData.accountId) {
-      // Account matched without category
-      setSelectedAccount(voiceData.accountId);
-      if (voiceData.amount) {
-        setDisplay(voiceData.amount.toString());
-        setValue(voiceData.amount);
-      }
-      setCurrentPage("amount");
-    } else if (voiceData.amount) {
-      // Only amount matched, fill it in current amount page
-      setDisplay(voiceData.amount.toString());
-      setValue(voiceData.amount);
+    // Clear previous timeout
+    if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
+
+    // Set 4-second timeout to check if all 3 parts are matched
+    voiceTimeoutRef.current = setTimeout(() => {
+      const { categoryId, accountId, amount } = voiceAccumulatorRef.current;
+
+      // Get category and account names for display
+      const categoryName = categoryId
+        ? categories.find((c) => c.id === categoryId)?.name
+        : undefined;
+      const accountName = accountId
+        ? accounts.find((a) => a.id === accountId)?.name
+        : undefined;
+
+      // Check if all 3 parts are detected
+      const allMatched = categoryId && accountId && amount;
+
+      setVoiceResultData({
+        categoryId,
+        accountId,
+        amount,
+        categoryName,
+        accountName,
+        isSuccess: !!allMatched,
+      });
+
+      setShowVoiceResult(true);
+
+      // Reset accumulator
+      voiceAccumulatorRef.current = {};
+    }, 4000);
+  };
+
+  const handleVoiceResultConfirm = () => {
+    const { categoryId, accountId, amount } = voiceResultData;
+
+    if (categoryId) setSelectedCategory(categoryId);
+    if (accountId) setSelectedAccount(accountId);
+    if (amount) {
+      setDisplay(amount.toString());
+      setValue(amount);
     }
+
+    setShowVoiceResult(false);
+
+    if (categoryId && accountId && amount) {
+      setCurrentPage("amount");
+    } else if (categoryId && accountId) {
+      setCurrentPage("amount");
+    } else if (categoryId) {
+      setCurrentPage("account");
+    }
+  };
+
+  const handleVoiceResultEdit = () => {
+    setShowVoiceResult(false);
+    // Return to first page to speak again
+    setCurrentPage("category");
+    voiceAccumulatorRef.current = {};
   };
 
   const handleAccountSelect = (accountId: string) => {
@@ -624,6 +679,19 @@ export default function Index() {
           </div>
         </div>
       </div>
+
+      {/* Voice Result Confirmation Modal */}
+      {showVoiceResult && (
+        <VoiceResultConfirmation
+          categoryName={voiceResultData.categoryName}
+          accountName={voiceResultData.accountName}
+          amount={voiceResultData.amount}
+          isSuccess={voiceResultData.isSuccess}
+          onConfirm={handleVoiceResultConfirm}
+          onEdit={handleVoiceResultEdit}
+          onClose={() => setShowVoiceResult(false)}
+        />
+      )}
     </div>
   );
 }
