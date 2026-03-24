@@ -206,34 +206,65 @@ export default function Index() {
             renderItem={(account) => {
               const IconComponent = account.icon;
               return (
-                <button
+                <div
                   key={account.id}
                   draggable={isReorderMode}
-                  onMouseDown={(e) => handleAccountMouseDown(e, account.id)}
-                  onMouseUp={handleAccountMouseUp}
-                  onMouseLeave={handleAccountMouseUp}
-                  onDragStart={(e) => handleAccountDragStart(e, account.id)}
-                  onDragOver={handleAccountDragOver}
-                  onDrop={(e) => handleAccountDrop(e, account.id)}
-                  onClick={() => {
+                  onDragStart={(e) => {
                     if (isReorderMode) {
-                      exitReorderMode();
-                    } else {
-                      navigate(`/account/${account.id}/transactions`);
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", account.id);
+                      setDraggedAccount(account.id);
                     }
                   }}
-                  className={`py-2 px-3 rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold ${
-                    isReorderMode
-                      ? draggedAccount === account.id
-                        ? "bg-indigo-400 text-white shadow-lg opacity-70"
-                        : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 cursor-move border-2 border-indigo-300"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                  }`}
+                  onDragOver={(e) => {
+                    if (isReorderMode) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }
+                  }}
+                  onDrop={(e) => {
+                    if (isReorderMode) {
+                      e.preventDefault();
+                      const draggedId = e.dataTransfer.getData("text/plain");
+                      if (draggedId && draggedId !== account.id) {
+                        const draggedIndex = accountsList.findIndex((a) => a.id === draggedId);
+                        const targetIndex = accountsList.findIndex((a) => a.id === account.id);
+
+                        if (draggedIndex !== -1 && targetIndex !== -1) {
+                          const newList = [...accountsList];
+                          const [draggedItem] = newList.splice(draggedIndex, 1);
+                          newList.splice(targetIndex, 0, draggedItem);
+                          setAccountsList(newList);
+                        }
+                      }
+                    }
+                  }}
+                  className={isReorderMode ? "cursor-move" : ""}
                 >
-                  <IconComponent size={20} />
-                  <span className="font-bold text-xs">{account.name}</span>
-                  <span className="text-xs font-normal opacity-75">{account.type}</span>
-                </button>
+                  <button
+                    onMouseDown={(e) => handleAccountMouseDown(e, account.id)}
+                    onMouseUp={handleAccountMouseUp}
+                    onMouseLeave={handleAccountMouseUp}
+                    onClick={() => {
+                      if (isReorderMode) {
+                        exitReorderMode();
+                      } else {
+                        navigate(`/account/${account.id}/transactions`);
+                      }
+                    }}
+                    className={`w-full py-2 px-3 rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold ${
+                      isReorderMode
+                        ? draggedAccount === account.id
+                          ? "bg-indigo-400 text-white shadow-lg opacity-70"
+                          : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    <IconComponent size={20} />
+                    <span className="font-bold text-xs">{account.name}</span>
+                    <span className="text-xs font-normal opacity-75">{account.type}</span>
+                  </button>
+                </div>
               );
             }}
           />
