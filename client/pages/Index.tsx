@@ -220,20 +220,20 @@ export default function Index() {
             </div>
 
             {/* Up/Down Buttons - Aligned right with category buttons */}
-            <div className="flex flex-col gap-3 justify-start pt-1">
+            <div className="flex flex-col gap-3 flex-1">
               <button
                 onClick={handleMoveUp}
-                className="py-3 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                className="flex-1 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Move up (5px)"
               >
-                <ChevronUp size={20} />
+                <ChevronUp size={24} />
               </button>
               <button
                 onClick={handleMoveDown}
-                className="py-3 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                className="flex-1 px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
                 title="Move down (5px)"
               >
-                <ChevronDown size={20} />
+                <ChevronDown size={24} />
               </button>
             </div>
           </div>
