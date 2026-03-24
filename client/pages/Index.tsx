@@ -92,6 +92,43 @@ export default function Index() {
     setSelectedCategoryForSwap(null);
   };
 
+  const handleVoiceInput = (voiceData: {
+    categoryId?: string;
+    accountId?: string;
+    amount?: number;
+    description: string;
+  }) => {
+    // If category is matched
+    if (voiceData.categoryId) {
+      setSelectedCategory(voiceData.categoryId);
+
+      // If account is also matched, go directly to amount input
+      if (voiceData.accountId) {
+        setSelectedAccount(voiceData.accountId);
+        if (voiceData.amount) {
+          setDisplay(voiceData.amount.toString());
+          setValue(voiceData.amount);
+        }
+        setCurrentPage("amount");
+      } else {
+        // Only category matched, go to account selection
+        setCurrentPage("account");
+      }
+    } else if (voiceData.accountId) {
+      // Account matched without category
+      setSelectedAccount(voiceData.accountId);
+      if (voiceData.amount) {
+        setDisplay(voiceData.amount.toString());
+        setValue(voiceData.amount);
+      }
+      setCurrentPage("amount");
+    } else if (voiceData.amount) {
+      // Only amount matched, fill it in current amount page
+      setDisplay(voiceData.amount.toString());
+      setValue(voiceData.amount);
+    }
+  };
+
   const handleAccountSelect = (accountId: string) => {
     if (!isAccountPageReorderMode) {
       setSelectedAccount(accountId);
@@ -254,7 +291,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording />
+                    <Recording onVoiceInput={handleVoiceInput} />
                   </div>
                 </div>
                 <Carousel

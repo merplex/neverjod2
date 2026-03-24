@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic } from "lucide-react";
+import { parseVoiceInput } from "../utils/keywordMatch";
 
 interface RecordingProps {
   onTranscript?: (text: string) => void;
+  onVoiceInput?: (data: { categoryId?: string; accountId?: string; amount?: number; description: string }) => void;
 }
 
 export default function Recording({ onTranscript }: RecordingProps) {
@@ -39,6 +41,12 @@ export default function Recording({ onTranscript }: RecordingProps) {
           setTranscript((prev) => prev + transcriptPart + " ");
           if (onTranscript) {
             onTranscript(transcriptPart);
+          }
+
+          // Parse voice input for category, account, and amount
+          const voiceData = parseVoiceInput(transcriptPart);
+          if (onVoiceInput && (voiceData.categoryId || voiceData.accountId || voiceData.amount)) {
+            onVoiceInput(voiceData);
           }
         } else {
           interim += transcriptPart;
