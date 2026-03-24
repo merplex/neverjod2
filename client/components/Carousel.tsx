@@ -12,6 +12,7 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   const [currentPage, setCurrentPage] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.ceil(items.length / itemsPerPage);
@@ -28,6 +29,22 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
     handleSwipe();
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setTouchStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setTouchEnd(e.clientX);
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    handleSwipe();
+  };
+
   const handleSwipe = () => {
     if (touchStart === 0) return;
     const distance = touchStart - touchEnd;
@@ -38,6 +55,10 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
     } else if (!isLeftSwipe && distance < -50 && currentPage > 0) {
       setCurrentPage(currentPage - 1);
     }
+
+    // Reset touch values
+    setTouchStart(0);
+    setTouchEnd(0);
   };
 
   const gridColsClass = {
@@ -47,7 +68,17 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
   }[cols] || "grid-cols-4";
 
   return (
-    <div ref={containerRef} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div
+      ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      className={isDragging ? "cursor-grabbing" : "cursor-grab"}
+      style={{ userSelect: isDragging ? "none" : "auto" }}
+    >
       {/* Grid */}
       <div className={`grid gap-3 ${gridColsClass}`}>
         {currentItems.map((item, index) => renderItem(item, startIndex + index))}
