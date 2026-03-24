@@ -256,7 +256,7 @@ export default function Index() {
                   }`}
                 >
                   <IconComponent size={20} />
-                  <span className="font-bold text-xs">{account.name}</span>
+                  <span className="font-bold text-xs truncate">{account.name}</span>
                   <span className="text-xs font-normal opacity-75">{account.type}</span>
                 </button>
               );
@@ -335,7 +335,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={32} />
-                        <span className="font-bold text-xs text-center">{category.name}</span>
+                        <span className="font-bold text-xs text-center truncate">{category.name}</span>
                       </button>
                     );
                   }}
@@ -415,7 +415,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={32} />
-                        <span className="font-bold text-xs text-center">{account.name}</span>
+                        <span className="font-bold text-xs text-center truncate">{account.name}</span>
                       </button>
                     );
                   }}
