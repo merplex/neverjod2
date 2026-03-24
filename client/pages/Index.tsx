@@ -18,6 +18,22 @@ const categories = [
   { id: "bonus", name: "Bonus", type: "income", icon: Gift },
   { id: "freelance", name: "Freelance", type: "income", icon: Banknote },
   { id: "other", name: "Other", type: "expense", icon: MoreHorizontal },
+  { id: "travel", name: "Travel", type: "expense", icon: Plane },
+  { id: "gifts", name: "Gifts", type: "expense", icon: Gift },
+  { id: "sports", name: "Sports", type: "expense", icon: Dumbbell },
+  { id: "clothing", name: "Clothing", type: "expense", icon: ShoppingBag },
+  { id: "investment", name: "Investment", type: "income", icon: TrendingUp },
+  { id: "rental", name: "Rental", type: "income", icon: CreditCard },
+  { id: "food_delivery", name: "Food Delivery", type: "expense", icon: Utensils },
+  { id: "subscription", name: "Subscription", type: "expense", icon: Zap },
+  { id: "insurance", name: "Insurance", type: "expense", icon: FileText },
+  { id: "car", name: "Car", type: "expense", icon: Bus },
+  { id: "phone", name: "Phone", type: "expense", icon: Smartphone },
+  { id: "internet", name: "Internet", type: "expense", icon: Zap },
+  { id: "hobby", name: "Hobby", type: "expense", icon: Music },
+  { id: "pets", name: "Pets", type: "expense", icon: Heart },
+  { id: "childcare", name: "Childcare", type: "expense", icon: Gift },
+  { id: "loan", name: "Loan", type: "expense", icon: FileText },
 ];
 
 const accounts = [
