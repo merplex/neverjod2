@@ -16,24 +16,10 @@ const categories = [
   { id: "travel", name: "Travel", type: "expense" },
   { id: "groceries", name: "Groceries", type: "expense" },
   { id: "fitness", name: "Fitness", type: "expense" },
-  { id: "gifts", name: "Gifts", type: "expense" },
-  { id: "insurance", name: "Insurance", type: "expense" },
-  { id: "subscriptions", name: "Subscriptions", type: "expense" },
-  { id: "other", name: "Other", type: "expense" },
   { id: "salary", name: "Salary", type: "income" },
   { id: "bonus", name: "Bonus", type: "income" },
   { id: "freelance", name: "Freelance", type: "income" },
-  { id: "investment", name: "Investment", type: "income" },
-  { id: "refund", name: "Refund", type: "income" },
-  { id: "dividend", name: "Dividend", type: "income" },
-  { id: "interest", name: "Interest", type: "income" },
-  { id: "rental", name: "Rental", type: "income" },
-  { id: "gift_received", name: "Gift Received", type: "income" },
-  { id: "lottery", name: "Lottery", type: "income" },
-  { id: "business", name: "Business", type: "income" },
-  { id: "other_income", name: "Other Income", type: "income" },
-  { id: "savings", name: "Savings", type: "transfer" },
-  { id: "transfer", name: "Transfer", type: "transfer" },
+  { id: "other", name: "Other", type: "expense" },
 ];
 
 const accounts = [
@@ -47,25 +33,11 @@ const accounts = [
   { id: "acme", name: "ACME", type: "debit card" },
   { id: "kkp", name: "KKP", type: "savings account" },
   { id: "ghb", name: "GHB", type: "credit card" },
-  { id: "kbank_cc", name: "K-Bank CC", type: "credit card" },
-  { id: "aeon", name: "AEON", type: "credit card" },
-  { id: "citibank", name: "Citibank", type: "credit card" },
-  { id: "hsbc", name: "HSBC", type: "debit card" },
-  { id: "gbank", name: "GSBank", type: "savings account" },
-  { id: "icbc", name: "ICBC", type: "debit card" },
-  { id: "botn", name: "BoTN", type: "savings account" },
-  { id: "mufg", name: "MUFG", type: "debit card" },
-  { id: "baht_pay", name: "Baht Pay", type: "digital wallet" },
-  { id: "promptpay", name: "PromptPay", type: "digital wallet" },
-  { id: "truemoney", name: "TrueMoney", type: "digital wallet" },
-  { id: "linepay", name: "LINE Pay", type: "digital wallet" },
-  { id: "rabbit", name: "Rabbit Card", type: "prepaid card" },
-  { id: "bt_purse", name: "BTS Purse", type: "prepaid card" },
-  { id: "beep", name: "BEEP Card", type: "prepaid card" },
-  { id: "octopus", name: "Octopus", type: "prepaid card" },
   { id: "cash", name: "Cash", type: "cash" },
   { id: "crypto", name: "Crypto", type: "cryptocurrency" },
   { id: "investment_acc", name: "Investment", type: "investment" },
+  { id: "baht_pay", name: "Baht Pay", type: "digital wallet" },
+  { id: "promptpay", name: "PromptPay", type: "digital wallet" },
   { id: "other_acc", name: "Other", type: "other" },
 ];
 
@@ -168,25 +140,25 @@ export default function Index() {
 
           {/* Dynamic Main Input Area */}
           <div className="px-6 py-6 bg-white">
-            {/* Category Input Page (5 rows × 6 columns) */}
+            {/* Category Input Page (4 rows × 4 columns) */}
             {currentPage === "category" && (
               <div>
                 <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {categories.map((category) => (
                     <button
                       key={category.id}
                       onClick={() => handleCategorySelect(category.id)}
-                      className="py-2 px-1 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
+                      className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
                     >
-                      <span className="font-bold text-xs">{category.name.slice(0, 4)}</span>
+                      <span className="font-bold text-xs">{category.name.slice(0, 5)}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Account Input Page (5 rows × 6 columns) */}
+            {/* Account Input Page (4 rows × 4 columns) */}
             {currentPage === "account" && (
               <div>
                 <button
@@ -196,14 +168,14 @@ export default function Index() {
                   ← Back
                 </button>
                 <h2 className="text-lg font-bold text-slate-900 mb-4">Select Account</h2>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {accounts.map((account) => (
                     <button
                       key={account.id}
                       onClick={() => handleAccountSelect(account.id)}
-                      className="py-2 px-1 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
+                      className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
                     >
-                      <span className="font-bold text-xs">{account.name.slice(0, 4)}</span>
+                      <span className="font-bold text-xs">{account.name.slice(0, 5)}</span>
                     </button>
                   ))}
                 </div>
