@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 export default function Index() {
   const [display, setDisplay] = useState("0");
   const [value, setValue] = useState(0);
+  const [numpadSize, setNumpadSize] = useState(80);
+  const [numpadOffset, setNumpadOffset] = useState(0);
 
   const handleNumberClick = (num: number) => {
     if (display === "0") {
@@ -35,6 +38,14 @@ export default function Index() {
   const handleConfirm = () => {
     console.log("Expense entered:", value);
     handleClear();
+  };
+
+  const handleMoveUp = () => {
+    setNumpadOffset((prev) => prev - 5);
+  };
+
+  const handleMoveDown = () => {
+    setNumpadOffset((prev) => prev + 5);
   };
 
   const numpadButtons = [
@@ -88,56 +99,104 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Numpad Section */}
-          <div className="px-6 py-8">
-            {/* Number Grid */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {numpadButtons.map((btn) => (
+          {/* Controls Section */}
+          <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between gap-4">
+            {/* Size Controls */}
+            <div className="flex gap-2">
+              {[75, 80, 85].map((size) => (
                 <button
-                  key={btn.label}
-                  onClick={() => handleNumberClick(btn.value)}
-                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                  key={size}
+                  onClick={() => setNumpadSize(size)}
+                  className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                    numpadSize === size
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
                 >
-                  {btn.label}
+                  {size}%
                 </button>
               ))}
             </div>
 
-            {/* Bottom Row */}
-            <div className="grid grid-cols-4 gap-3 mb-4">
+            {/* Movement Controls */}
+            <div className="flex flex-col gap-1">
               <button
-                onClick={handleDecimal}
-                className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                onClick={handleMoveUp}
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                title="Move up (5px)"
               >
-                .
+                <ChevronUp size={18} />
               </button>
               <button
-                onClick={() => handleNumberClick(0)}
-                className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                onClick={handleMoveDown}
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                title="Move down (5px)"
               >
-                0
-              </button>
-              <button
-                onClick={handleDelete}
-                className="py-4 px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
-              >
-                ⌫
-              </button>
-              <button
-                onClick={handleClear}
-                className="py-4 px-2 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
-              >
-                C
+                <ChevronDown size={18} />
               </button>
             </div>
+          </div>
 
-            {/* Confirm Button */}
-            <button
-              onClick={handleConfirm}
-              className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-lg rounded-xl transition-all active:scale-95 shadow-lg"
+          {/* Numpad Section */}
+          <div className="relative px-6 py-8 min-h-96">
+            {/* Numpad Container with dynamic sizing and positioning */}
+            <div
+              style={{
+                width: `${numpadSize}%`,
+                transform: `translateY(${numpadOffset}px)`,
+                transition: "transform 0.1s ease-out",
+              }}
+              className="flex flex-col gap-4"
             >
-              Add Expense
-            </button>
+              {/* Number Grid */}
+              <div className="grid grid-cols-3 gap-3">
+                {numpadButtons.map((btn) => (
+                  <button
+                    key={btn.label}
+                    onClick={() => handleNumberClick(btn.value)}
+                    className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bottom Row */}
+              <div className="grid grid-cols-4 gap-3">
+                <button
+                  onClick={handleDecimal}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  .
+                </button>
+                <button
+                  onClick={() => handleNumberClick(0)}
+                  className="py-4 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  0
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="py-4 px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  ⌫
+                </button>
+                <button
+                  onClick={handleClear}
+                  className="py-4 px-2 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  C
+                </button>
+              </div>
+
+              {/* Confirm Button */}
+              <button
+                onClick={handleConfirm}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-lg rounded-xl transition-all active:scale-95 shadow-lg"
+              >
+                Add Expense
+              </button>
+            </div>
           </div>
         </div>
       </div>
