@@ -65,7 +65,6 @@ export default function Index() {
   const [accountsList, setAccountsList] = useState(accounts);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [draggedAccount, setDraggedAccount] = useState<string | null>(null);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Amount input state
   const [display, setDisplay] = useState("0");
@@ -138,59 +137,9 @@ export default function Index() {
     setIsLocked(!isLocked);
   };
 
-  // Long-press handlers for account reordering
-  const handleAccountMouseDown = (e: React.MouseEvent, accountId: string) => {
-    e.preventDefault();
-    longPressTimerRef.current = setTimeout(() => {
-      setIsReorderMode(true);
-      setDraggedAccount(accountId);
-    }, 500); // 500ms long press
-  };
-
-  const handleAccountMouseUp = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-
-  const handleAccountDragStart = (e: React.DragEvent, accountId: string) => {
-    if (isReorderMode) {
-      e.dataTransfer.effectAllowed = "move";
-      setDraggedAccount(accountId);
-    }
-  };
-
-  const handleAccountDragOver = (e: React.DragEvent) => {
-    if (isReorderMode) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-    }
-  };
-
-  const handleAccountDrop = (e: React.DragEvent, targetAccountId: string) => {
-    e.preventDefault();
-    if (!draggedAccount || draggedAccount === targetAccountId || !isReorderMode) return;
-
-    const draggedIndex = accountsList.findIndex((a) => a.id === draggedAccount);
-    const targetIndex = accountsList.findIndex((a) => a.id === targetAccountId);
-
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
-    const newList = [...accountsList];
-    const [draggedItem] = newList.splice(draggedIndex, 1);
-    newList.splice(targetIndex, 0, draggedItem);
-
-    setAccountsList(newList);
-  };
-
   const exitReorderMode = () => {
     setIsReorderMode(false);
     setDraggedAccount(null);
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
   };
 
   return (
@@ -198,7 +147,17 @@ export default function Index() {
       <div className="w-full max-w-md mx-auto">
         {/* Persistent Account Section - Top */}
         <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
-          <h3 className="text-sm font-semibold text-slate-600 mb-3">Accounts</h3>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-sm font-semibold text-slate-600">Accounts</h3>
+            {!isReorderMode && (
+              <button
+                onClick={() => setIsReorderMode(true)}
+                className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded font-semibold hover:bg-indigo-200 transition-colors"
+              >
+                Edit
+              </button>
+            )}
+          </div>
           <Carousel
             items={accountsList}
             itemsPerPage={6}
@@ -215,6 +174,8 @@ export default function Index() {
                       e.dataTransfer.effectAllowed = "move";
                       e.dataTransfer.setData("text/plain", account.id);
                       setDraggedAccount(account.id);
+                    } else {
+                      e.preventDefault();
                     }
                   }}
                   onDragOver={(e) => {
@@ -243,13 +204,8 @@ export default function Index() {
                   className={isReorderMode ? "cursor-move" : ""}
                 >
                   <button
-                    onMouseDown={(e) => handleAccountMouseDown(e, account.id)}
-                    onMouseUp={handleAccountMouseUp}
-                    onMouseLeave={handleAccountMouseUp}
                     onClick={() => {
-                      if (isReorderMode) {
-                        exitReorderMode();
-                      } else {
+                      if (!isReorderMode) {
                         navigate(`/account/${account.id}/transactions`);
                       }
                     }}
@@ -260,6 +216,7 @@ export default function Index() {
                           : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
                         : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                     }`}
+                    disabled={isReorderMode}
                   >
                     <IconComponent size={20} />
                     <span className="font-bold text-xs">{account.name}</span>
