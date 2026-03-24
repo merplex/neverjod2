@@ -86,11 +86,13 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
 
       {/* Page Indicators - Only show if more than 1 page */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 mt-4">
+        <div className="flex items-center justify-between mt-4">
           {/* Left Arrow - Show only if not on first page */}
-          {currentPage > 0 && (
-            <ChevronLeft size={14} className="text-slate-500" />
-          )}
+          <div className="w-6 flex justify-center">
+            {currentPage > 0 && (
+              <ChevronLeft size={14} className="text-slate-500" />
+            )}
+          </div>
 
           {/* Dots - Centered */}
           <div className="flex gap-1">
@@ -106,9 +108,11 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
           </div>
 
           {/* Right Arrow - Show only if not on last page */}
-          {currentPage < totalPages - 1 && (
-            <ChevronRight size={14} className="text-slate-500" />
-          )}
+          <div className="w-6 flex justify-center">
+            {currentPage < totalPages - 1 && (
+              <ChevronRight size={14} className="text-slate-500" />
+            )}
+          </div>
         </div>
       )}
     </div>
