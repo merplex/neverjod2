@@ -9,11 +9,11 @@ interface RecordingProps {
 }
 
 export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: RecordingProps) {
-  const [isListening, setIsListening] = useState(true);
+  const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const recognitionRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isListeningRef = useRef(true);
+  const isListeningRef = useRef(false);
   const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
   const hasSpeechStartedRef = useRef(false);
 
@@ -32,14 +32,12 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     recognitionRef.current.lang = "en-US";
 
     recognitionRef.current.onstart = () => {
-      setIsListening(true);
-      isListeningRef.current = true;
       hasSpeechStartedRef.current = false;
 
       // Set 4-second timeout for initial speech detection
       speechStartTimeoutRef.current = setTimeout(() => {
         // If no speech detected within 4 seconds, reset and restart listening
-        if (!hasSpeechStartedRef.current) {
+        if (!hasSpeechStartedRef.current && recognitionRef.current) {
           recognitionRef.current.abort();
           recognitionRef.current.start();
         }
@@ -77,9 +75,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     };
 
     recognitionRef.current.onend = () => {
-      setIsListening(false);
-      isListeningRef.current = false;
-
       // Call onVoiceEnd when speech ends
       if (hasSpeechStartedRef.current && onVoiceEnd) {
         onVoiceEnd();
@@ -97,9 +92,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
       console.log("Speech recognition error:", event.error);
     };
 
-    // Start listening on mount
-    recognitionRef.current.start();
-
+    // Don't start automatically - wait for user to click the button
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -107,11 +100,24 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     };
   }, [onVoiceInput, onVoiceEnd]);
 
-  const handleStop = () => {
-    if (recognitionRef.current) {
+  const handleToggleListening = () => {
+    if (!recognitionRef.current) {
+      console.warn("Speech Recognition not available");
+      return;
+    }
+
+    if (isListeningRef.current) {
+      // Stop listening
       recognitionRef.current.stop();
       setIsListening(false);
       isListeningRef.current = false;
+    } else {
+      // Start listening
+      setTranscript("");
+      hasSpeechStartedRef.current = false;
+      recognitionRef.current.start();
+      setIsListening(true);
+      isListeningRef.current = true;
     }
   };
 
@@ -120,43 +126,18 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     isListeningRef.current = isListening;
   }, [isListening]);
 
-  // Listen for any button clicks to stop recording
-  useEffect(() => {
-    const handleGlobalClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      const button = target.closest("button");
-
-      // Don't stop if clicking the recording button itself
-      if (button === containerRef.current?.querySelector("button")) {
-        return;
-      }
-
-      // Check if clicked element is a button or inside a button
-      if (target.tagName === "BUTTON" || button) {
-        if (isListeningRef.current) {
-          handleStop();
-        }
-      }
-    };
-
-    document.addEventListener("click", handleGlobalClick);
-
-    return () => {
-      document.removeEventListener("click", handleGlobalClick);
-    };
-  }, []);
-
   return (
     <div ref={containerRef}>
       <button
-        onClick={handleStop}
+        onClick={handleToggleListening}
         className={`relative p-2 hover:bg-slate-200 rounded-lg transition-colors ${
           isListening ? "text-red-500" : "text-slate-600"
         } hover:text-slate-900`}
+        title={isListening ? "Stop recording" : "Start recording"}
       >
         <Mic size={24} />
 
-        {/* Sound wave pulse animation - small version */}
+        {/* Sound wave pulse animation - shows when listening */}
         {isListening && (
           <div className="absolute inset-0 rounded-full border-2 border-red-500 opacity-40 animate-ping" style={{ animationDuration: "1.5s" }} />
         )}
