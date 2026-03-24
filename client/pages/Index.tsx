@@ -276,7 +276,7 @@ export default function Index() {
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                     : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold"
                 }`}
-                style={{ height: "calc(2 * 4rem)" }}
+                style={{ height: "37.5%" }}
                 title={isLocked ? "Position locked" : "Move up (5px)"}
               >
                 <ChevronUp size={32} />
@@ -289,7 +289,7 @@ export default function Index() {
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                     : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold"
                 }`}
-                style={{ height: "calc(2 * 4rem)" }}
+                style={{ height: "37.5%" }}
                 title={isLocked ? "Position locked" : "Move down (5px)"}
               >
                 <ChevronDown size={32} />
@@ -301,7 +301,7 @@ export default function Index() {
                     ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
                     : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
                 }`}
-                style={{ flex: 1 }}
+                style={{ height: "25%" }}
                 title={isLocked ? "Unlock position" : "Lock position"}
               >
                 {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
