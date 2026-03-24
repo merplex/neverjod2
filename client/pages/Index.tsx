@@ -75,26 +75,32 @@ export default function Index() {
       <div className="w-full max-w-md">
         {/* Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          {/* Display Buttons Section */}
+          {/* Account Buttons Section */}
           <div className="px-6 py-6 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
             <div className="grid grid-cols-2 gap-3">
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">
-                Food
+              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+                <span className="font-bold text-sm">UOB</span>
+                <span className="text-xs text-slate-600 font-normal">credit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">
-                Transport
+              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+                <span className="font-bold text-sm">BankA</span>
+                <span className="text-xs text-slate-600 font-normal">debit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">
-                Entertainment
+              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+                <span className="font-bold text-sm">Krungsri</span>
+                <span className="text-xs text-slate-600 font-normal">savings account</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">
-                Shopping
+              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+                <span className="font-bold text-sm">Bangkok Bank</span>
+                <span className="text-xs text-slate-600 font-normal">credit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">
-                Bills
+              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+                <span className="font-bold text-sm">Kasikornbank</span>
+                <span className="text-xs text-slate-600 font-normal">debit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">
-                Other
+              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+                <span className="font-bold text-sm">Other</span>
+                <span className="text-xs text-slate-600 font-normal">account</span>
               </button>
             </div>
           </div>
