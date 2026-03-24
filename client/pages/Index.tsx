@@ -264,7 +264,7 @@ export default function Index() {
                 </div>
 
                 {/* Section C-D: Numpad and Controls */}
-                <div className={`flex gap-4 ${isRightMode ? "flex-row-reverse" : ""}`}>
+                <div className={`flex gap-4 flex-1 ${isRightMode ? "flex-row-reverse" : ""}`}>
                   {/* Section C: Numpad */}
                   <div
                     style={{
@@ -272,14 +272,15 @@ export default function Index() {
                       transform: `translateY(${numpadOffset}px)`,
                       transition: "transform 0.1s ease-out",
                     }}
+                    className="flex flex-col flex-1 gap-3"
                   >
                     {/* 3-column grid */}
-                    <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="grid grid-cols-3 gap-3 flex-1">
                       {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
                         <button
                           key={num}
                           onClick={() => handleNumberClick(num)}
-                          className="h-16 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                          className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                         >
                           {num}
                         </button>
@@ -287,30 +288,30 @@ export default function Index() {
                     </div>
 
                     {/* 4-column grid */}
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-4 gap-3 flex-1">
                       {isRightMode ? (
                         <>
                           <button
                             onClick={handleDelete}
-                            className="h-16 px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
+                            className="px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
                           >
                             ⌫
                           </button>
                           <button
                             onClick={handleDecimal}
-                            className="h-16 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                           >
                             .
                           </button>
                           <button
                             onClick={() => handleNumberClick(0)}
-                            className="h-16 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                           >
                             0
                           </button>
                           <button
                             onClick={handleConfirm}
-                            className="h-16 px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
+                            className="px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
                           >
                             Save
                           </button>
@@ -319,25 +320,25 @@ export default function Index() {
                         <>
                           <button
                             onClick={handleConfirm}
-                            className="h-16 px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
+                            className="px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
                           >
                             Save
                           </button>
                           <button
                             onClick={() => handleNumberClick(0)}
-                            className="h-16 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                           >
                             0
                           </button>
                           <button
                             onClick={handleDecimal}
-                            className="h-16 px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                           >
                             .
                           </button>
                           <button
                             onClick={handleDelete}
-                            className="h-16 px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
+                            className="px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
                           >
                             ⌫
                           </button>
