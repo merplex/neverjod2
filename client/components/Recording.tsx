@@ -20,35 +20,38 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
   useEffect(() => {
     // Initialize Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
+
     if (!SpeechRecognition) {
-      console.log("Speech Recognition not supported");
+      console.warn("Speech Recognition not supported in this browser");
       return;
     }
 
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = true;
-    recognitionRef.current.interimResults = true;
-    recognitionRef.current.lang = "en-US";
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
 
-    recognitionRef.current.onstart = () => {
+    recognition.onstart = () => {
+      console.log("Speech recognition started");
       hasSpeechStartedRef.current = false;
 
       // Set 4-second timeout for initial speech detection
       speechStartTimeoutRef.current = setTimeout(() => {
         // If no speech detected within 4 seconds, reset and restart listening
-        if (!hasSpeechStartedRef.current && recognitionRef.current) {
-          recognitionRef.current.abort();
-          recognitionRef.current.start();
+        if (!hasSpeechStartedRef.current && recognition) {
+          console.log("No speech detected, restarting...");
+          recognition.abort();
+          setTimeout(() => recognition.start(), 100);
         }
       }, 4000);
     };
 
-    recognitionRef.current.onresult = (event: any) => {
+    recognition.onresult = (event: any) => {
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcriptPart = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
+          console.log("Final transcript:", transcriptPart);
           // Mark that speech has started
           hasSpeechStartedRef.current = true;
 
@@ -66,6 +69,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
           // Parse voice input for category, account, and amount
           const voiceData = parseVoiceInput(transcriptPart);
           if (onVoiceInput && (voiceData.categoryId || voiceData.accountId || voiceData.amount)) {
+            console.log("Voice data detected:", voiceData);
             onVoiceInput(voiceData);
           }
         } else {
@@ -74,7 +78,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
       }
     };
 
-    recognitionRef.current.onend = () => {
+    recognition.onend = () => {
+      console.log("Speech recognition ended");
       // Call onVoiceEnd when speech ends
       if (hasSpeechStartedRef.current && onVoiceEnd) {
         onVoiceEnd();
@@ -88,36 +93,46 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
       hasSpeechStartedRef.current = false;
     };
 
-    recognitionRef.current.onerror = (event: any) => {
-      console.log("Speech recognition error:", event.error);
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
     };
 
-    // Don't start automatically - wait for user to click the button
+    recognitionRef.current = recognition;
+
+    // Cleanup
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
+      if (recognition) {
+        recognition.stop();
       }
     };
   }, [onVoiceInput, onVoiceEnd]);
 
   const handleToggleListening = () => {
+    console.log("Toggle clicked, recognition available:", !!recognitionRef.current);
+
     if (!recognitionRef.current) {
-      console.warn("Speech Recognition not available");
+      console.error("Speech Recognition not available");
       return;
     }
 
     if (isListeningRef.current) {
       // Stop listening
+      console.log("Stopping listening...");
       recognitionRef.current.stop();
       setIsListening(false);
       isListeningRef.current = false;
     } else {
       // Start listening
+      console.log("Starting listening...");
       setTranscript("");
       hasSpeechStartedRef.current = false;
-      recognitionRef.current.start();
-      setIsListening(true);
-      isListeningRef.current = true;
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+        isListeningRef.current = true;
+      } catch (error) {
+        console.error("Error starting recognition:", error);
+      }
     }
   };
 
