@@ -249,7 +249,7 @@ export default function Index() {
 
             {/* Up/Down Buttons - Aligned right with numpad rows, moves with numpad */}
             <div
-              className="flex flex-col gap-3 w-16 flex-shrink-0"
+              className="flex flex-col gap-3 w-16"
               style={{
                 transform: `translateY(${numpadOffset}px)`,
                 transition: "transform 0.1s ease-out",
