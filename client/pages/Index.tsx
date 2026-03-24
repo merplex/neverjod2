@@ -194,30 +194,28 @@ export default function Index() {
   const handleVoiceEnd = () => {
     const { categoryId, accountId, amount } = voiceAccumulatorRef.current;
 
-    // Only show result if any data was detected
-    if (categoryId || accountId || amount) {
-      // Get category and account names for display
-      const categoryName = categoryId
-        ? categoriesList.find((c) => c.id === categoryId)?.name
-        : undefined;
-      const accountName = accountId
-        ? accountsList.find((a) => a.id === accountId)?.name
-        : undefined;
+    // Get category and account names for display
+    const categoryName = categoryId
+      ? categoriesList.find((c) => c.id === categoryId)?.name
+      : undefined;
+    const accountName = accountId
+      ? accountsList.find((a) => a.id === accountId)?.name
+      : undefined;
 
-      // Check if all 3 parts are detected
-      const allMatched = categoryId && accountId && amount;
+    // Check if all 3 parts are detected
+    const allMatched = categoryId && accountId && amount;
 
-      setVoiceResultData({
-        categoryId,
-        accountId,
-        amount,
-        categoryName,
-        accountName,
-        isSuccess: !!allMatched,
-      });
+    // Always show result popup (either success or no-match)
+    setVoiceResultData({
+      categoryId,
+      accountId,
+      amount,
+      categoryName,
+      accountName,
+      isSuccess: !!allMatched,
+    });
 
-      setShowVoiceResult(true);
-    }
+    setShowVoiceResult(true);
 
     // Reset accumulator
     voiceAccumulatorRef.current = {};
