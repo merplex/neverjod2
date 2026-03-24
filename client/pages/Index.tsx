@@ -118,73 +118,77 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Card Container */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          {/* Persistent Account Section - Always Visible */}
-          <div className="px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-600 mb-3">Accounts</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {accounts.slice(0, 6).map((account) => (
-                <button
-                  key={account.id}
-                  className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
-                >
-                  <span className="font-bold text-xs">{account.name}</span>
-                  <span className="text-xs text-slate-600 font-normal">{account.type}</span>
-                </button>
-              ))}
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4">
+      <div className="w-full max-w-md mx-auto">
+        {/* Persistent Account Section - Top */}
+        <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
+          <h3 className="text-sm font-semibold text-slate-600 mb-3">Accounts</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {accounts.slice(0, 6).map((account) => (
+              <button
+                key={account.id}
+                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
+              >
+                <span className="font-bold text-xs">{account.name}</span>
+                <span className="text-xs text-slate-600 font-normal">{account.type}</span>
+              </button>
+            ))}
           </div>
+        </div>
 
+        {/* Main Input Area - Full Screen */}
+        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col min-h-96">
           {/* Dynamic Main Input Area */}
-          <div className="px-6 py-6 bg-white">
-            {/* Category Input Page (4 rows × 4 columns) */}
+          <div className="px-6 py-6 bg-white flex flex-col flex-1">
+            {/* Category Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "category" && (
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
-                <div className="grid grid-cols-4 gap-2">
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category.id)}
-                      className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
-                    >
-                      <span className="font-bold text-xs">{category.name.slice(0, 5)}</span>
-                    </button>
-                  ))}
+              <div className="flex flex-col flex-1 justify-end">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
+                  <div className="grid grid-cols-4 gap-2">
+                    {categories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category.id)}
+                        className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
+                      >
+                        <span className="font-bold text-xs">{category.name.slice(0, 5)}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Account Input Page (4 rows × 4 columns) */}
+            {/* Account Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "account" && (
-              <div>
+              <div className="flex flex-col flex-1 justify-end">
                 <button
                   onClick={() => setCurrentPage("category")}
-                  className="mb-4 text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
+                  className="mb-4 text-indigo-600 hover:text-indigo-700 font-semibold text-sm self-start"
                 >
                   ← Back
                 </button>
-                <h2 className="text-lg font-bold text-slate-900 mb-4">Select Account</h2>
-                <div className="grid grid-cols-4 gap-2">
-                  {accounts.map((account) => (
-                    <button
-                      key={account.id}
-                      onClick={() => handleAccountSelect(account.id)}
-                      className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
-                    >
-                      <span className="font-bold text-xs">{account.name.slice(0, 5)}</span>
-                    </button>
-                  ))}
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 mb-4">Select Account</h2>
+                  <div className="grid grid-cols-4 gap-2">
+                    {accounts.map((account) => (
+                      <button
+                        key={account.id}
+                        onClick={() => handleAccountSelect(account.id)}
+                        className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
+                      >
+                        <span className="font-bold text-xs">{account.name.slice(0, 5)}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Amount Input Page (Numpad A-B-C-D) */}
             {currentPage === "amount" && (
-              <div>
+              <div className="flex flex-col flex-1">
                 <button
                   onClick={() => setCurrentPage("account")}
                   className="mb-4 text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
