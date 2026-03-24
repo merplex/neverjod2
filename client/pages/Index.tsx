@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronUp, ChevronDown, Lock, LockOpen } from "lucide-react";
 
 export default function Index() {
+  const navigate = useNavigate();
   const [display, setDisplay] = useState("0");
   const [value, setValue] = useState(0);
   const [numpadSize, setNumpadSize] = useState(80);
@@ -78,27 +80,27 @@ export default function Index() {
           {/* Account Buttons Section */}
           <div className="px-6 py-6 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
             <div className="grid grid-cols-2 gap-3">
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+              <button onClick={() => navigate("/account/uob")} className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer">
                 <span className="font-bold text-sm">UOB</span>
                 <span className="text-xs text-slate-600 font-normal">credit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+              <button onClick={() => navigate("/account/banka")} className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer">
                 <span className="font-bold text-sm">BankA</span>
                 <span className="text-xs text-slate-600 font-normal">debit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+              <button onClick={() => navigate("/account/krungsri")} className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer">
                 <span className="font-bold text-sm">Krungsri</span>
                 <span className="text-xs text-slate-600 font-normal">savings account</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+              <button onClick={() => navigate("/account/bangkok")} className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer">
                 <span className="font-bold text-sm">Bangkok Bank</span>
                 <span className="text-xs text-slate-600 font-normal">credit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+              <button onClick={() => navigate("/account/kasikorn")} className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer">
                 <span className="font-bold text-sm">Kasikornbank</span>
                 <span className="text-xs text-slate-600 font-normal">debit card</span>
               </button>
-              <button className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1">
+              <button onClick={() => navigate("/account/other")} className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer">
                 <span className="font-bold text-sm">Other</span>
                 <span className="text-xs text-slate-600 font-normal">account</span>
               </button>
