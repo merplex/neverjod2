@@ -103,6 +103,36 @@ export default function Transactions() {
   const account = accountData[accountId || ""];
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
+  const [targetAccount, setTargetAccount] = useState<string>("");
+
+  const handleSelectTransaction = (id: string) => {
+    const newSelected = new Set(selectedTransactions);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedTransactions(newSelected);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedTransactions.size === 0) return;
+    // In a real app, this would send to backend
+    console.log("Deleting transactions:", Array.from(selectedTransactions));
+    setSelectedTransactions(new Set());
+    setIsSelectMode(false);
+  };
+
+  const handleMoveSelected = () => {
+    if (selectedTransactions.size === 0 || !targetAccount) return;
+    // In a real app, this would send to backend
+    console.log("Moving transactions:", Array.from(selectedTransactions), "to", targetAccount);
+    setSelectedTransactions(new Set());
+    setTargetAccount("");
+    setIsSelectMode(false);
+  };
 
   if (!account) {
     return (
@@ -172,50 +202,116 @@ export default function Transactions() {
         {/* Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-screen">
           {/* Header */}
-          <div className="px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 flex items-center gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <ChevronLeft size={24} className="text-slate-700" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">{account.name}</h1>
-              <p className="text-xs text-slate-600">{account.type}</p>
+          <div className="px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/")}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft size={24} className="text-slate-700" />
+              </button>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">{account.name}</h1>
+                <p className="text-xs text-slate-600">{account.type}</p>
+              </div>
             </div>
+            <button
+              onClick={() => {
+                setIsSelectMode(!isSelectMode);
+                setSelectedTransactions(new Set());
+              }}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                isSelectMode
+                  ? "bg-indigo-600 text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {isSelectMode ? "Done" : "Select"}
+            </button>
           </div>
 
-          {/* Filters */}
-          <div className="px-6 py-4 bg-white border-b border-slate-200 flex gap-2">
-            {/* Sort Button */}
-            <button
-              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg transition-colors text-sm"
-            >
-              {sortOrder === "asc" ? (
-                <ArrowUpDown size={16} />
-              ) : (
-                <ArrowDownUp size={16} />
-              )}
-              {sortOrder === "asc" ? "Ascending" : "Descending"}
-            </button>
-
-            {/* Time Range Buttons */}
-            <div className="flex gap-2 flex-1">
-              {["week", "month", "all"].map((range) => (
+          {/* Filters / Actions */}
+          <div className="px-6 py-4 bg-white border-b border-slate-200">
+            {!isSelectMode ? (
+              <div className="flex gap-2">
+                {/* Sort Button */}
                 <button
-                  key={range}
-                  onClick={() => setTimeRange(range as TimeRange)}
-                  className={`flex-1 px-2 py-2 rounded-lg font-semibold text-sm transition-all capitalize ${
-                    timeRange === range
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg transition-colors text-sm"
+                >
+                  {sortOrder === "asc" ? (
+                    <ArrowUpDown size={16} />
+                  ) : (
+                    <ArrowDownUp size={16} />
+                  )}
+                  {sortOrder === "asc" ? "Ascending" : "Descending"}
+                </button>
+
+                {/* Time Range Buttons */}
+                <div className="flex gap-2 flex-1">
+                  {["week", "month", "all"].map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setTimeRange(range as TimeRange)}
+                      className={`flex-1 px-2 py-2 rounded-lg font-semibold text-sm transition-all capitalize ${
+                        timeRange === range
+                          ? "bg-indigo-600 text-white shadow-md"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                {/* Delete Button */}
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={selectedTransactions.size === 0}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    selectedTransactions.size === 0
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-red-500 hover:bg-red-600 text-white"
                   }`}
                 >
-                  {range}
+                  Delete ({selectedTransactions.size})
                 </button>
-              ))}
-            </div>
+
+                {/* Move Account Select */}
+                <select
+                  value={targetAccount}
+                  onChange={(e) => setTargetAccount(e.target.value)}
+                  disabled={selectedTransactions.size === 0}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all border ${
+                    selectedTransactions.size === 0
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
+                      : "bg-white text-slate-700 border-indigo-300 hover:border-indigo-500"
+                  }`}
+                >
+                  <option value="">Move to Account...</option>
+                  {Object.entries(accountData).map(([id, data]) => (
+                    <option key={id} value={id}>
+                      {data.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Move Button */}
+                <button
+                  onClick={handleMoveSelected}
+                  disabled={selectedTransactions.size === 0 || !targetAccount}
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    selectedTransactions.size === 0 || !targetAccount
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-green-500 hover:bg-green-600 text-white"
+                  }`}
+                >
+                  Move
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Transactions List */}
@@ -239,11 +335,34 @@ export default function Transactions() {
 
                     {/* Day's Transactions */}
                     <div className="space-y-2">
-                      {transactions.map((transaction) => (
+                      {transactions.map((transaction, index) => (
                         <div
                           key={transaction.id}
-                          className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                          className={`flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
+                            selectedTransactions.has(transaction.id)
+                              ? "bg-indigo-100 border-2 border-indigo-500"
+                              : "bg-slate-50 hover:bg-slate-100"
+                          }`}
+                          onClick={() => isSelectMode && handleSelectTransaction(transaction.id)}
                         >
+                          {/* Number / Checkbox */}
+                          <div className="w-8 flex-shrink-0">
+                            {isSelectMode ? (
+                              <input
+                                type="checkbox"
+                                checked={selectedTransactions.has(transaction.id)}
+                                onChange={() => handleSelectTransaction(transaction.id)}
+                                className="w-5 h-5 cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <span className="text-sm font-semibold text-slate-600">
+                                {index + 1}.
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Transaction Info */}
                           <div className="flex-1">
                             <p className="font-semibold text-slate-900">
                               {transaction.category}
@@ -252,7 +371,9 @@ export default function Transactions() {
                               {transaction.description}
                             </p>
                           </div>
-                          <div className="text-right">
+
+                          {/* Amount */}
+                          <div className="text-right flex-shrink-0">
                             <p className="font-bold text-slate-900">
                               {transaction.amount > 0 ? "+" : ""}{transaction.amount}฿
                             </p>
