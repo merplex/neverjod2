@@ -99,13 +99,13 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Size Controls - Full width row */}
+          {/* Size Controls - Full width row with equal button widths */}
           <div className="px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 flex gap-4 items-center">
             {[75, 80, 85].map((size) => (
               <button
                 key={size}
                 onClick={() => setNumpadSize(size)}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                   numpadSize === size
                     ? "bg-indigo-600 text-white shadow-md"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -118,7 +118,7 @@ export default function Index() {
             {/* Full Button */}
             <button
               onClick={() => setNumpadSize(100)}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                 numpadSize === 100
                   ? "bg-indigo-600 text-white shadow-md"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -127,12 +127,9 @@ export default function Index() {
               Full
             </button>
 
-            {/* Spacer */}
-            <div className="flex-1"></div>
-
             {/* Right Toggle Button */}
             <button
-              className="px-4 py-2 rounded-lg font-semibold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
+              className="flex-1 py-2 rounded-lg font-semibold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
               title="Toggle right position"
             >
               Right
