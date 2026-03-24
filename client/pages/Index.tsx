@@ -162,38 +162,34 @@ export default function Index() {
         </div>
 
         {/* Main Input Area - Full Screen */}
-        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col flex-1 relative">
-          {/* Recording Button */}
-          <div className="absolute top-4 right-4 z-50">
-            <Recording />
-          </div>
-
+        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col flex-1">
           {/* Dynamic Main Input Area */}
           <div className="px-6 py-6 bg-white flex flex-col flex-1">
             {/* Category Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "category" && (
               <div className="flex flex-col flex-1 justify-end">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
-                  <Carousel
-                    items={categories}
-                    itemsPerPage={12}
-                    cols={4}
-                    renderItem={(category) => {
-                      const IconComponent = category.icon;
-                      return (
-                        <button
-                          key={category.id}
-                          onClick={() => handleCategorySelect(category.id)}
-                          className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
-                        >
-                          <IconComponent size={32} />
-                          <span className="font-bold text-xs text-center">{category.name}</span>
-                        </button>
-                      );
-                    }}
-                  />
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-slate-900">Select Category</h2>
+                  <Recording />
                 </div>
+                <Carousel
+                  items={categories}
+                  itemsPerPage={12}
+                  cols={4}
+                  renderItem={(category) => {
+                    const IconComponent = category.icon;
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category.id)}
+                        className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
+                      >
+                        <IconComponent size={32} />
+                        <span className="font-bold text-xs text-center">{category.name}</span>
+                      </button>
+                    );
+                  }}
+                />
               </div>
             )}
 

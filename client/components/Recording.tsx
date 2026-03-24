@@ -105,28 +105,20 @@ export default function Recording({ onTranscript }: RecordingProps) {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef}>
       <button
         onClick={handleStop}
-        className={`flex items-center justify-center w-14 h-14 rounded-full font-bold text-white text-sm transition-all ${
-          isListening
-            ? "bg-red-500 hover:bg-red-600 shadow-lg"
-            : "bg-slate-400 hover:bg-slate-500"
-        }`}
+        className={`relative p-2 hover:bg-slate-200 rounded-lg transition-colors ${
+          isListening ? "text-red-500" : "text-slate-600"
+        } hover:text-slate-900`}
       >
-        <div className="flex flex-col items-center gap-0.5">
-          <Mic size={20} />
-          <span className="text-xs">REC</span>
-        </div>
-      </button>
+        <Mic size={24} />
 
-      {/* Sound wave pulse animations */}
-      {isListening && (
-        <>
-          <div className="absolute inset-0 rounded-full border-2 border-red-500 animate-pulse" />
-          <div className="absolute inset-0 rounded-full border-2 border-red-500 animate-ping" style={{ animationDuration: "1.5s" }} />
-        </>
-      )}
+        {/* Sound wave pulse animation - small version */}
+        {isListening && (
+          <div className="absolute inset-0 rounded-full border-2 border-red-500 opacity-40 animate-ping" style={{ animationDuration: "1.5s" }} />
+        )}
+      </button>
     </div>
   );
 }
