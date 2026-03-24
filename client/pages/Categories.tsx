@@ -48,6 +48,7 @@ export default function Categories() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
+  const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
 
   const startEditing = (category: Category) => {
     setEditingId(category.id);
@@ -94,10 +95,36 @@ export default function Categories() {
         </div>
       </div>
 
+      {/* Tab Controls */}
+      <div className="max-w-md mx-auto px-4 py-4 bg-white border-b border-slate-200 sticky top-16 z-10">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCategoryType("expense")}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              categoryType === "expense"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            Expense
+          </button>
+          <button
+            onClick={() => setCategoryType("income")}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              categoryType === "income"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            Income
+          </button>
+        </div>
+      </div>
+
       {/* Content */}
       <div className="max-w-md mx-auto px-4 py-4">
         <div className="space-y-2">
-          {categories.map((category) => {
+          {categories.filter((c) => c.type === categoryType).map((category) => {
             const IconComponent = category.icon;
             const isEditing = editingId === category.id;
 
