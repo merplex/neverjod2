@@ -110,7 +110,7 @@ export default function Index() {
               }}
             >
               {/* Size Controls - Inside numpad container, moves with it */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-4 items-center">
                 {[75, 80, 85].map((size) => (
                   <button
                     key={size}
@@ -124,6 +124,29 @@ export default function Index() {
                     {size}%
                   </button>
                 ))}
+
+                {/* Full Button */}
+                <button
+                  onClick={() => setNumpadSize(100)}
+                  className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                    numpadSize === 100
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  Full
+                </button>
+
+                {/* Spacer */}
+                <div className="flex-1"></div>
+
+                {/* Right Toggle Button */}
+                <button
+                  className="px-3 py-1.5 rounded-lg font-semibold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
+                  title="Toggle right position"
+                >
+                  Right
+                </button>
               </div>
               {/* Numpad Grid - First 3 rows (3 columns) */}
               <div className="grid grid-cols-3 gap-3 mb-3">
