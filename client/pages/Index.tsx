@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Lock, LockOpen } from "lucide-react";
 
 export default function Index() {
   const [display, setDisplay] = useState("0");
   const [value, setValue] = useState(0);
   const [numpadSize, setNumpadSize] = useState(80);
   const [numpadOffset, setNumpadOffset] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
 
   const handleNumberClick = (num: number) => {
     if (display === "0") {
@@ -41,11 +42,19 @@ export default function Index() {
   };
 
   const handleMoveUp = () => {
-    setNumpadOffset(0);
+    if (!isLocked) {
+      setNumpadOffset(0);
+    }
   };
 
   const handleMoveDown = () => {
-    setNumpadOffset((prev) => prev + 5);
+    if (!isLocked) {
+      setNumpadOffset((prev) => prev + 5);
+    }
+  };
+
+  const handleToggleLock = () => {
+    setIsLocked(!isLocked);
   };
 
   const numpadButtons = [
@@ -250,7 +259,7 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Up/Down Buttons - Aligned right with numpad rows, moves with numpad */}
+            {/* Up/Down/Lock Buttons - Aligned right with numpad rows, moves with numpad */}
             <div
               className="flex flex-col gap-3 flex-1"
               style={{
@@ -260,19 +269,40 @@ export default function Index() {
             >
               <button
                 onClick={handleMoveUp}
-                className="px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                disabled={isLocked}
+                className={`px-3 rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center ${
+                  isLocked
+                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold"
+                }`}
                 style={{ height: "calc(2 * 3.5rem + 12px)" }}
-                title="Move up (5px)"
+                title={isLocked ? "Position locked" : "Move up (5px)"}
               >
                 <ChevronUp size={32} />
               </button>
               <button
                 onClick={handleMoveDown}
-                className="px-3 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                disabled={isLocked}
+                className={`px-3 rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center ${
+                  isLocked
+                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold"
+                }`}
                 style={{ height: "calc(2 * 3.5rem + 12px)" }}
-                title="Move down (5px)"
+                title={isLocked ? "Position locked" : "Move down (5px)"}
               >
                 <ChevronDown size={32} />
+              </button>
+              <button
+                onClick={handleToggleLock}
+                className={`px-3 py-3 rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold ${
+                  isLocked
+                    ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
+                    : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
+                }`}
+                title={isLocked ? "Unlock position" : "Lock position"}
+              >
+                {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
               </button>
             </div>
           </div>
