@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronUp, ChevronDown, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X } from "lucide-react";
 
 type InputPage = "category" | "account" | "amount";
@@ -34,6 +35,7 @@ const accounts = [
 ];
 
 export default function Index() {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -121,6 +123,7 @@ export default function Index() {
               return (
                 <button
                   key={account.id}
+                  onClick={() => navigate(`/account/${account.id}/transactions`)}
                   className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs"
                 >
                   <IconComponent size={20} />
