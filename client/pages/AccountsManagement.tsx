@@ -35,7 +35,15 @@ const defaultAccounts: Account[] = [
 
 export default function AccountsManagement() {
   const navigate = useNavigate();
-  const [accounts, setAccounts] = useState<Account[]>(defaultAccounts);
+  const [accounts, setAccounts] = useState<Account[]>(() => {
+    // Load from localStorage if available, otherwise use defaults
+    try {
+      const stored = localStorage.getItem("app_accounts");
+      return stored ? JSON.parse(stored) : defaultAccounts;
+    } catch {
+      return defaultAccounts;
+    }
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editBalance, setEditBalance] = useState("");
@@ -63,18 +71,20 @@ export default function AccountsManagement() {
       .map((k) => k.trim())
       .filter((k) => k);
 
-    setAccounts(
-      accounts.map((acc) =>
-        acc.id === editingId
-          ? {
-              ...acc,
-              name: editName,
-              balance: parseFloat(editBalance) || 0,
-              keywords,
-            }
-          : acc
-      )
+    const updatedAccounts = accounts.map((acc) =>
+      acc.id === editingId
+        ? {
+            ...acc,
+            name: editName,
+            balance: parseFloat(editBalance) || 0,
+            keywords,
+          }
+        : acc
     );
+
+    setAccounts(updatedAccounts);
+    // Save to localStorage so voice recognition can use updated keywords
+    localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
     setEditingId(null);
   };
 
@@ -113,17 +123,19 @@ export default function AccountsManagement() {
       return;
     }
 
-    setAccounts(
-      accounts.map((acc) => {
-        if (acc.id === transferFromId) {
-          return { ...acc, balance: (acc.balance || 0) - amount };
-        }
-        if (acc.id === transferToId) {
-          return { ...acc, balance: (acc.balance || 0) + amount };
-        }
-        return acc;
-      })
-    );
+    const updatedAccounts = accounts.map((acc) => {
+      if (acc.id === transferFromId) {
+        return { ...acc, balance: (acc.balance || 0) - amount };
+      }
+      if (acc.id === transferToId) {
+        return { ...acc, balance: (acc.balance || 0) + amount };
+      }
+      return acc;
+    });
+
+    setAccounts(updatedAccounts);
+    // Save to localStorage
+    localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
 
     closeTransferModal();
   };

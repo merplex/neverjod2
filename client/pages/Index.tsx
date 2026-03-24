@@ -65,8 +65,24 @@ export default function Index() {
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [categoriesList, setCategoriesList] = useState(categories);
-  const [accountsList, setAccountsList] = useState(accounts);
+  const [categoriesList, setCategoriesList] = useState(() => {
+    // Load from localStorage if available, otherwise use defaults
+    try {
+      const stored = localStorage.getItem("app_categories");
+      return stored ? JSON.parse(stored) : categories;
+    } catch {
+      return categories;
+    }
+  });
+  const [accountsList, setAccountsList] = useState(() => {
+    // Load from localStorage if available, otherwise use defaults
+    try {
+      const stored = localStorage.getItem("app_accounts");
+      return stored ? JSON.parse(stored) : accounts;
+    } catch {
+      return accounts;
+    }
+  });
   const [isCategoryReorderMode, setIsCategoryReorderMode] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [isAccountPageReorderMode, setIsAccountPageReorderMode] = useState(false);

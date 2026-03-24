@@ -7,8 +7,8 @@ export interface MatchResult {
   description: string;
 }
 
-// Sample categories and accounts with keywords
-const categoriesWithKeywords: Record<string, { name: string; keywords: string[] }> = {
+// Default categories and accounts with keywords
+const defaultCategoriesWithKeywords: Record<string, { name: string; keywords: string[] }> = {
   food: { name: "Food", keywords: ["food", "eat", "meal", "restaurant", "dining"] },
   transport: { name: "Transport", keywords: ["transport", "taxi", "bus", "car", "fuel"] },
   entertainment: { name: "Entertainment", keywords: ["entertainment", "movie", "game", "fun"] },
@@ -23,7 +23,7 @@ const categoriesWithKeywords: Record<string, { name: string; keywords: string[] 
   other: { name: "Other", keywords: ["other", "misc"] },
 };
 
-const accountsWithKeywords: Record<string, { name: string; keywords: string[] }> = {
+const defaultAccountsWithKeywords: Record<string, { name: string; keywords: string[] }> = {
   uob: { name: "UOB", keywords: ["uob", "united"] },
   banka: { name: "BankA", keywords: ["banka", "bank a"] },
   krungsri: { name: "Krungsri", keywords: ["krungsri", "krungthai"] },
@@ -43,6 +43,48 @@ const accountsWithKeywords: Record<string, { name: string; keywords: string[] }>
   paypal: { name: "PayPal", keywords: ["paypal", "paypal"] },
 };
 
+// Get categories from localStorage or use defaults
+function getCategoriesWithKeywords(): Record<string, { name: string; keywords: string[] }> {
+  try {
+    const stored = localStorage.getItem("app_categories");
+    if (stored) {
+      const categories = JSON.parse(stored);
+      const result: Record<string, { name: string; keywords: string[] }> = {};
+      for (const cat of categories) {
+        result[cat.id] = {
+          name: cat.name,
+          keywords: [...(cat.keywords || []), cat.name.toLowerCase()],
+        };
+      }
+      return result;
+    }
+  } catch (e) {
+    console.log("Could not load categories from localStorage");
+  }
+  return defaultCategoriesWithKeywords;
+}
+
+// Get accounts from localStorage or use defaults
+function getAccountsWithKeywords(): Record<string, { name: string; keywords: string[] }> {
+  try {
+    const stored = localStorage.getItem("app_accounts");
+    if (stored) {
+      const accounts = JSON.parse(stored);
+      const result: Record<string, { name: string; keywords: string[] }> = {};
+      for (const acc of accounts) {
+        result[acc.id] = {
+          name: acc.name,
+          keywords: [...(acc.keywords || []), acc.name.toLowerCase()],
+        };
+      }
+      return result;
+    }
+  } catch (e) {
+    console.log("Could not load accounts from localStorage");
+  }
+  return defaultAccountsWithKeywords;
+}
+
 export function extractNumberFromText(text: string): number | undefined {
   // Match numbers like "500", "50.50", "5,000"
   const numberMatch = text.match(/\d+(?:[.,]\d+)?/);
@@ -58,6 +100,7 @@ export function matchKeyword(text: string, keywords: string[]): boolean {
 }
 
 export function matchCategory(text: string): string | undefined {
+  const categoriesWithKeywords = getCategoriesWithKeywords();
   for (const [categoryId, { keywords }] of Object.entries(categoriesWithKeywords)) {
     if (matchKeyword(text, keywords)) {
       return categoryId;
@@ -67,6 +110,7 @@ export function matchCategory(text: string): string | undefined {
 }
 
 export function matchAccount(text: string): string | undefined {
+  const accountsWithKeywords = getAccountsWithKeywords();
   for (const [accountId, { keywords }] of Object.entries(accountsWithKeywords)) {
     if (matchKeyword(text, keywords)) {
       return accountId;

@@ -44,7 +44,15 @@ const defaultCategories: Category[] = [
 
 export default function Categories() {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [categories, setCategories] = useState<Category[]>(() => {
+    // Load from localStorage if available, otherwise use defaults
+    try {
+      const stored = localStorage.getItem("app_categories");
+      return stored ? JSON.parse(stored) : defaultCategories;
+    } catch {
+      return defaultCategories;
+    }
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
@@ -64,13 +72,15 @@ export default function Categories() {
       .map((k) => k.trim())
       .filter((k) => k);
 
-    setCategories(
-      categories.map((cat) =>
-        cat.id === editingId
-          ? { ...cat, name: editName, keywords }
-          : cat
-      )
+    const updatedCategories = categories.map((cat) =>
+      cat.id === editingId
+        ? { ...cat, name: editName, keywords }
+        : cat
     );
+
+    setCategories(updatedCategories);
+    // Save to localStorage so voice recognition can use updated keywords
+    localStorage.setItem("app_categories", JSON.stringify(updatedCategories));
     setEditingId(null);
   };
 
