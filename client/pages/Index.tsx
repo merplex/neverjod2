@@ -140,13 +140,10 @@ export default function Index() {
               transform: `translateY(${numpadOffset}px)`,
               transition: "transform 0.1s ease-out",
             }}
-            className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-6 py-8"
+            className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-4"
           >
-            <h1 className="text-white text-sm font-semibold opacity-80 mb-2">
-              Enter Amount
-            </h1>
-            <div className="text-5xl font-bold text-white font-mono tracking-tight">
-              ${display}
+            <div className="text-2xl font-bold text-white font-mono tracking-tight">
+              ฿{display}
             </div>
           </div>
 
