@@ -1,12 +1,11 @@
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import BottomNav from "../components/BottomNav";
 
 export default function Stats() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4 sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center gap-3">
@@ -27,9 +26,6 @@ export default function Stats() {
           <p className="text-slate-400 text-sm mt-2">Charts and analysis will be available here</p>
         </div>
       </div>
-
-      {/* Bottom Nav */}
-      <BottomNav />
     </div>
   );
 }

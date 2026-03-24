@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, Edit2, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import BottomNav from "../components/BottomNav";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote } from "lucide-react";
 
 interface Category {
@@ -81,7 +80,7 @@ export default function Categories() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4 sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center gap-3">
@@ -183,9 +182,6 @@ export default function Categories() {
           })}
         </div>
       </div>
-
-      {/* Bottom Nav */}
-      <BottomNav />
     </div>
   );
 }

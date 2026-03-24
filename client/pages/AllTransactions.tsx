@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ArrowUpDown } from "lucide-react";
-import BottomNav from "../components/BottomNav";
 import { getTransactionsList } from "../utils/transactionData";
 
 type TimeRange = "week" | "month" | "all";
@@ -69,7 +68,7 @@ export default function AllTransactions() {
   }, [sorted]);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4 sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center gap-3">
@@ -172,9 +171,6 @@ export default function AllTransactions() {
           </div>
         )}
       </div>
-
-      {/* Bottom Nav */}
-      <BottomNav />
     </div>
   );
 }

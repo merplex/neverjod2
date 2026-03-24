@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ChevronLeft, ArrowUpDown, ArrowDownUp } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getTransactionsList, type Transaction } from "../utils/transactionData";
-import BottomNav from "../components/BottomNav";
 
 type SortOrder = "asc" | "desc";
 type TimeRange = "week" | "month" | "all";
@@ -141,7 +140,7 @@ export default function Transactions() {
   const groupedTransactions = groupTransactionsByDay();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4 pb-32">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4 pb-24">
       <div className="w-full max-w-md mx-auto">
         {/* Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-screen">
@@ -343,8 +342,6 @@ export default function Transactions() {
           </div>
         </div>
       </div>
-
-      <BottomNav />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import Stats from "./pages/Stats";
 import Categories from "./pages/Categories";
 import AccountsManagement from "./pages/AccountsManagement";
 import NotFound from "./pages/NotFound";
+import BottomNavLayout from "./components/BottomNavLayout";
 
 const queryClient = new QueryClient();
 
@@ -27,17 +28,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/transactions" element={<AllTransactions />} />
-          <Route path="/account/:accountId/transactions" element={<Transactions />} />
-          <Route path="/account/:accountId/transactions/:transactionId" element={<TransactionDetail />} />
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/accounts" element={<AccountsManagement />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <BottomNavLayout>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/transactions" element={<AllTransactions />} />
+            <Route path="/account/:accountId/transactions" element={<Transactions />} />
+            <Route path="/account/:accountId/transactions/:transactionId" element={<TransactionDetail />} />
+            <Route path="/stats" element={<Stats />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/accounts" element={<AccountsManagement />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BottomNavLayout>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

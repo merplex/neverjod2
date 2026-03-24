@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, Edit2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import BottomNav from "../components/BottomNav";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal } from "lucide-react";
 
 interface Account {
@@ -79,7 +78,7 @@ export default function AccountsManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4 sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center gap-3">
@@ -193,9 +192,6 @@ export default function AccountsManagement() {
           })}
         </div>
       </div>
-
-      {/* Bottom Nav */}
-      <BottomNav />
     </div>
   );
 }
