@@ -1,44 +1,44 @@
 import { useState } from "react";
-import { ChevronUp, ChevronDown, Lock, LockOpen } from "lucide-react";
+import { ChevronUp, ChevronDown, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote } from "lucide-react";
 
 type InputPage = "category" | "account" | "amount";
 
 const categories = [
-  { id: "food", name: "Food", type: "expense" },
-  { id: "transport", name: "Transport", type: "expense" },
-  { id: "entertainment", name: "Entertainment", type: "expense" },
-  { id: "shopping", name: "Shopping", type: "expense" },
-  { id: "bills", name: "Bills", type: "expense" },
-  { id: "health", name: "Health", type: "expense" },
-  { id: "education", name: "Education", type: "expense" },
-  { id: "utilities", name: "Utilities", type: "expense" },
-  { id: "dining", name: "Dining", type: "expense" },
-  { id: "travel", name: "Travel", type: "expense" },
-  { id: "groceries", name: "Groceries", type: "expense" },
-  { id: "fitness", name: "Fitness", type: "expense" },
-  { id: "salary", name: "Salary", type: "income" },
-  { id: "bonus", name: "Bonus", type: "income" },
-  { id: "freelance", name: "Freelance", type: "income" },
-  { id: "other", name: "Other", type: "expense" },
+  { id: "food", name: "Food", type: "expense", icon: Utensils },
+  { id: "transport", name: "Transport", type: "expense", icon: Bus },
+  { id: "entertainment", name: "Entertainment", type: "expense", icon: Music },
+  { id: "shopping", name: "Shopping", type: "expense", icon: ShoppingCart },
+  { id: "bills", name: "Bills", type: "expense", icon: FileText },
+  { id: "health", name: "Health", type: "expense", icon: Heart },
+  { id: "education", name: "Education", type: "expense", icon: BookOpen },
+  { id: "utilities", name: "Utilities", type: "expense", icon: Zap },
+  { id: "dining", name: "Dining", type: "expense", icon: Wind },
+  { id: "travel", name: "Travel", type: "expense", icon: Plane },
+  { id: "groceries", name: "Groceries", type: "expense", icon: ShoppingBag },
+  { id: "fitness", name: "Fitness", type: "expense", icon: Dumbbell },
+  { id: "salary", name: "Salary", type: "income", icon: TrendingUp },
+  { id: "bonus", name: "Bonus", type: "income", icon: Gift },
+  { id: "freelance", name: "Freelance", type: "income", icon: Banknote },
+  { id: "other", name: "Other", type: "expense", icon: MoreHorizontal },
 ];
 
 const accounts = [
-  { id: "uob", name: "UOB", type: "credit card" },
-  { id: "banka", name: "BankA", type: "debit card" },
-  { id: "krungsri", name: "Krungsri", type: "savings account" },
-  { id: "bangkok", name: "Bangkok Bank", type: "credit card" },
-  { id: "kasikorn", name: "Kasikornbank", type: "debit card" },
-  { id: "tmb", name: "TMB", type: "savings account" },
-  { id: "scb", name: "SCB", type: "credit card" },
-  { id: "acme", name: "ACME", type: "debit card" },
-  { id: "kkp", name: "KKP", type: "savings account" },
-  { id: "ghb", name: "GHB", type: "credit card" },
-  { id: "cash", name: "Cash", type: "cash" },
-  { id: "crypto", name: "Crypto", type: "cryptocurrency" },
-  { id: "investment_acc", name: "Investment", type: "investment" },
-  { id: "baht_pay", name: "Baht Pay", type: "digital wallet" },
-  { id: "promptpay", name: "PromptPay", type: "digital wallet" },
-  { id: "other_acc", name: "Other", type: "other" },
+  { id: "uob", name: "UOB", type: "credit card", icon: CreditCard },
+  { id: "banka", name: "BankA", type: "debit card", icon: CreditCard },
+  { id: "krungsri", name: "Krungsri", type: "savings account", icon: Wallet },
+  { id: "bangkok", name: "Bangkok Bank", type: "credit card", icon: CreditCard },
+  { id: "kasikorn", name: "Kasikornbank", type: "debit card", icon: CreditCard },
+  { id: "tmb", name: "TMB", type: "savings account", icon: Wallet },
+  { id: "scb", name: "SCB", type: "credit card", icon: CreditCard },
+  { id: "acme", name: "ACME", type: "debit card", icon: CreditCard },
+  { id: "kkp", name: "KKP", type: "savings account", icon: Wallet },
+  { id: "ghb", name: "GHB", type: "credit card", icon: CreditCard },
+  { id: "cash", name: "Cash", type: "cash", icon: Banknote },
+  { id: "crypto", name: "Crypto", type: "cryptocurrency", icon: TrendingUp },
+  { id: "investment_acc", name: "Investment", type: "investment", icon: TrendingUp },
+  { id: "baht_pay", name: "Baht Pay", type: "digital wallet", icon: Smartphone },
+  { id: "promptpay", name: "PromptPay", type: "digital wallet", icon: Smartphone },
+  { id: "other_acc", name: "Other", type: "other", icon: MoreHorizontal },
 ];
 
 export default function Index() {
@@ -124,15 +124,19 @@ export default function Index() {
         <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
           <h3 className="text-sm font-semibold text-slate-600 mb-3">Accounts</h3>
           <div className="grid grid-cols-2 gap-2">
-            {accounts.slice(0, 6).map((account) => (
-              <button
-                key={account.id}
-                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
-              >
-                <span className="font-bold text-xs">{account.name}</span>
-                <span className="text-xs text-slate-600 font-normal">{account.type}</span>
-              </button>
-            ))}
+            {accounts.slice(0, 6).map((account) => {
+              const IconComponent = account.icon;
+              return (
+                <button
+                  key={account.id}
+                  className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs"
+                >
+                  <IconComponent size={20} />
+                  <span className="font-bold text-xs">{account.name}</span>
+                  <span className="text-xs text-slate-600 font-normal">{account.type}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -145,16 +149,20 @@ export default function Index() {
               <div className="flex flex-col flex-1 justify-end">
                 <div>
                   <h2 className="text-lg font-bold text-slate-900 mb-4">Select Category</h2>
-                  <div className="grid grid-cols-4 gap-2">
-                    {categories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleCategorySelect(category.id)}
-                        className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
-                      >
-                        <span className="font-bold text-xs">{category.name.slice(0, 5)}</span>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-4 gap-3">
+                    {categories.map((category) => {
+                      const IconComponent = category.icon;
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategorySelect(category.id)}
+                          className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
+                        >
+                          <IconComponent size={32} />
+                          <span className="font-bold text-xs text-center">{category.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -171,16 +179,20 @@ export default function Index() {
                 </button>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900 mb-4">Select Account</h2>
-                  <div className="grid grid-cols-4 gap-2">
-                    {accounts.map((account) => (
-                      <button
-                        key={account.id}
-                        onClick={() => handleAccountSelect(account.id)}
-                        className="py-3 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center gap-0.5 cursor-pointer text-xs"
-                      >
-                        <span className="font-bold text-xs">{account.name.slice(0, 5)}</span>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-4 gap-3">
+                    {accounts.map((account) => {
+                      const IconComponent = account.icon;
+                      return (
+                        <button
+                          key={account.id}
+                          onClick={() => handleAccountSelect(account.id)}
+                          className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
+                        >
+                          <IconComponent size={32} />
+                          <span className="font-bold text-xs text-center">{account.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
