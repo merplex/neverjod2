@@ -59,8 +59,9 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
             {/* Inner clock circle */}
             <circle cx="120" cy="120" r="70" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
 
-            {/* Center dot */}
-            <circle cx="120" cy="120" r="5" fill="#4f46e5" />
+            {/* Center dot with border */}
+            <circle cx="120" cy="120" r="14" fill="none" stroke="#4f46e5" strokeWidth="3" />
+            <circle cx="120" cy="120" r="8" fill="#4f46e5" />
 
             {/* Pointer */}
             {mode === "hours" ? (
@@ -68,12 +69,12 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                 x1="120"
                 y1="120"
                 x2="120"
-                y2={hours > 12 ? 70 : 50}
+                y2={35}
                 stroke="#4f46e5"
-                strokeWidth="3"
+                strokeWidth="4"
                 strokeLinecap="round"
                 style={{
-                  transform: `rotate(${(hours % 12) * 30}deg)`,
+                  transform: `rotate(${(hours / 24) * 360}deg)`,
                   transformOrigin: "120px 120px",
                   transition: "transform 0.2s",
                 }}
@@ -83,9 +84,9 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                 x1="120"
                 y1="120"
                 x2="120"
-                y2="30"
+                y2="25"
                 stroke="#4f46e5"
-                strokeWidth="2"
+                strokeWidth="3"
                 strokeLinecap="round"
                 style={{
                   transform: `rotate(${minutes * 6}deg)`,
