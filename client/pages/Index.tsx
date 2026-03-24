@@ -105,7 +105,7 @@ export default function Index() {
               transform: `translateY(${numpadOffset}px)`,
               transition: "transform 0.1s ease-out",
             }}
-            className="px-6 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 py-4 mb-2"
+            className="px-6 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 py-4 mb-0"
           >
             <div className="flex gap-4 items-center">
               {[75, 80, 85].map((size) => (
@@ -145,7 +145,7 @@ export default function Index() {
           </div>
 
           {/* Numpad Section */}
-          <div className="relative px-6 py-8 min-h-96 flex gap-4">
+          <div className="relative px-6 py-2 min-h-96 flex gap-4">
             {/* Numpad Container with dynamic sizing and positioning */}
             <div
               style={{
