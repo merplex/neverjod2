@@ -250,16 +250,16 @@ export default function Index() {
                     transform: `translateY(${numpadOffset}px)`,
                     transition: "transform 0.1s ease-out",
                   }}
-                  className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-2 rounded-lg mb-4 flex justify-between items-center"
+                  className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-1.5 rounded-lg mb-4 flex justify-between items-center gap-2"
                 >
-                  <div className="text-xl font-bold text-white font-mono tracking-tight">
+                  <div className="text-lg font-bold text-white font-mono tracking-tight">
                     ฿{display}
                   </div>
                   <button
                     onClick={() => setCurrentPage("account")}
-                    className="p-2 hover:bg-indigo-500 rounded-lg transition-colors text-white"
+                    className="p-1 hover:bg-indigo-500 rounded-lg transition-colors text-white flex-shrink-0"
                   >
-                    <X size={20} />
+                    <X size={18} />
                   </button>
                 </div>
 
