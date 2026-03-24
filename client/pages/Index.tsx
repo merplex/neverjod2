@@ -131,7 +131,7 @@ export default function Index() {
                   key={account.id}
                   className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors flex flex-col items-center gap-1 cursor-pointer text-xs"
                 >
-                  <IconComponent size={20} />
+                  <IconComponent size={16} />
                   <span className="font-bold text-xs">{account.name}</span>
                   <span className="text-xs text-slate-600 font-normal">{account.type}</span>
                 </button>
@@ -158,7 +158,7 @@ export default function Index() {
                           onClick={() => handleCategorySelect(category.id)}
                           className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
                         >
-                          <IconComponent size={32} />
+                          <IconComponent size={24} />
                           <span className="font-bold text-xs text-center">{category.name}</span>
                         </button>
                       );
@@ -189,7 +189,7 @@ export default function Index() {
                         onClick={() => handleAccountSelect(account.id)}
                         className="py-4 px-2 bg-indigo-50 hover:bg-indigo-200 text-indigo-900 font-semibold rounded-lg transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-28"
                       >
-                        <IconComponent size={32} />
+                        <IconComponent size={24} />
                         <span className="font-bold text-xs text-center">{account.name}</span>
                       </button>
                     );
