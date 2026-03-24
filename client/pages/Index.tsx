@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronUp, ChevronDown, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X } from "lucide-react";
+import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Mic } from "lucide-react";
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
+import { calculateFromVoice } from "../utils/voiceCalculator";
 
 type InputPage = "category" | "account" | "amount";
 
@@ -75,9 +76,9 @@ export default function Index() {
   const [display, setDisplay] = useState("0");
   const [value, setValue] = useState(0);
   const [numpadSize, setNumpadSize] = useState(80);
-  const [numpadOffset, setNumpadOffset] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [isRightMode, setIsRightMode] = useState(false);
+  const [isVoiceCalculatorMode, setIsVoiceCalculatorMode] = useState(false);
 
   const handleCategorySelect = (categoryId: string) => {
     if (!isCategoryReorderMode) {
@@ -97,6 +98,17 @@ export default function Index() {
     amount?: number;
     description: string;
   }) => {
+    // If in voice calculator mode, parse the transcript as a mathematical expression
+    if (isVoiceCalculatorMode) {
+      const result = calculateFromVoice(voiceData.description);
+      if (!result.error) {
+        setDisplay(result.result.toString());
+        setValue(result.result);
+      }
+      setIsVoiceCalculatorMode(false);
+      return;
+    }
+
     // If category is matched
     if (voiceData.categoryId) {
       setSelectedCategory(voiceData.categoryId);
@@ -175,18 +187,6 @@ export default function Index() {
     setSelectedCategory(null);
     setSelectedAccount(null);
     setCurrentPage("category");
-  };
-
-  const handleMoveUp = () => {
-    if (!isLocked) {
-      setNumpadOffset(0);
-    }
-  };
-
-  const handleMoveDown = () => {
-    if (!isLocked) {
-      setNumpadOffset((prev) => prev + 5);
-    }
   };
 
   const handleToggleLock = () => {
@@ -435,13 +435,7 @@ export default function Index() {
             {currentPage === "amount" && (
               <div className="flex flex-col flex-1">
                 {/* Section A: Size Controls */}
-                <div
-                  style={{
-                    transform: `translateY(${numpadOffset}px)`,
-                    transition: "transform 0.1s ease-out",
-                  }}
-                  className="flex gap-4 items-center mb-3"
-                >
+                <div className="flex gap-4 items-center mb-3">
                   {[75, 80, 85].map((size) => (
                     <button
                       key={size}
@@ -478,13 +472,7 @@ export default function Index() {
                 </div>
 
                 {/* Section B: Display */}
-                <div
-                  style={{
-                    transform: `translateY(${numpadOffset}px)`,
-                    transition: "transform 0.1s ease-out",
-                  }}
-                  className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-4 rounded-lg mb-4 flex justify-between items-center"
-                >
+                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-4 rounded-lg mb-4 flex justify-between items-center">
                   <div className="text-2xl font-bold text-white font-mono tracking-tight">
                     ฿{display}
                   </div>
@@ -499,13 +487,7 @@ export default function Index() {
                 {/* Section C-D: Numpad and Controls */}
                 <div className={`flex gap-4 ${isRightMode ? "flex-row-reverse" : ""}`}>
                   {/* Section C: Numpad */}
-                  <div
-                    style={{
-                      width: `${numpadSize}%`,
-                      transform: `translateY(${numpadOffset}px)`,
-                      transition: "transform 0.1s ease-out",
-                    }}
-                  >
+                  <div style={{ width: `${numpadSize}%` }}>
                     {/* 3-column grid */}
                     <div className="grid grid-cols-3 gap-3 mb-3">
                       {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
@@ -588,47 +570,38 @@ export default function Index() {
                     </div>
                   </div>
 
-                  {/* Section D: Up/Down/Lock */}
-                  <div
-                    className="flex flex-col gap-3 flex-1"
-                    style={{
-                      height: "calc(4 * 4rem + 3 * 12px)",
-                      transform: `translateY(${numpadOffset}px)`,
-                      transition: "transform 0.1s ease-out",
-                    }}
-                  >
-                    <button
-                      onClick={handleMoveUp}
-                      disabled={isLocked}
-                      className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center ${
-                        isLocked
-                          ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                          : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold"
-                      }`}
-                      style={{ height: "37.5%" }}
-                    >
-                      <ChevronUp size={32} />
-                    </button>
-                    <button
-                      onClick={handleMoveDown}
-                      disabled={isLocked}
-                      className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center ${
-                        isLocked
-                          ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                          : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-bold"
-                      }`}
-                      style={{ height: "37.5%" }}
-                    >
-                      <ChevronDown size={32} />
-                    </button>
+                  {/* Section D: Voice Calculator & Lock */}
+                  <div className="flex flex-col gap-3 flex-1">
+                    {!isVoiceCalculatorMode ? (
+                      <button
+                        onClick={() => setIsVoiceCalculatorMode(true)}
+                        disabled={isLocked}
+                        className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 ${
+                          isLocked
+                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                            : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-1">
+                            <Calculator size={24} />
+                            <Mic size={24} />
+                          </div>
+                          <span className="text-xs">Voice</span>
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="rounded-lg bg-green-100 border-2 border-green-500 flex items-center justify-center flex-1 p-2">
+                        <Recording onVoiceInput={handleVoiceInput} />
+                      </div>
+                    )}
                     <button
                       onClick={handleToggleLock}
-                      className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold ${
+                      className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
                         isLocked
                           ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
                           : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
                       }`}
-                      style={{ height: "25%" }}
                     >
                       {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
                     </button>
