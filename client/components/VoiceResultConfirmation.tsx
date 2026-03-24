@@ -26,18 +26,18 @@ export default function VoiceResultConfirmation({
     if (!isSuccess) return;
 
     const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onConfirm();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setCountdown((prev) => prev - 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isSuccess, onConfirm]);
+  }, [isSuccess]);
+
+  // Separate effect to handle auto-confirm when countdown reaches 0
+  useEffect(() => {
+    if (isSuccess && countdown === 0) {
+      onConfirm();
+    }
+  }, [countdown, isSuccess, onConfirm]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
