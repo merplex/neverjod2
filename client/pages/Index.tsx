@@ -9,6 +9,19 @@ import { matchCategory, matchAccount } from "../utils/keywordMatch";
 
 type InputPage = "category" | "account" | "amount";
 
+function saveTransaction(categoryId: string, accountId: string, amount: number) {
+  const transaction = {
+    id: Date.now().toString(),
+    categoryId,
+    accountId,
+    amount,
+    date: new Date().toISOString(),
+  };
+  const existing = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+  existing.unshift(transaction);
+  localStorage.setItem("app_transactions", JSON.stringify(existing));
+}
+
 const categories = [
   { id: "food", name: "Food", type: "expense", icon: Utensils },
   { id: "transport", name: "Transport", type: "expense", icon: Bus },
@@ -150,6 +163,33 @@ export default function Index() {
     transcript?: string;
   }>({});
 
+  // Refs for auto-save when app goes background / screen off / killed
+  const showVoiceResultRef = useRef(false);
+  const pendingVoiceResultRef = useRef<{ categoryId?: string; accountId?: string; amount?: number }>({});
+
+  useEffect(() => { showVoiceResultRef.current = showVoiceResult; }, [showVoiceResult]);
+  useEffect(() => { pendingVoiceResultRef.current = voiceResultData; }, [voiceResultData]);
+
+  useEffect(() => {
+    const autoSave = () => {
+      if (!showVoiceResultRef.current) return;
+      const { categoryId, accountId, amount } = pendingVoiceResultRef.current;
+      if (categoryId && accountId && amount) {
+        saveTransaction(categoryId, accountId, amount);
+        showVoiceResultRef.current = false; // prevent double-save
+      }
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") autoSave(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", autoSave);
+    window.addEventListener("beforeunload", autoSave);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", autoSave);
+      window.removeEventListener("beforeunload", autoSave);
+    };
+  }, []);
+
   const handleCategorySelect = (categoryId: string) => {
     if (!isCategoryReorderMode) {
       setSelectedCategory(categoryId);
@@ -234,6 +274,20 @@ export default function Index() {
   const handleVoiceResultConfirm = () => {
     const { categoryId, accountId, amount } = voiceResultData;
 
+    setShowVoiceResult(false);
+
+    // If all 3 detected — save directly, no need to go to amount page
+    if (categoryId && accountId && amount) {
+      saveTransaction(categoryId, accountId, amount);
+      setDisplay("0");
+      setValue(0);
+      setSelectedCategory(null);
+      setSelectedAccount(null);
+      setCurrentPage("category");
+      return;
+    }
+
+    // Partial match — prefill and navigate to complete manually
     if (categoryId) setSelectedCategory(categoryId);
     if (accountId) setSelectedAccount(accountId);
     if (amount) {
@@ -241,11 +295,7 @@ export default function Index() {
       setValue(amount);
     }
 
-    setShowVoiceResult(false);
-
-    if (categoryId && accountId && amount) {
-      setCurrentPage("amount");
-    } else if (categoryId && accountId) {
+    if (categoryId && accountId) {
       setCurrentPage("amount");
     } else if (categoryId) {
       setCurrentPage("account");
@@ -295,12 +345,9 @@ export default function Index() {
   };
 
   const handleConfirm = () => {
-    console.log("Transaction saved:", {
-      category: selectedCategory,
-      account: selectedAccount,
-      amount: value,
-    });
-    // Reset and exit
+    if (selectedCategory && selectedAccount && value > 0) {
+      saveTransaction(selectedCategory, selectedAccount, value);
+    }
     setDisplay("0");
     setValue(0);
     setSelectedCategory(null);
