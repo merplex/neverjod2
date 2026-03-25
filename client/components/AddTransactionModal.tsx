@@ -476,7 +476,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
       {showAmountPad && (
         <div className="fixed inset-0 z-[70] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowAmountPad(false)} />
-          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "72vh" }}>
+          <div className="relative bg-white rounded-t-2xl">
           {/* hidden Recording for voice calculator */}
           <div className="hidden">
             <Recording
@@ -488,14 +488,14 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             />
           </div>
 
-          <div className="px-4 pt-3 pb-4 flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="px-4 pt-3 pb-4">
             {/* Section A: Size Controls */}
-            <div className="flex gap-4 items-center mb-3">
+            <div className="flex gap-2 items-center mb-2">
               {[70, 75, 80, 85].map((size) => (
                 <button
                   key={size}
                   onClick={() => setNumpadSize(size)}
-                  className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg font-semibold text-sm transition-all ${
                     numpadSize === size ? "bg-theme-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
@@ -504,7 +504,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               ))}
               <button
                 onClick={() => setIsRightMode(!isRightMode)}
-                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
+                className={`flex-1 py-1.5 rounded-lg font-semibold text-sm transition-all ${
                   isRightMode ? "bg-theme-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -512,57 +512,55 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               </button>
             </div>
 
-            {/* Section B+C+D */}
-            <div className="flex flex-col flex-1 min-h-0 gap-2">
-              {/* Section B: Display */}
-              <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-3 rounded-lg flex justify-between items-center flex-shrink-0">
-                <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
-                  {sign}฿{display}
+            {/* Section B: Display */}
+            <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2">
+              <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
+                {sign}฿{display}
+              </div>
+              <button
+                onClick={() => setShowAmountPad(false)}
+                className="p-1.5 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Section C+D */}
+            <div className={`flex gap-2 ${isRightMode ? "flex-row-reverse" : ""}`} style={{ height: 200 }}>
+              {/* Section C: Numpad */}
+              <div className="flex flex-col gap-1.5" style={{ width: `${numpadSize}%` }}>
+                <div className="grid grid-cols-3 gap-1.5" style={{ height: 152 }}>
+                  {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => handleNumberClick(num)}
+                      className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                    >
+                      {num}
+                    </button>
+                  ))}
                 </div>
-                <button
-                  onClick={() => setShowAmountPad(false)}
-                  className="p-2 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0"
-                >
-                  <X size={24} />
-                </button>
+                <div className="grid grid-cols-4 gap-1.5 flex-1">
+                  {isRightMode ? (
+                    <>
+                      <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                      <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                      <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                      <button onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                      <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                      <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                      <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* Section C+D */}
-              <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
-                {/* Section C: Numpad */}
-                <div className="flex flex-col flex-1 min-h-0 gap-2" style={{ width: `${numpadSize}%`, flex: "none" }}>
-                  <div className="grid grid-cols-3 gap-2 flex-1 min-h-0" style={{ gridTemplateRows: "repeat(3, 1fr)" }}>
-                    {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
-                      <button
-                        key={num}
-                        onClick={() => handleNumberClick(num)}
-                        className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 flex-shrink-0" style={{ height: "15%" }}>
-                    {isRightMode ? (
-                      <>
-                        <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                        <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                        <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                        <button onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                        <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                        <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                        <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Section D: Voice Calculator (long press) + Lock */}
-                <div className="flex flex-col gap-2 flex-1 min-h-0">
+              {/* Section D: Voice Calculator (long press) + Lock */}
+              <div className="flex flex-col gap-1.5 flex-1">
                   <button
                     onPointerDown={(e) => {
                       e.preventDefault();
@@ -605,10 +603,9 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                     {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
                   </button>
                 </div>
-              </div>
             </div>
           </div>
-          </div>{/* end rounded inner */}
+          </div>
         </div>
       )}
     </div>
