@@ -329,7 +329,7 @@ export default function Transactions() {
                           {/* Amount */}
                           <div className="text-right flex-shrink-0">
                             <p className="font-bold text-slate-900">
-                              {transaction.amount > 0 ? "+" : ""}{transaction.amount}฿
+                              {transaction.type === "income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
                             </p>
                           </div>
                         </div>

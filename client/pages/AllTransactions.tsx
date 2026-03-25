@@ -1,10 +1,161 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown } from "lucide-react";
+import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 
-type TimeRange = "week" | "month" | "all";
+type TimeRange = "custom" | "month" | "all";
 type SortOrder = "asc" | "desc";
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function CalendarRangePicker({
+  rangeStart, rangeEnd, onSelect, onClose,
+}: {
+  rangeStart: Date | null;
+  rangeEnd: Date | null;
+  onSelect: (start: Date, end: Date) => void;
+  onClose: () => void;
+}) {
+  const today = startOfDay(new Date());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [picking, setPicking] = useState<"start" | "end">("start");
+  const [tempStart, setTempStart] = useState<Date | null>(rangeStart);
+  const [tempEnd, setTempEnd] = useState<Date | null>(rangeEnd);
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+  const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  }
+
+  function handleDay(day: number) {
+    const d = new Date(viewYear, viewMonth, day);
+    if (picking === "start") {
+      setTempStart(d);
+      setTempEnd(null);
+      setPicking("end");
+    } else {
+      if (tempStart && d < tempStart) {
+        setTempStart(d);
+        setTempEnd(null);
+        setPicking("end");
+      } else {
+        setTempEnd(d);
+        setPicking("start");
+      }
+    }
+  }
+
+  function isInRange(day: number) {
+    if (!tempStart || !tempEnd) return false;
+    const d = new Date(viewYear, viewMonth, day);
+    return d > tempStart && d < tempEnd;
+  }
+  function isStart(day: number) {
+    if (!tempStart) return false;
+    return isSameDay(new Date(viewYear, viewMonth, day), tempStart);
+  }
+  function isEnd(day: number) {
+    if (!tempEnd) return false;
+    return isSameDay(new Date(viewYear, viewMonth, day), tempEnd);
+  }
+
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  const formatLabel = (d: Date) =>
+    d.getDate() + " " + MONTH_NAMES[d.getMonth()].slice(0, 3) + " " + d.getFullYear();
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-t-2xl p-4 pb-6">
+        {/* Range display */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <span className={`px-3 py-1.5 rounded-lg ${picking === "start" ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700"}`}>
+              {tempStart ? formatLabel(tempStart) : "Start"}
+            </span>
+            <ChevronRight size={16} className="text-slate-400" />
+            <span className={`px-3 py-1.5 rounded-lg ${picking === "end" ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700"}`}>
+              {tempEnd ? formatLabel(tempEnd) : "End"}
+            </span>
+          </div>
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Month nav */}
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={prevMonth} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <ChevronLeft size={20} className="text-slate-600" />
+          </button>
+          <span className="font-semibold text-slate-800">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+          <button onClick={nextMonth} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <ChevronRight size={20} className="text-slate-600" />
+          </button>
+        </div>
+
+        {/* Day headers */}
+        <div className="grid grid-cols-7 mb-1">
+          {DAYS.map(d => (
+            <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7">
+          {Array.from({ length: firstDayOfWeek }).map((_, i) => <div key={`e${i}`} />)}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1;
+            const start = isStart(day);
+            const end = isEnd(day);
+            const inRange = isInRange(day);
+            return (
+              <button
+                key={day}
+                onClick={() => handleDay(day)}
+                className={`aspect-square flex items-center justify-center text-sm font-medium transition-colors rounded-full mx-auto w-9 h-9
+                  ${start || end ? "bg-indigo-600 text-white" : ""}
+                  ${inRange ? "bg-indigo-100 text-indigo-700 rounded-none" : ""}
+                  ${!start && !end && !inRange ? "hover:bg-slate-100 text-slate-700" : ""}
+                `}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Confirm */}
+        <button
+          disabled={!tempStart || !tempEnd}
+          onClick={() => tempStart && tempEnd && onSelect(tempStart, tempEnd)}
+          className={`mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-colors ${
+            tempStart && tempEnd
+              ? "bg-indigo-600 text-white hover:bg-indigo-700"
+              : "bg-slate-100 text-slate-400 cursor-not-allowed"
+          }`}
+        >
+          Apply Range
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function AllTransactions() {
   const navigate = useNavigate();
@@ -15,6 +166,9 @@ export default function AllTransactions() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAccountGrid, setShowAccountGrid] = useState(false);
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const [customStart, setCustomStart] = useState<Date | null>(null);
+  const [customEnd, setCustomEnd] = useState<Date | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const storedAccounts = useMemo(() => {
@@ -36,6 +190,12 @@ export default function AllTransactions() {
     return found?.accountName ?? accountIdFilter;
   }, [accountIdFilter, storedAccounts, allTransactions]);
 
+  const customLabel = useMemo(() => {
+    if (!customStart || !customEnd) return "Custom";
+    const fmt = (d: Date) => d.getDate() + "/" + (d.getMonth() + 1);
+    return `${fmt(customStart)}–${fmt(customEnd)}`;
+  }, [customStart, customEnd]);
+
   const filtered = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -53,10 +213,9 @@ export default function AllTransactions() {
         transaction.date.getDate()
       );
 
-      if (timeRange === "week") {
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return transactionDate >= weekAgo && transactionDate <= today;
+      if (timeRange === "custom") {
+        if (!customStart || !customEnd) return true;
+        return transactionDate >= customStart && transactionDate <= customEnd;
       } else if (timeRange === "month") {
         const monthAgo = new Date(today);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
@@ -64,7 +223,7 @@ export default function AllTransactions() {
       }
       return true;
     });
-  }, [allTransactions, timeRange, searchQuery, accountIdFilter]);
+  }, [allTransactions, timeRange, searchQuery, accountIdFilter, customStart, customEnd]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -88,9 +247,7 @@ export default function AllTransactions() {
         month: "short",
         day: "numeric",
       });
-      if (!groups[dateStr]) {
-        groups[dateStr] = [];
-      }
+      if (!groups[dateStr]) groups[dateStr] = [];
       groups[dateStr].push(transaction);
     });
     return groups;
@@ -102,13 +259,20 @@ export default function AllTransactions() {
     setShowAccountGrid(false);
   }
 
+  function handleCustomSelect(start: Date, end: Date) {
+    setCustomStart(start);
+    setCustomEnd(end);
+    setTimeRange("custom");
+    setShowCustomPicker(false);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Sticky header + controls wrapper */}
       <div className="sticky top-0 z-10">
         {/* Header */}
         <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
-          <div className="max-w-md mx-auto flex items-center gap-3">
+          <div className="max-w-md mx-auto flex items-center gap-2">
             <button
               onClick={() => navigate("/")}
               className="p-2 hover:bg-indigo-500 rounded-lg transition-colors flex-shrink-0"
@@ -123,6 +287,14 @@ export default function AllTransactions() {
             >
               <span className="text-sm font-semibold truncate">{selectedAccountName}</span>
               <ChevronDown size={16} className={`flex-shrink-0 transition-transform ${showAccountGrid ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* + Add transaction */}
+            <button
+              onClick={() => navigate("/")}
+              className="flex-shrink-0 p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+            >
+              <Plus size={20} />
             </button>
 
             {accountIdFilter && (
@@ -149,9 +321,7 @@ export default function AllTransactions() {
               <button
                 onClick={() => selectAccount(null)}
                 className={`px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${
-                  !accountIdFilter
-                    ? "bg-white text-indigo-700"
-                    : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
+                  !accountIdFilter ? "bg-white text-indigo-700" : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
                 }`}
               >
                 All Accounts
@@ -161,9 +331,7 @@ export default function AllTransactions() {
                   key={acc.id}
                   onClick={() => selectAccount(acc.id)}
                   className={`px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${
-                    accountIdFilter === acc.id
-                      ? "bg-white text-indigo-700"
-                      : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
+                    accountIdFilter === acc.id ? "bg-white text-indigo-700" : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
                   }`}
                 >
                   {acc.name}
@@ -187,7 +355,18 @@ export default function AllTransactions() {
               {sortOrder === "desc" ? "Descending" : "Ascending"}
             </button>
             <div className="flex gap-2">
-              {(["week", "month", "all"] as TimeRange[]).map((range) => (
+              {/* Custom range button */}
+              <button
+                onClick={() => setShowCustomPicker(true)}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  timeRange === "custom"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {customLabel}
+              </button>
+              {(["month", "all"] as TimeRange[]).map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
@@ -197,13 +376,13 @@ export default function AllTransactions() {
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
-                  {range === "week" ? "Week" : range === "month" ? "Month" : "All"}
+                  {range === "month" ? "Month" : "All"}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Search bar — shown when search toggled */}
+          {/* Search bar */}
           {showSearch && (
             <div className="mt-2 flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2">
               <Search size={15} className="text-slate-400 flex-shrink-0" />
@@ -223,20 +402,15 @@ export default function AllTransactions() {
             </div>
           )}
         </div>
-      </div>{/* end sticky wrapper */}
+      </div>
 
       {/* Transactions List */}
       <div className="max-w-md mx-auto px-4 py-4">
         {Object.entries(grouped).map(([dateStr, transactions]) => (
           <div key={dateStr} className="mb-6">
-            {/* Date Header */}
             <div className="mb-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase">
-                {dateStr}
-              </span>
+              <span className="text-xs font-semibold text-slate-500 uppercase">{dateStr}</span>
             </div>
-
-            {/* Transaction Items */}
             <div className="space-y-2">
               {transactions.map((transaction, index) => (
                 <div
@@ -247,27 +421,15 @@ export default function AllTransactions() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-semibold text-slate-500">
-                          {index + 1}.
-                        </span>
-                        <span className="text-xs font-medium text-slate-600">
-                          {transaction.accountName}
-                        </span>
-                        <span className="text-xs font-semibold text-indigo-600">
-                          {transaction.category}
-                        </span>
+                        <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
+                        <span className="text-xs font-medium text-slate-600">{transaction.accountName}</span>
+                        <span className="text-xs font-semibold text-indigo-600">{transaction.category}</span>
                       </div>
-                      <span className="text-xs text-slate-500">
-                        {transaction.time}
-                      </span>
+                      <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>
                     <div className="text-right">
-                      <span className={`font-semibold text-sm ${
-                        transaction.type === "income"
-                          ? "text-green-600"
-                          : "text-slate-900"
-                      }`}>
-                        {transaction.type === "income" ? "+" : ""}{transaction.amount}฿
+                      <span className={`font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-slate-900"}`}>
+                        {transaction.type === "income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -283,6 +445,16 @@ export default function AllTransactions() {
           </div>
         )}
       </div>
+
+      {/* Custom Date Range Picker */}
+      {showCustomPicker && (
+        <CalendarRangePicker
+          rangeStart={customStart}
+          rangeEnd={customEnd}
+          onSelect={handleCustomSelect}
+          onClose={() => setShowCustomPicker(false)}
+        />
+      )}
     </div>
   );
 }

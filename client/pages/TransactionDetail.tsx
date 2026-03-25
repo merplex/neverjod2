@@ -201,7 +201,7 @@ export default function TransactionDetail() {
               onClick={() => setShowDatePicker(true)}
               className="flex-1 flex items-center gap-2 px-4 py-3 hover:bg-slate-50 transition-colors"
             >
-              <span className="text-xs text-slate-400 w-8">Date</span>
+              <span className="text-xs text-slate-400 w-20">Date</span>
               <span className="text-sm font-medium text-slate-800">{formatDate(currentDate)}</span>
             </button>
             <div className="w-px bg-slate-100" />
@@ -274,7 +274,7 @@ export default function TransactionDetail() {
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto grid grid-cols-3 divide-x divide-y divide-slate-100">
+            <div className="overflow-y-auto grid grid-cols-3 divide-x divide-y divide-slate-100 pb-6">
               {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
                 const Icon = categoryIconMap[cat.id] || MoreHorizontal;
                 return (
@@ -306,7 +306,7 @@ export default function TransactionDetail() {
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto grid grid-cols-3 divide-x divide-y divide-slate-100">
+            <div className="overflow-y-auto grid grid-cols-3 divide-x divide-y divide-slate-100 pb-6">
               {accountsList.map((acc: any) => {
                 const Icon = accountIconMap[acc.id] || CreditCard;
                 return (
