@@ -21,6 +21,17 @@ export default function AllTransactions() {
     try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
   }, []);
 
+  // Auto-scroll chip row to selected account
+  useEffect(() => {
+    if (!chipScrollRef.current) return;
+    if (!accountIdFilter) {
+      chipScrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+    const chip = chipScrollRef.current.querySelector(`[data-account-id="${accountIdFilter}"]`) as HTMLElement;
+    if (chip) chip.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [accountIdFilter]);
+
   useEffect(() => {
     if (showSearch) searchInputRef.current?.focus();
     else setSearchQuery("");
@@ -122,6 +133,7 @@ export default function AllTransactions() {
             {storedAccounts.map((acc: any) => (
               <button
                 key={acc.id}
+                data-account-id={acc.id}
                 onClick={() => setSearchParams({ accountId: acc.id })}
                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
                   accountIdFilter === acc.id
