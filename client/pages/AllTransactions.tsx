@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ArrowUpDown, X, Search } from "lucide-react";
+import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 
 type TimeRange = "week" | "month" | "all";
@@ -14,23 +14,12 @@ export default function AllTransactions() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAccountGrid, setShowAccountGrid] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const chipScrollRef = useRef<HTMLDivElement>(null);
 
   const storedAccounts = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
   }, []);
-
-  // Auto-scroll chip row to selected account
-  useEffect(() => {
-    if (!chipScrollRef.current) return;
-    if (!accountIdFilter) {
-      chipScrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
-      return;
-    }
-    const chip = chipScrollRef.current.querySelector(`[data-account-id="${accountIdFilter}"]`) as HTMLElement;
-    if (chip) chip.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [accountIdFilter]);
 
   useEffect(() => {
     if (showSearch) searchInputRef.current?.focus();
@@ -39,11 +28,13 @@ export default function AllTransactions() {
 
   const allTransactions = useMemo(() => getRealTransactionsList(), []);
 
-  const accountName = useMemo(() => {
-    if (!accountIdFilter) return null;
+  const selectedAccountName = useMemo(() => {
+    if (!accountIdFilter) return "All Accounts";
+    const acc = storedAccounts.find((a: any) => a.id === accountIdFilter);
+    if (acc) return acc.name;
     const found = allTransactions.find((t) => t.accountId === accountIdFilter);
     return found?.accountName ?? accountIdFilter;
-  }, [accountIdFilter, allTransactions]);
+  }, [accountIdFilter, storedAccounts, allTransactions]);
 
   const filtered = useMemo(() => {
     const now = new Date();
@@ -105,117 +96,133 @@ export default function AllTransactions() {
     return groups;
   }, [sorted]);
 
+  function selectAccount(id: string | null) {
+    if (id) setSearchParams({ accountId: id });
+    else setSearchParams({});
+    setShowAccountGrid(false);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Sticky header + controls wrapper */}
       <div className="sticky top-0 z-10">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
-        <div className="max-w-md mx-auto flex items-center gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          {/* Scrollable account filter chips */}
-          <div
-            ref={chipScrollRef}
-            className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 items-center py-1 px-3"
-            style={{ maskImage: "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)" }}
-          >
+        {/* Header */}
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
+          <div className="max-w-md mx-auto flex items-center gap-3">
             <button
-              onClick={() => setSearchParams({})}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                !accountIdFilter
-                  ? "bg-white text-indigo-600"
-                  : "bg-indigo-500 text-indigo-100 hover:bg-indigo-400"
-              }`}
+              onClick={() => navigate("/")}
+              className="p-2 hover:bg-indigo-500 rounded-lg transition-colors flex-shrink-0"
             >
-              All
+              <ChevronLeft size={24} />
             </button>
-            {storedAccounts.map((acc: any) => (
-              <button
-                key={acc.id}
-                data-account-id={acc.id}
-                onClick={() => setSearchParams({ accountId: acc.id })}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                  accountIdFilter === acc.id
-                    ? "bg-white text-indigo-600"
-                    : "bg-indigo-500 text-indigo-100 hover:bg-indigo-400"
-                }`}
-              >
-                {acc.name}
-              </button>
-            ))}
-          </div>
-          {accountIdFilter && (
+
+            {/* Account selector button */}
             <button
-              onClick={() => setSearchParams({})}
-              className="flex-shrink-0 p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+              onClick={() => setShowAccountGrid((v) => !v)}
+              className="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-indigo-500/60 hover:bg-indigo-500 rounded-xl transition-colors min-w-0"
             >
-              <X size={20} />
+              <span className="text-sm font-semibold truncate">{selectedAccountName}</span>
+              <ChevronDown size={16} className={`flex-shrink-0 transition-transform ${showAccountGrid ? "rotate-180" : ""}`} />
             </button>
-          )}
-          <button
-            onClick={() => setShowSearch((v) => !v)}
-            className={`p-2 rounded-lg transition-colors ${showSearch ? "bg-indigo-400" : "hover:bg-indigo-500"}`}
-          >
-            <Search size={20} />
-          </button>
-        </div>
-      </div>
 
-      {/* Controls */}
-      <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200">
-        <div className="flex justify-between items-center gap-2 mb-1">
-          <span className="text-xs text-slate-400">{sorted.length} transactions</span>
-        </div>
-        <div className="flex justify-between items-center gap-2">
-          <button
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
-          >
-            <ArrowUpDown size={16} />
-            {sortOrder === "desc" ? "Descending" : "Ascending"}
-          </button>
-          <div className="flex gap-2">
-            {(["week", "month", "all"] as TimeRange[]).map((range) => (
+            {accountIdFilter && (
               <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                  timeRange === range
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
+                onClick={() => selectAccount(null)}
+                className="flex-shrink-0 p-2 hover:bg-indigo-500 rounded-lg transition-colors"
               >
-                {range === "week" ? "Week" : range === "month" ? "Month" : "All"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Search bar — shown when search toggled */}
-        {showSearch && (
-          <div className="mt-2 flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2">
-            <Search size={15} className="text-slate-400 flex-shrink-0" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ค้นหา account หรือ category..."
-              className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")}>
-                <X size={15} className="text-slate-400 hover:text-slate-600" />
+                <X size={20} />
               </button>
             )}
+            <button
+              onClick={() => setShowSearch((v) => !v)}
+              className={`flex-shrink-0 p-2 rounded-lg transition-colors ${showSearch ? "bg-indigo-400" : "hover:bg-indigo-500"}`}
+            >
+              <Search size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Account Grid Dropdown */}
+        {showAccountGrid && (
+          <div className="bg-indigo-700 px-4 pb-4 pt-2">
+            <div className="max-w-md mx-auto grid grid-cols-2 gap-2">
+              <button
+                onClick={() => selectAccount(null)}
+                className={`px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${
+                  !accountIdFilter
+                    ? "bg-white text-indigo-700"
+                    : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
+                }`}
+              >
+                All Accounts
+              </button>
+              {storedAccounts.map((acc: any) => (
+                <button
+                  key={acc.id}
+                  onClick={() => selectAccount(acc.id)}
+                  className={`px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${
+                    accountIdFilter === acc.id
+                      ? "bg-white text-indigo-700"
+                      : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
+                  }`}
+                >
+                  {acc.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
-      </div>
+
+        {/* Controls */}
+        <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200">
+          <div className="flex justify-between items-center gap-2 mb-1">
+            <span className="text-xs text-slate-400">{sorted.length} transactions</span>
+          </div>
+          <div className="flex justify-between items-center gap-2">
+            <button
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
+            >
+              <ArrowUpDown size={16} />
+              {sortOrder === "desc" ? "Descending" : "Ascending"}
+            </button>
+            <div className="flex gap-2">
+              {(["week", "month", "all"] as TimeRange[]).map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                    timeRange === range
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {range === "week" ? "Week" : range === "month" ? "Month" : "All"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Search bar — shown when search toggled */}
+          {showSearch && (
+            <div className="mt-2 flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2">
+              <Search size={15} className="text-slate-400 flex-shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ค้นหา account หรือ category..."
+                className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")}>
+                  <X size={15} className="text-slate-400 hover:text-slate-600" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>{/* end sticky wrapper */}
 
       {/* Transactions List */}
