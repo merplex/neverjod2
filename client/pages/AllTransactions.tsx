@@ -119,7 +119,11 @@ export default function AllTransactions() {
             <ChevronLeft size={24} />
           </button>
           {/* Scrollable account filter chips */}
-          <div ref={chipScrollRef} className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 items-center py-1">
+          <div
+            ref={chipScrollRef}
+            className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 items-center py-1"
+            style={{ maskImage: "linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)" }}
+          >
             <button
               onClick={() => setSearchParams({})}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
