@@ -205,8 +205,8 @@ export default function Index() {
       ? accountsList.find((a) => a.id === accountId)?.name
       : undefined;
 
-    // Check if all 3 parts are detected
-    const allMatched = categoryId && accountId && amount;
+    // Check if minimum required parts are detected (category + amount; account optional)
+    const allMatched = categoryId && amount;
 
     // Always show result popup (either success or no-match)
     setVoiceResultData({

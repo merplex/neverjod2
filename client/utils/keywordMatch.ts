@@ -24,7 +24,7 @@ const defaultCategoriesWithKeywords: Record<string, { name: string; keywords: st
 };
 
 const defaultAccountsWithKeywords: Record<string, { name: string; keywords: string[] }> = {
-  uob: { name: "UOB", keywords: ["uob", "united"] },
+  uob: { name: "UOB", keywords: ["uob", "united", "you'll be", "you o b", "you oh be", "you be", "yob", "u o b"] },
   banka: { name: "BankA", keywords: ["banka", "bank a"] },
   krungsri: { name: "Krungsri", keywords: ["krungsri", "krungthai"] },
   bangkok: { name: "Bangkok Bank", keywords: ["bangkok", "bank"] },
