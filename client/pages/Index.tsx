@@ -371,6 +371,8 @@ export default function Index() {
   const exitReorderMode = () => {
     setIsReorderMode(false);
     setSelectedForSwap(null);
+    // Persist reordered accounts to localStorage so AccountsManagement reflects it
+    localStorage.setItem("app_accounts", JSON.stringify(accountsList));
   };
 
   return (

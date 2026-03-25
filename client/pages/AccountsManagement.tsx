@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Edit2, ArrowRightLeft, Trash2 } from "lucide-react";
+import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TimePicker from "../components/TimePicker";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal } from "lucide-react";
@@ -34,10 +34,6 @@ const defaultAccounts: Account[] = [
   { id: "account_deleted", name: "Account Deleted", type: "deleted", icon: Trash2, balance: 0, keywords: [] },
 ];
 
-const ACCOUNT_TYPES = [
-  "credit card", "debit card", "savings account", "cash",
-  "cryptocurrency", "digital wallet", "digital bank", "payment gateway", "other",
-];
 
 export default function AccountsManagement() {
   const navigate = useNavigate();
@@ -73,6 +69,7 @@ export default function AccountsManagement() {
   const [editKeywords, setEditKeywords] = useState("");
   const [keywordError, setKeywordError] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [reorderSelectedId, setReorderSelectedId] = useState<string | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
@@ -157,12 +154,32 @@ export default function AccountsManagement() {
     setEditingId(null);
   };
 
+  const handleGripClick = (accountId: string) => {
+    if (reorderSelectedId === null) {
+      setReorderSelectedId(accountId);
+    } else if (reorderSelectedId === accountId) {
+      setReorderSelectedId(null);
+    } else {
+      // Swap the two — keep account_deleted always last
+      const reorderableAccounts = accounts.filter((a) => a.id !== "account_deleted");
+      const deletedAccount = accounts.find((a) => a.id === "account_deleted");
+      const firstIdx = reorderableAccounts.findIndex((a) => a.id === reorderSelectedId);
+      const secondIdx = reorderableAccounts.findIndex((a) => a.id === accountId);
+      const newList = [...reorderableAccounts];
+      [newList[firstIdx], newList[secondIdx]] = [newList[secondIdx], newList[firstIdx]];
+      const finalList = deletedAccount ? [...newList, deletedAccount] : newList;
+      setAccounts(finalList);
+      localStorage.setItem("app_accounts", JSON.stringify(finalList));
+      setReorderSelectedId(null);
+    }
+  };
+
   const openTransferModal = () => {
     setShowTransferModal(true);
     setTransferFromId(null);
     setTransferToId(null);
     setTransferAmount("");
-    setTransferDate(new Date());
+    setTransferDate(new Date().toISOString().split("T")[0]);
   };
 
   const closeTransferModal = () => {
@@ -252,15 +269,13 @@ export default function AccountsManagement() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-600">Account Type</label>
-                      <select
+                      <input
+                        type="text"
                         value={editType}
                         onChange={(e) => setEditType(e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
-                      >
-                        {ACCOUNT_TYPES.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
+                        className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                        placeholder="เช่น credit card, savings account"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-600">Start Balance</label>
@@ -309,7 +324,24 @@ export default function AccountsManagement() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-start justify-between">
+                  <div className={`flex items-start gap-2 rounded-lg transition-colors ${reorderSelectedId === account.id ? "bg-indigo-50 -mx-1 px-1" : ""}`}>
+                    {account.id !== "account_deleted" ? (
+                      <button
+                        onClick={() => handleGripClick(account.id)}
+                        className={`mt-1 p-1 rounded transition-colors flex-shrink-0 ${
+                          reorderSelectedId === account.id
+                            ? "text-indigo-600 bg-indigo-100"
+                            : reorderSelectedId !== null
+                            ? "text-indigo-400 hover:text-indigo-600"
+                            : "text-slate-300 hover:text-slate-500"
+                        }`}
+                      >
+                        <GripVertical size={18} />
+                      </button>
+                    ) : (
+                      <div className="w-7 flex-shrink-0" />
+                    )}
+                    <div className="flex items-start justify-between flex-1">
                     <div className="flex items-start gap-3 flex-1">
                       <IconComponent size={24} className="text-indigo-600 mt-1" />
                       <div>
@@ -340,6 +372,7 @@ export default function AccountsManagement() {
                         <Edit2 size={18} />
                       </button>
                     )}
+                    </div>
                   </div>
                 )}
               </div>
