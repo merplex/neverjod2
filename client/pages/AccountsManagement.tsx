@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Edit2, ArrowRightLeft } from "lucide-react";
+import { ChevronLeft, Edit2, ArrowRightLeft, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TimePicker from "../components/TimePicker";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal } from "lucide-react";
@@ -31,40 +31,48 @@ const defaultAccounts: Account[] = [
   { id: "wise", name: "Wise", type: "digital bank", icon: Wallet, balance: 5000, keywords: [] },
   { id: "stripe", name: "Stripe", type: "payment gateway", icon: CreditCard, balance: 0, keywords: [] },
   { id: "paypal", name: "PayPal", type: "digital wallet", icon: Banknote, balance: 1000, keywords: [] },
+  { id: "account_deleted", name: "Account Deleted", type: "deleted", icon: Trash2, balance: 0, keywords: [] },
+];
+
+const ACCOUNT_TYPES = [
+  "credit card", "debit card", "savings account", "cash",
+  "cryptocurrency", "digital wallet", "digital bank", "payment gateway", "other",
 ];
 
 export default function AccountsManagement() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>(() => {
-    // Load from localStorage if available, otherwise use defaults
     try {
       const stored = localStorage.getItem("app_accounts");
+      let list: Account[] = defaultAccounts;
       if (stored) {
         const storedAccounts = JSON.parse(stored);
-        // Restore icons from defaultAccounts since they can't be serialized
-        return storedAccounts
+        list = storedAccounts
           .map((acc: any) => {
             if (!acc || !acc.id) return null;
             const defaultAcc = defaultAccounts.find((d) => d.id === acc.id);
             if (!defaultAcc) return null;
-            return {
-              ...acc,
-              icon: defaultAcc.icon,
-            };
+            return { ...acc, icon: defaultAcc.icon };
           })
           .filter((acc: any) => acc !== null);
       }
-      return defaultAccounts;
+      // Ensure account_deleted always exists
+      if (!list.find((a) => a.id === "account_deleted")) {
+        const deletedDefault = defaultAccounts.find((a) => a.id === "account_deleted")!;
+        list = [...list, deletedDefault];
+      }
+      return list;
     } catch (e) {
-      console.error("Error loading accounts from localStorage:", e);
       return defaultAccounts;
     }
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editType, setEditType] = useState("");
   const [editBalance, setEditBalance] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
   const [keywordError, setKeywordError] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
@@ -76,6 +84,7 @@ export default function AccountsManagement() {
   const startEditing = (account: Account) => {
     setEditingId(account.id);
     setEditName(account.name);
+    setEditType(account.type);
     setEditBalance(account.balance?.toString() || "0");
     setEditKeywords((account.keywords || []).join(", "));
     setKeywordError("");
@@ -106,7 +115,7 @@ export default function AccountsManagement() {
     setKeywordError("");
     const updatedAccounts = accounts.map((acc) =>
       acc.id === editingId
-        ? { ...acc, name: editName, balance: parseFloat(editBalance) || 0, keywords }
+        ? { ...acc, name: editName, type: editType, balance: parseFloat(editBalance) || 0, keywords }
         : acc
     );
 
@@ -118,9 +127,34 @@ export default function AccountsManagement() {
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
+    setEditType("");
     setEditBalance("");
     setEditKeywords("");
     setKeywordError("");
+  };
+
+  const deleteTransactionCount = (accountId: string): number => {
+    try {
+      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      return txns.filter((t: any) => t.accountId === accountId).length;
+    } catch { return 0; }
+  };
+
+  const confirmDelete = (accountId: string) => {
+    // Move all transactions to account_deleted
+    try {
+      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const updated = txns.map((t: any) =>
+        t.accountId === accountId ? { ...t, accountId: "account_deleted" } : t
+      );
+      localStorage.setItem("app_transactions", JSON.stringify(updated));
+    } catch {}
+    // Remove account from list
+    const updatedAccounts = accounts.filter((a) => a.id !== accountId);
+    setAccounts(updatedAccounts);
+    localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+    setDeleteConfirmId(null);
+    setEditingId(null);
   };
 
   const openTransferModal = () => {
@@ -208,9 +242,7 @@ export default function AccountsManagement() {
                 {isEditing ? (
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">
-                        Account Name
-                      </label>
+                      <label className="text-xs font-semibold text-slate-600">Account Name</label>
                       <input
                         type="text"
                         value={editName}
@@ -219,9 +251,19 @@ export default function AccountsManagement() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">
-                        Balance
-                      </label>
+                      <label className="text-xs font-semibold text-slate-600">Account Type</label>
+                      <select
+                        value={editType}
+                        onChange={(e) => setEditType(e.target.value)}
+                        className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                      >
+                        {ACCOUNT_TYPES.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600">Start Balance</label>
                       <input
                         type="number"
                         value={editBalance}
@@ -230,9 +272,7 @@ export default function AccountsManagement() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">
-                        Keywords (คั่นด้วยจุลภาค)
-                      </label>
+                      <label className="text-xs font-semibold text-slate-600">Keywords (คั่นด้วยจุลภาค)</label>
                       <input
                         type="text"
                         value={editKeywords}
@@ -258,6 +298,15 @@ export default function AccountsManagement() {
                         Cancel
                       </button>
                     </div>
+                    {account.id !== "account_deleted" && (
+                      <button
+                        onClick={() => setDeleteConfirmId(account.id)}
+                        className="w-full px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={15} />
+                        Delete Account
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-start justify-between">
@@ -283,12 +332,14 @@ export default function AccountsManagement() {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => startEditing(account)}
-                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-indigo-600"
-                    >
-                      <Edit2 size={18} />
-                    </button>
+                    {account.id !== "account_deleted" && (
+                      <button
+                        onClick={() => startEditing(account)}
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-indigo-600"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -296,6 +347,45 @@ export default function AccountsManagement() {
           })}
         </div>
       </div>
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirmId && (() => {
+        const acc = accounts.find((a) => a.id === deleteConfirmId);
+        const count = deleteTransactionCount(deleteConfirmId);
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Trash2 size={20} className="text-red-500" />
+                </div>
+                <h2 className="text-base font-bold text-slate-900">ลบ Account</h2>
+              </div>
+              <p className="text-sm text-slate-700">
+                Account <span className="font-semibold">"{acc?.name}"</span> มี{" "}
+                <span className="font-bold text-red-600">{count} รายการ</span> ที่ใช้งานอยู่
+              </p>
+              <p className="text-sm text-slate-500">
+                ถ้ายืนยัน รายการทั้งหมดจะย้ายไปอยู่ใน <span className="font-semibold text-slate-700">Account Deleted</span> และลบ account นี้ออก
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => confirmDelete(deleteConfirmId)}
+                  className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+                >
+                  ยืนยันลบ
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Transfer Modal */}
       {showTransferModal && (
