@@ -6,9 +6,10 @@ interface RecordingProps {
   onTranscript?: (text: string) => void;
   onVoiceInput?: (data: { categoryId?: string; accountId?: string; amount?: number; description: string }) => void;
   onVoiceEnd?: () => void;
+  startTrigger?: number;
 }
 
-export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: RecordingProps) {
+export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, startTrigger }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
@@ -26,6 +27,21 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
   useEffect(() => { onVoiceInputRef.current = onVoiceInput; }, [onVoiceInput]);
   useEffect(() => { onVoiceEndRef.current = onVoiceEnd; }, [onVoiceEnd]);
   useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
+
+  // Auto-start when trigger increments (e.g. when category page becomes active)
+  useEffect(() => {
+    if (!startTrigger || !recognitionRef.current || isListeningRef.current) return;
+    try {
+      setTranscript("");
+      hasSpeechStartedRef.current = false;
+      setIsListening(true);
+      isListeningRef.current = true;
+      recognitionRef.current.start();
+    } catch (e) {
+      setIsListening(false);
+      isListeningRef.current = false;
+    }
+  }, [startTrigger]);
 
   useEffect(() => {
     // Initialize Web Speech API with multiple fallbacks

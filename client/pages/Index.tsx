@@ -144,6 +144,14 @@ export default function Index() {
   const [isVoiceCalculatorMode, setIsVoiceCalculatorMode] = useState(false);
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
 
+  // Auto-start voice when category page is shown
+  const [voiceStartTrigger, setVoiceStartTrigger] = useState(0);
+  useEffect(() => {
+    if (currentPage === "category") {
+      setVoiceStartTrigger((n) => n + 1);
+    }
+  }, [currentPage]);
+
   // Voice result confirmation state
   const [showVoiceResult, setShowVoiceResult] = useState(false);
   const [voiceResultData, setVoiceResultData] = useState<{
@@ -477,7 +485,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} />
                   </div>
                 </div>
                 <Carousel
