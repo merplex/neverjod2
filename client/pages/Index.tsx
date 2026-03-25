@@ -308,10 +308,10 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4">
-      <div className="w-full max-w-md mx-auto relative">
+    <div className="h-[100dvh] flex flex-col pb-[72px] bg-white overflow-hidden">
+      <div className="w-full flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Persistent Account Section - Top */}
-        <div className="bg-white rounded-t-3xl shadow-2xl px-6 py-4 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
+        <div className="px-4 py-3 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm font-semibold text-slate-600">Accounts</h3>
             {!isReorderMode && (
@@ -382,13 +382,13 @@ export default function Index() {
         </div>
 
         {/* Main Input Area - Full Screen */}
-        <div className="bg-white rounded-b-3xl shadow-2xl overflow-hidden flex flex-col flex-1">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Dynamic Main Input Area */}
-          <div className="px-6 py-6 bg-white flex flex-col flex-1">
+          <div className="px-4 pt-2 pb-5 bg-white flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Category Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "category" && (
-              <div className="flex flex-col flex-1 justify-end">
-                <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex justify-between items-center mb-2">
                   <div className="flex gap-2">
                     <button
                       onClick={() => setCategoryType("expense")}
@@ -425,8 +425,9 @@ export default function Index() {
                 </div>
                 <Carousel
                   items={categoriesList.filter((c) => c.type === categoryType)}
-                  itemsPerPage={12}
+                  itemsPerPage={16}
                   cols={4}
+                  rows={4}
                   renderItem={(category) => {
                     const IconComponent = category.icon;
                     const categoryIndex = categoriesList.findIndex((c) => c.id === category.id);
@@ -456,7 +457,7 @@ export default function Index() {
                             handleCategorySelect(category.id);
                           }
                         }}
-                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-22 font-semibold ${
+                        className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold ${
                           isCategoryReorderMode
                             ? isSelected
                               ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
@@ -464,8 +465,8 @@ export default function Index() {
                             : "bg-indigo-50 hover:bg-indigo-200 text-indigo-900"
                         }`}
                       >
-                        <IconComponent size={32} />
-                        <span className="font-bold text-xs text-center truncate">{category.name}</span>
+                        <IconComponent size={24} />
+                        <span className="font-bold text-xs text-center truncate leading-tight">{category.name}</span>
                       </button>
                     );
                   }}
@@ -483,8 +484,8 @@ export default function Index() {
 
             {/* Account Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "account" && (
-              <div className="flex flex-col flex-1 justify-end">
-                <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex justify-between items-center mb-2">
                   <h2 className="text-lg font-bold text-slate-900">Select Account</h2>
                   <div className="flex items-center gap-2">
                     {!isAccountPageReorderMode && (
@@ -505,8 +506,9 @@ export default function Index() {
                 </div>
                 <Carousel
                   items={accountsList}
-                  itemsPerPage={12}
+                  itemsPerPage={16}
                   cols={4}
+                  rows={4}
                   renderItem={(account) => {
                     const IconComponent = account.icon;
                     const accountIndex = accountsList.findIndex((a) => a.id === account.id);
@@ -518,13 +520,10 @@ export default function Index() {
                         onClick={() => {
                           if (isAccountPageReorderMode) {
                             if (selectedAccountForSwap === null) {
-                              // First selection - select this account
                               setSelectedAccountForSwap(account.id);
                             } else if (selectedAccountForSwap === account.id) {
-                              // Deselect if clicking the same account
                               setSelectedAccountForSwap(null);
                             } else {
-                              // Second selection - swap the two accounts
                               const firstIndex = accountsList.findIndex((a) => a.id === selectedAccountForSwap);
                               const newList = [...accountsList];
                               [newList[firstIndex], newList[accountIndex]] = [newList[accountIndex], newList[firstIndex]];
@@ -532,11 +531,10 @@ export default function Index() {
                               setSelectedAccountForSwap(null);
                             }
                           } else {
-                            // Normal mode - select account
                             handleAccountSelect(account.id);
                           }
                         }}
-                        className={`py-4 px-2 rounded-lg transition-all flex flex-col items-center justify-center gap-2 cursor-pointer text-xs h-22 font-semibold ${
+                        className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold ${
                           isAccountPageReorderMode
                             ? isSelected
                               ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
@@ -544,8 +542,8 @@ export default function Index() {
                             : "bg-indigo-50 hover:bg-indigo-200 text-indigo-900"
                         }`}
                       >
-                        <IconComponent size={32} />
-                        <span className="font-bold text-xs text-center truncate">{account.name}</span>
+                        <IconComponent size={24} />
+                        <span className="font-bold text-xs text-center truncate leading-tight">{account.name}</span>
                       </button>
                     );
                   }}
@@ -563,7 +561,7 @@ export default function Index() {
 
             {/* Amount Input Page (Numpad A-B-C-D) */}
             {currentPage === "amount" && (
-              <div className="flex flex-col flex-1">
+              <div className="flex flex-col flex-1 min-h-0">
                 {/* Section A: Size Controls */}
                 <div className="flex gap-4 items-center mb-3">
                   {[70, 75, 80, 85].map((size) => (
@@ -591,140 +589,94 @@ export default function Index() {
                   </button>
                 </div>
 
-                {/* Section B: Display */}
-                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-4 rounded-lg mb-4 flex justify-between items-center">
-                  <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                    ฿{display}
+                {/* Group B+C+D: Display + Numpad + Controls */}
+                <div className="flex flex-col flex-1 min-h-0 gap-2">
+                  {/* Section B: Display */}
+                  <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-3 rounded-lg flex justify-between items-center flex-shrink-0">
+                    <div className="text-2xl font-bold text-white font-mono tracking-tight">
+                      ฿{display}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage("account")}
+                      className="p-2 hover:bg-indigo-500 rounded-lg transition-colors text-white flex-shrink-0"
+                    >
+                      <X size={24} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setCurrentPage("account")}
-                    className="p-2 hover:bg-indigo-500 rounded-lg transition-colors text-white flex-shrink-0"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
 
-                {/* Section C-D: Numpad and Controls */}
-                <div className={`flex gap-4 ${isRightMode ? "flex-row-reverse" : ""}`}>
-                  {/* Section C: Numpad */}
-                  <div style={{ width: `${numpadSize}%` }}>
-                    {/* 3-column grid */}
-                    <div className="grid grid-cols-3 gap-3 mb-3">
-                      {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
+                  {/* Section C-D: Numpad and Controls */}
+                  <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
+                    {/* Section C: Numpad */}
+                    <div className="flex flex-col flex-1 min-h-0 gap-2" style={{ width: `${numpadSize}%`, flex: "none" }}>
+                      {/* 3-column grid - fills remaining */}
+                      <div className="grid grid-cols-3 gap-2 flex-1 min-h-0" style={{ gridTemplateRows: "repeat(3, 1fr)" }}>
+                        {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
+                          <button
+                            key={num}
+                            onClick={() => handleNumberClick(num)}
+                            className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                          >
+                            {num}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* 4-column grid - fixed height */}
+                      <div className="grid grid-cols-4 gap-2 flex-shrink-0" style={{ height: "15%" }}>
+                        {isRightMode ? (
+                          <>
+                            <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                            <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                            <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Section D: Voice Calculator & Lock */}
+                    <div className="flex flex-col gap-2 flex-1 min-h-0">
+                      {!isVoiceCalculatorMode ? (
                         <button
-                          key={num}
-                          onClick={() => handleNumberClick(num)}
-                          style={{ height: "51.2px" }}
-                          className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                          onClick={() => setIsVoiceCalculatorMode(true)}
+                          disabled={isLocked}
+                          className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 ${
+                            isLocked
+                              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                              : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
+                          }`}
                         >
-                          {num}
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="flex items-center gap-1">
+                              <Calculator size={24} />
+                              <Mic size={24} />
+                            </div>
+                            <span className="text-xs">Voice</span>
+                          </div>
                         </button>
-                      ))}
-                    </div>
-
-                    {/* 4-column grid */}
-                    <div className="grid grid-cols-4 gap-3">
-                      {isRightMode ? (
-                        <>
-                          <button
-                            onClick={handleDelete}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            ⌫
-                          </button>
-                          <button
-                            onClick={handleDecimal}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            .
-                          </button>
-                          <button
-                            onClick={() => handleNumberClick(0)}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            0
-                          </button>
-                          <button
-                            onClick={handleConfirm}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
-                          >
-                            Save
-                          </button>
-                        </>
                       ) : (
-                        <>
-                          <button
-                            onClick={handleConfirm}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => handleNumberClick(0)}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            0
-                          </button>
-                          <button
-                            onClick={handleDecimal}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            .
-                          </button>
-                          <button
-                            onClick={handleDelete}
-                            style={{ height: "51.2px" }}
-                            className="px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            ⌫
-                          </button>
-                        </>
+                        <div className="rounded-lg bg-green-100 border-2 border-green-500 flex items-center justify-center flex-1 p-2">
+                          <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
+                        </div>
                       )}
-                    </div>
-                  </div>
-
-                  {/* Section D: Voice Calculator & Lock */}
-                  <div className="flex flex-col gap-3 flex-1">
-                    {!isVoiceCalculatorMode ? (
                       <button
-                        onClick={() => setIsVoiceCalculatorMode(true)}
-                        disabled={isLocked}
-                        className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 ${
+                        onClick={handleToggleLock}
+                        className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
                           isLocked
-                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                            : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
+                            ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
+                            : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
                         }`}
                       >
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center gap-1">
-                            <Calculator size={24} />
-                            <Mic size={24} />
-                          </div>
-                          <span className="text-xs">Voice</span>
-                        </div>
+                        {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
                       </button>
-                    ) : (
-                      <div className="rounded-lg bg-green-100 border-2 border-green-500 flex items-center justify-center flex-1 p-2">
-                        <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
-                      </div>
-                    )}
-                    <button
-                      onClick={handleToggleLock}
-                      className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
-                        isLocked
-                          ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
-                          : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
-                      }`}
-                    >
-                      {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>

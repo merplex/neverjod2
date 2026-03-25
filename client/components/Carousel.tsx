@@ -6,9 +6,10 @@ interface CarouselProps {
   itemsPerPage: number;
   renderItem: (item: any, index: number) => React.ReactNode;
   cols: number;
+  rows?: number;
 }
 
-export default function Carousel({ items, itemsPerPage, renderItem, cols }: CarouselProps) {
+export default function Carousel({ items, itemsPerPage, renderItem, cols, rows }: CarouselProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef(0);
@@ -79,45 +80,45 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols }: Caro
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      className="cursor-grab"
+      className={`cursor-grab ${rows ? "flex flex-col flex-1 min-h-0" : ""}`}
       style={{ userSelect: "auto" }}
     >
       {/* Grid */}
-      <div className={`grid gap-3 ${gridColsClass}`}>
+      <div
+        className={`grid gap-1 ${gridColsClass} ${rows ? "flex-1 min-h-0" : ""}`}
+        style={rows ? { gridTemplateRows: `repeat(${rows}, 1fr)` } : undefined}
+      >
         {currentItems.map((item, index) => renderItem(item, startIndex + index))}
       </div>
 
-      {/* Page Indicators - Only show if more than 1 page */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          {/* Left Arrow - Show only if not on first page */}
-          <div className="w-6 flex justify-center">
-            {currentPage > 0 && (
-              <ChevronLeft size={14} className="text-slate-500" />
-            )}
-          </div>
-
-          {/* Dots - Centered */}
-          <div className="flex gap-1">
-            {Array.from({ length: totalPages }).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentPage(index)}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentPage ? "bg-indigo-600" : "bg-slate-300"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Right Arrow - Show only if not on last page */}
-          <div className="w-6 flex justify-center">
-            {currentPage < totalPages - 1 && (
-              <ChevronRight size={14} className="text-slate-500" />
-            )}
-          </div>
-        </div>
-      )}
+      {/* Page Indicators - Always reserve height when rows mode */}
+      <div className={`flex items-center justify-between flex-shrink-0 ${rows ? "h-6 mt-1" : (totalPages <= 1 ? "hidden" : "mt-1")}`}>
+        {totalPages > 1 && (
+          <>
+            <div className="w-6 flex justify-center">
+              {currentPage > 0 && (
+                <ChevronLeft size={14} className="text-slate-500" />
+              )}
+            </div>
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === currentPage ? "bg-indigo-600" : "bg-slate-300"
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="w-6 flex justify-center">
+              {currentPage < totalPages - 1 && (
+                <ChevronRight size={14} className="text-slate-500" />
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

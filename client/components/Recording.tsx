@@ -18,6 +18,14 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
   const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
   const hasSpeechStartedRef = useRef(false);
   const silenceTimeoutRef = useRef<NodeJS.Timeout>();
+  const onVoiceInputRef = useRef(onVoiceInput);
+  const onVoiceEndRef = useRef(onVoiceEnd);
+  const onTranscriptRef = useRef(onTranscript);
+
+  // Keep refs up-to-date without re-initializing recognition
+  useEffect(() => { onVoiceInputRef.current = onVoiceInput; }, [onVoiceInput]);
+  useEffect(() => { onVoiceEndRef.current = onVoiceEnd; }, [onVoiceEnd]);
+  useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
 
   useEffect(() => {
     // Initialize Web Speech API with multiple fallbacks
@@ -58,15 +66,15 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
           hasSpeechStartedRef.current = true;
 
           setTranscript((prev) => prev + transcriptPart + " ");
-          if (onTranscript) {
-            onTranscript(transcriptPart);
+          if (onTranscriptRef.current) {
+            onTranscriptRef.current(transcriptPart);
           }
 
           // Parse voice input for category, account, and amount
           const voiceData = parseVoiceInput(transcriptPart);
-          if (onVoiceInput && (voiceData.categoryId || voiceData.accountId || voiceData.amount)) {
+          if (onVoiceInputRef.current && (voiceData.categoryId || voiceData.accountId || voiceData.amount)) {
             console.log("Voice data detected:", voiceData);
-            onVoiceInput(voiceData);
+            onVoiceInputRef.current(voiceData);
           }
 
           // Auto-stop after 2 seconds of silence (user finished speaking)
@@ -95,9 +103,9 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
       }
 
       // Call onVoiceEnd callback when speech ends (if speech was detected)
-      if (hasSpeechStartedRef.current && onVoiceEnd) {
+      if (hasSpeechStartedRef.current && onVoiceEndRef.current) {
         console.log("Calling onVoiceEnd callback");
-        onVoiceEnd();
+        onVoiceEndRef.current();
       }
 
       // Reset state to match reality - listening has stopped
@@ -111,24 +119,11 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     };
 
     recognition.onerror = (event: any) => {
-      // Ignore these expected errors
-      if (event.error === "aborted") {
-        console.log("Recognition stopped (user clicked stop)");
-        return;
-      }
-
-      if (event.error === "no-speech") {
-        console.log("No speech detected, keep listening or click mic to stop");
-        return;
-      }
-
-      if (event.error === "network") {
-        console.error("Network error - check your internet connection");
-        return;
-      }
-
-      // Log unexpected errors
+      if (event.error === "aborted") return;
+      if (event.error === "no-speech") return;
       console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+      isListeningRef.current = false;
     };
 
     recognitionRef.current = recognition;
@@ -153,7 +148,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
         clearTimeout(silenceTimeoutRef.current);
       }
     };
-  }, [onVoiceInput, onVoiceEnd]);
+  }, []); // init once only
 
   const handleToggleListening = () => {
     console.log("Toggle clicked, listening:", isListeningRef.current);
