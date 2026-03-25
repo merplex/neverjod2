@@ -106,7 +106,7 @@ export default function Carousel({ items, itemsPerPage, renderItem, cols, rows }
                   key={index}
                   onClick={() => setCurrentPage(index)}
                   className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentPage ? "bg-indigo-600" : "bg-slate-300"
+                    index === currentPage ? "bg-theme-600" : "bg-slate-300"
                   }`}
                 />
               ))}

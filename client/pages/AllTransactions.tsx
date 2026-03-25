@@ -85,11 +85,11 @@ function CalendarRangePicker({
         {/* Range display */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <span className={`px-3 py-1.5 rounded-lg ${picking === "start" ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700"}`}>
+            <span className={`px-3 py-1.5 rounded-lg ${picking === "start" ? "bg-theme-600 text-white" : "bg-theme-50 text-theme-700"}`}>
               {tempStart ? formatLabel(tempStart) : "Start"}
             </span>
             <ChevronRight size={16} className="text-slate-400" />
-            <span className={`px-3 py-1.5 rounded-lg ${picking === "end" ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700"}`}>
+            <span className={`px-3 py-1.5 rounded-lg ${picking === "end" ? "bg-theme-600 text-white" : "bg-theme-50 text-theme-700"}`}>
               {tempEnd ? formatLabel(tempEnd) : "End"}
             </span>
           </div>
@@ -131,8 +131,8 @@ function CalendarRangePicker({
                 key={`cell${i}`}
                 onClick={() => handleDay(day)}
                 className={`aspect-square flex items-center justify-center text-sm font-medium transition-colors rounded-full mx-auto w-9 h-9
-                  ${start || end ? "bg-indigo-600 text-white" : ""}
-                  ${inRange ? "bg-indigo-100 text-indigo-700 rounded-none" : ""}
+                  ${start || end ? "bg-theme-600 text-white" : ""}
+                  ${inRange ? "bg-theme-100 text-theme-700 rounded-none" : ""}
                   ${!start && !end && !inRange ? "hover:bg-slate-100 text-slate-700" : ""}
                 `}
               >
@@ -148,7 +148,7 @@ function CalendarRangePicker({
           onClick={() => tempStart && tempEnd && onSelect(tempStart, tempEnd)}
           className={`mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-colors ${
             tempStart && tempEnd
-              ? "bg-indigo-600 text-white hover:bg-indigo-700"
+              ? "bg-theme-600 text-white hover:bg-theme-700"
               : "bg-slate-100 text-slate-400 cursor-not-allowed"
           }`}
         >
@@ -273,11 +273,11 @@ export default function AllTransactions() {
       {/* Sticky header + controls wrapper */}
       <div className="sticky top-0 z-10">
         {/* Header */}
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
+        <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 py-4">
           <div className="max-w-md mx-auto flex items-center gap-2">
             <button
               onClick={() => navigate("/")}
-              className="p-2 hover:bg-indigo-500 rounded-lg transition-colors flex-shrink-0"
+              className="p-2 hover:bg-theme-500 rounded-lg transition-colors flex-shrink-0"
             >
               <ChevronLeft size={24} />
             </button>
@@ -285,7 +285,7 @@ export default function AllTransactions() {
             {/* Account selector button */}
             <button
               onClick={() => setShowAccountGrid((v) => !v)}
-              className="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-indigo-500/60 hover:bg-indigo-500 rounded-xl transition-colors min-w-0"
+              className="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-theme-500/60 hover:bg-theme-500 rounded-xl transition-colors min-w-0"
             >
               <span className="text-sm font-semibold truncate">{selectedAccountName}</span>
               <ChevronDown size={16} className={`flex-shrink-0 transition-transform ${showAccountGrid ? "rotate-180" : ""}`} />
@@ -302,14 +302,14 @@ export default function AllTransactions() {
             {accountIdFilter && (
               <button
                 onClick={() => selectAccount(null)}
-                className="flex-shrink-0 p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+                className="flex-shrink-0 p-2 hover:bg-theme-500 rounded-lg transition-colors"
               >
                 <X size={20} />
               </button>
             )}
             <button
               onClick={() => setShowSearch((v) => !v)}
-              className={`flex-shrink-0 p-2 rounded-lg transition-colors ${showSearch ? "bg-indigo-400" : "hover:bg-indigo-500"}`}
+              className={`flex-shrink-0 p-2 rounded-lg transition-colors ${showSearch ? "bg-theme-400" : "hover:bg-theme-500"}`}
             >
               <Search size={20} />
             </button>
@@ -318,12 +318,12 @@ export default function AllTransactions() {
 
         {/* Account Grid Dropdown */}
         {showAccountGrid && (
-          <div className="bg-indigo-700 px-4 pb-4 pt-2">
+          <div className="bg-theme-700 px-4 pb-4 pt-2">
             <div className="max-w-md mx-auto grid grid-cols-2 gap-2">
               <button
                 onClick={() => selectAccount(null)}
                 className={`px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${
-                  !accountIdFilter ? "bg-white text-indigo-700" : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
+                  !accountIdFilter ? "bg-white text-theme-700" : "bg-theme-500/60 text-theme-100 hover:bg-theme-500"
                 }`}
               >
                 All Accounts
@@ -333,7 +333,7 @@ export default function AllTransactions() {
                   key={acc.id}
                   onClick={() => selectAccount(acc.id)}
                   className={`px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${
-                    accountIdFilter === acc.id ? "bg-white text-indigo-700" : "bg-indigo-500/60 text-indigo-100 hover:bg-indigo-500"
+                    accountIdFilter === acc.id ? "bg-white text-theme-700" : "bg-theme-500/60 text-theme-100 hover:bg-theme-500"
                   }`}
                 >
                   {acc.name}
@@ -362,7 +362,7 @@ export default function AllTransactions() {
                 onClick={() => setShowCustomPicker(true)}
                 className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                   timeRange === "custom"
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-theme-600 text-white"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -374,7 +374,7 @@ export default function AllTransactions() {
                   onClick={() => setTimeRange(range)}
                   className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                     timeRange === range
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-theme-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
@@ -425,7 +425,7 @@ export default function AllTransactions() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
                         <span className="text-xs font-medium text-slate-600">{transaction.accountName}</span>
-                        <span className="text-xs font-semibold text-indigo-600">{transaction.category}</span>
+                        <span className="text-xs font-semibold text-theme-600">{transaction.category}</span>
                       </div>
                       <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>

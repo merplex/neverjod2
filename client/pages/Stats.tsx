@@ -76,11 +76,11 @@ export default function Stats() {
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Sticky header + tabs */}
       <div className="sticky top-0 z-10">
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
+        <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 py-4">
           <div className="max-w-md mx-auto flex items-center gap-3">
             <button
               onClick={() => navigate("/")}
-              className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+              className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
             >
               <ChevronLeft size={24} />
             </button>
@@ -94,7 +94,7 @@ export default function Stats() {
               onClick={() => setTab("summary")}
               className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                 tab === "summary"
-                  ? "bg-indigo-600 text-white shadow-md"
+                  ? "bg-theme-600 text-white shadow-md"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
@@ -104,7 +104,7 @@ export default function Stats() {
               onClick={() => setTab("stats")}
               className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                 tab === "stats"
-                  ? "bg-indigo-600 text-white shadow-md"
+                  ? "bg-theme-600 text-white shadow-md"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
@@ -170,7 +170,7 @@ export default function Stats() {
                       onClick={() => setPickerYear(y)}
                       className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
                         pickerYear === y
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-theme-600 text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
@@ -190,7 +190,7 @@ export default function Stats() {
                       }}
                       className={`py-2 rounded-lg text-xs font-semibold transition-colors ${
                         selectedYear === pickerYear && selectedMonth === i
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-theme-600 text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >

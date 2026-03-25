@@ -107,9 +107,9 @@ export default function VoiceResultConfirmation({
 
             {/* Countdown — only when account is present */}
             {accountName && (
-              <div className="flex items-center justify-between mb-4 p-3 bg-indigo-50 rounded-lg">
+              <div className="flex items-center justify-between mb-4 p-3 bg-theme-50 rounded-lg">
                 <span className="text-sm font-semibold text-slate-600">Auto-confirming in:</span>
-                <span className="text-2xl font-bold text-indigo-600">{countdown}s</span>
+                <span className="text-2xl font-bold text-theme-600">{countdown}s</span>
               </div>
             )}
 
@@ -124,7 +124,7 @@ export default function VoiceResultConfirmation({
               {accountName && (
                 <button
                   onClick={onConfirm}
-                  className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                  className="flex-1 px-3 py-2 bg-theme-600 text-white rounded-lg text-sm font-semibold hover:bg-theme-700 transition-colors"
                 >
                   Confirm Now
                 </button>
@@ -162,7 +162,7 @@ export default function VoiceResultConfirmation({
             {/* Button */}
             <button
               onClick={onEdit}
-              className="w-full px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+              className="w-full px-3 py-2 bg-theme-600 text-white rounded-lg text-sm font-semibold hover:bg-theme-700 transition-colors"
             >
               Try Again
             </button>

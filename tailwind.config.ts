@@ -14,6 +14,17 @@ export default {
     },
     extend: {
       colors: {
+        theme: {
+          50:  "hsl(var(--t-50))",
+          100: "hsl(var(--t-100))",
+          200: "hsl(var(--t-200))",
+          300: "hsl(var(--t-300))",
+          400: "hsl(var(--t-400))",
+          500: "hsl(var(--t-500))",
+          600: "hsl(var(--t-600))",
+          700: "hsl(var(--t-700))",
+          900: "hsl(var(--t-900))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

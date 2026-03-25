@@ -51,14 +51,14 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
         {/* Time Display */}
         <div
           onClick={() => setMode(mode === "hours" ? "minutes" : "hours")}
-          className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-center py-4 rounded-lg mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+          className="bg-gradient-to-br from-theme-600 to-theme-700 text-white text-center py-4 rounded-lg mb-4 cursor-pointer hover:opacity-90 transition-opacity"
         >
           <div className="text-5xl font-bold font-mono tracking-tight">
-            <span className={mode === "hours" ? "text-indigo-200" : ""}>
+            <span className={mode === "hours" ? "text-theme-200" : ""}>
               {hours < 10 ? `0${hours}` : `${hours}`}
             </span>
             <span>:</span>
-            <span className={mode === "minutes" ? "text-indigo-200" : ""}>
+            <span className={mode === "minutes" ? "text-theme-200" : ""}>
               {minutes < 10 ? `0${minutes}` : `${minutes}`}
             </span>
           </div>
@@ -128,7 +128,7 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                         cy={y}
                         r="7"
                         fill={isSelected ? "#4f46e5" : "transparent"}
-                        className="cursor-pointer hover:fill-indigo-100"
+                        className="cursor-pointer hover:fill-theme-100"
                       />
                       <text
                         x={x}
@@ -161,7 +161,7 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                         cy={y}
                         r="6"
                         fill={isSelected ? "#4f46e5" : "transparent"}
-                        className="cursor-pointer hover:fill-indigo-100"
+                        className="cursor-pointer hover:fill-theme-100"
                       />
                       <text
                         x={x}
@@ -195,7 +195,7 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                       cy={y}
                       r="7"
                       fill={isSelected ? "#4f46e5" : "transparent"}
-                      className="cursor-pointer hover:fill-indigo-100"
+                      className="cursor-pointer hover:fill-theme-100"
                     />
                     <text
                       x={x}
@@ -227,13 +227,13 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors text-sm"
+              className="px-4 py-2 text-theme-600 font-semibold hover:text-theme-700 transition-colors text-sm"
             >
               CANCEL
             </button>
             <button
               onClick={handleConfirm}
-              className="px-4 py-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors text-sm"
+              className="px-4 py-2 text-theme-600 font-semibold hover:text-theme-700 transition-colors text-sm"
             >
               OK
             </button>

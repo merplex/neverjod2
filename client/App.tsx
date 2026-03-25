@@ -1,11 +1,27 @@
 import "./global.css";
 
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot, Root } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+function ThemeProvider() {
+  useEffect(() => {
+    function apply() {
+      try {
+        const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+        document.documentElement.setAttribute("data-theme", s.colorTheme || "blue");
+      } catch {}
+    }
+    apply();
+    window.addEventListener("storage", apply);
+    return () => window.removeEventListener("storage", apply);
+  }, []);
+  return null;
+}
 import Index from "./pages/Index";
 import Transactions from "./pages/Transactions";
 import AllTransactions from "./pages/AllTransactions";
@@ -26,6 +42,7 @@ declare global {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <ThemeProvider />
       <Toaster />
       <Sonner />
       <BrowserRouter>

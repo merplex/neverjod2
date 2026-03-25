@@ -28,7 +28,7 @@ export default function BottomNav() {
               onClick={() => navigate(item.path)}
               className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors ${
                 active
-                  ? "text-indigo-600"
+                  ? "text-theme-600"
                   : "text-slate-400 hover:text-slate-600"
               }`}
             >

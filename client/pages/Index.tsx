@@ -499,8 +499,8 @@ export default function Index() {
                   className={`w-full py-2 px-3 rounded-lg transition-all flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold overflow-hidden ${
                     isReorderMode
                       ? isSelected
-                        ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
-                        : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
+                        ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
+                        : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
                       : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                   }`}
                 >
@@ -534,7 +534,7 @@ export default function Index() {
                       onClick={() => setCategoryType("expense")}
                       className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                         categoryType === "expense"
-                          ? "bg-indigo-600 text-white shadow-md"
+                          ? "bg-theme-600 text-white shadow-md"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
@@ -544,7 +544,7 @@ export default function Index() {
                       onClick={() => setCategoryType("income")}
                       className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                         categoryType === "income"
-                          ? "bg-indigo-600 text-white shadow-md"
+                          ? "bg-theme-600 text-white shadow-md"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
@@ -555,7 +555,7 @@ export default function Index() {
                     {!isCategoryReorderMode && (
                       <button
                         onClick={() => setIsCategoryReorderMode(true)}
-                        className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded font-semibold hover:bg-indigo-200 transition-colors"
+                        className="px-3 py-1 text-xs bg-theme-100 text-theme-700 rounded font-semibold hover:bg-theme-200 transition-colors"
                       >
                         Reorder
                       </button>
@@ -624,9 +624,9 @@ export default function Index() {
                         className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold overflow-hidden ${
                           isCategoryReorderMode
                             ? isSelected
-                              ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
-                              : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
-                            : "bg-indigo-50 hover:bg-indigo-200 text-indigo-900"
+                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
+                              : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
+                            : "bg-theme-50 hover:bg-theme-200 text-theme-900"
                         }`}
                       >
                         <IconComponent size={24} />
@@ -655,7 +655,7 @@ export default function Index() {
                     {!isAccountPageReorderMode && (
                       <button
                         onClick={() => setIsAccountPageReorderMode(true)}
-                        className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded font-semibold hover:bg-indigo-200 transition-colors"
+                        className="px-3 py-1 text-xs bg-theme-100 text-theme-700 rounded font-semibold hover:bg-theme-200 transition-colors"
                       >
                         Reorder
                       </button>
@@ -701,9 +701,9 @@ export default function Index() {
                         className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold ${
                           isAccountPageReorderMode
                             ? isSelected
-                              ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
-                              : "bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-2 border-indigo-300"
-                            : "bg-indigo-50 hover:bg-indigo-200 text-indigo-900"
+                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
+                              : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
+                            : "bg-theme-50 hover:bg-theme-200 text-theme-900"
                         }`}
                       >
                         <IconComponent size={24} />
@@ -734,7 +734,7 @@ export default function Index() {
                       onClick={() => setNumpadSize(size)}
                       className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                         numpadSize === size
-                          ? "bg-indigo-600 text-white shadow-md"
+                          ? "bg-theme-600 text-white shadow-md"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
@@ -745,7 +745,7 @@ export default function Index() {
                     onClick={() => setIsRightMode(!isRightMode)}
                     className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                       isRightMode
-                        ? "bg-indigo-600 text-white shadow-md"
+                        ? "bg-theme-600 text-white shadow-md"
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
@@ -756,13 +756,13 @@ export default function Index() {
                 {/* Group B+C+D: Display + Numpad + Controls */}
                 <div className="flex flex-col flex-1 min-h-0 gap-2">
                   {/* Section B: Display */}
-                  <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-3 rounded-lg flex justify-between items-center flex-shrink-0">
+                  <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-3 rounded-lg flex justify-between items-center flex-shrink-0">
                     <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
                       {categoryType === "income" ? "+" : "-"}฿{display}
                     </div>
                     <button
                       onClick={() => setCurrentPage("account")}
-                      className="p-2 hover:bg-indigo-500 rounded-lg transition-colors text-white flex-shrink-0"
+                      className="p-2 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0"
                     >
                       <X size={24} />
                     </button>
@@ -778,7 +778,7 @@ export default function Index() {
                           <button
                             key={num}
                             onClick={() => handleNumberClick(num)}
-                            className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                            className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                           >
                             {num}
                           </button>
@@ -790,15 +790,15 @@ export default function Index() {
                         {isRightMode ? (
                           <>
                             <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
                             <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
                           </>
                         ) : (
                           <>
                             <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 text-indigo-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
                             <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
                           </>
                         )}
