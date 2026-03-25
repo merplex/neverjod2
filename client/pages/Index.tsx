@@ -426,7 +426,7 @@ export default function Index() {
                       navigate(`/transactions?accountId=${account.id}`);
                     }
                   }}
-                  className={`w-full py-2 px-3 rounded-lg transition-all flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold ${
+                  className={`w-full py-2 px-3 rounded-lg transition-all flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold overflow-hidden ${
                     isReorderMode
                       ? isSelected
                         ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
@@ -435,8 +435,8 @@ export default function Index() {
                   }`}
                 >
                   <IconComponent size={20} />
-                  <span className="font-bold text-xs truncate">{account.name}</span>
-                  <span className="text-xs font-normal opacity-75">{account.type}</span>
+                  <span className="font-bold text-xs truncate w-full text-center block">{account.name}</span>
+                  <span className="text-xs font-normal opacity-75 truncate w-full text-center block">{account.type}</span>
                 </button>
               );
             }}
@@ -527,7 +527,7 @@ export default function Index() {
                             handleCategorySelect(category.id);
                           }
                         }}
-                        className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold ${
+                        className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold overflow-hidden ${
                           isCategoryReorderMode
                             ? isSelected
                               ? "bg-indigo-500 text-white shadow-lg scale-105 border-2 border-indigo-700"
@@ -536,7 +536,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={24} />
-                        <span className="font-bold text-xs text-center truncate leading-tight">{category.name}</span>
+                        <span className="font-bold text-xs text-center truncate leading-tight w-full block">{category.name}</span>
                       </button>
                     );
                   }}
