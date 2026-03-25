@@ -93,16 +93,39 @@ export default function Categories() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIconId, setNewIconId] = useState("other");
+  const [newKeywords, setNewKeywords] = useState("");
+  const [newKeywordError, setNewKeywordError] = useState("");
 
   const handleAddCategory = () => {
     if (!newName.trim()) return;
+
+    const keywords = newKeywords
+      .split(",")
+      .map((k) => k.trim().toLowerCase())
+      .filter((k) => k);
+
+    // Validate: keywords must not already exist in other categories or accounts
+    const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+    for (const kw of keywords) {
+      const dupCat = categories.find((c) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupCat) {
+        setNewKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        return;
+      }
+      const dupAcc = storedAccounts.find((a: any) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupAcc) {
+        setNewKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        return;
+      }
+    }
+
     const iconEntry = iconOptions.find((o) => o.id === newIconId) || iconOptions[iconOptions.length - 1];
     const newId = `custom_${Date.now()}`;
-    const newCat: Category & { iconId?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords: [] };
+    const newCat: Category & { iconId?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords };
     const updated = [...categories.filter((c) => c.id !== "nocat"), newCat, ...categories.filter((c) => c.id === "nocat")];
     setCategories(updated);
     localStorage.setItem("app_categories", JSON.stringify(updated));
-    setNewName(""); setNewIconId("other"); setShowAddForm(false);
+    setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(false);
   };
 
   const isProtected = (id: string) => id === "other" || id === "nocat";
@@ -219,7 +242,7 @@ export default function Categories() {
             <h1 className="text-xl font-bold">Categories</h1>
           </div>
           <button
-            onClick={() => { setNewName(""); setNewIconId("other"); setShowAddForm(true); }}
+            onClick={() => { setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true); }}
             className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
             title="Add category"
           >
@@ -398,6 +421,19 @@ export default function Categories() {
                 placeholder="e.g. Gaming"
                 autoFocus
               />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Keywords (คั่นด้วยจุลภาค)</label>
+              <input
+                type="text"
+                value={newKeywords}
+                onChange={(e) => { setNewKeywords(e.target.value); setNewKeywordError(""); }}
+                className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newKeywordError ? "border-red-400" : "border-slate-300"}`}
+                placeholder="เช่น กิน, ข้าว, ร้านอาหาร"
+              />
+              {newKeywordError && (
+                <p className="text-xs text-red-500 mt-1">{newKeywordError}</p>
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>

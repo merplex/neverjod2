@@ -84,6 +84,8 @@ export default function AccountsManagement() {
   const [newAccType, setNewAccType] = useState("savings account");
   const [newAccBalance, setNewAccBalance] = useState("0");
   const [newAccIconId, setNewAccIconId] = useState("wallet");
+  const [newAccKeywords, setNewAccKeywords] = useState("");
+  const [newAccKeywordError, setNewAccKeywordError] = useState("");
 
   const accIconOptions = [
     { id: "creditcard", icon: CreditCard },
@@ -96,6 +98,27 @@ export default function AccountsManagement() {
 
   const handleAddAccount = () => {
     if (!newAccName.trim()) return;
+
+    const keywords = newAccKeywords
+      .split(",")
+      .map((k) => k.trim().toLowerCase())
+      .filter((k) => k);
+
+    // Validate: keywords must not already exist in other accounts or categories
+    const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
+    for (const kw of keywords) {
+      const dupAcc = accounts.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupAcc) {
+        setNewAccKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        return;
+      }
+      const dupCat = storedCategories.find((c: any) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupCat) {
+        setNewAccKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        return;
+      }
+    }
+
     const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[1];
     const newId = `custom_acc_${Date.now()}`;
     const newAcc: Account & { iconId?: string } = {
@@ -105,7 +128,7 @@ export default function AccountsManagement() {
       icon: iconEntry.icon,
       iconId: newAccIconId,
       balance: parseFloat(newAccBalance) || 0,
-      keywords: [],
+      keywords,
     };
     const deletedAcc = accounts.find((a) => a.id === "account_deleted");
     const rest = accounts.filter((a) => a.id !== "account_deleted");
@@ -113,6 +136,7 @@ export default function AccountsManagement() {
     setAccounts(updated);
     localStorage.setItem("app_accounts", JSON.stringify(updated));
     setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet");
+    setNewAccKeywords(""); setNewAccKeywordError("");
     setShowAddForm(false);
   };
 
@@ -284,7 +308,7 @@ export default function AccountsManagement() {
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet"); setShowAddForm(true); }}
+              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true); }}
               className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
               title="Add account"
             >
@@ -478,6 +502,19 @@ export default function AccountsManagement() {
                 onChange={(e) => setNewAccBalance(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
               />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Keywords (คั่นด้วยจุลภาค)</label>
+              <input
+                type="text"
+                value={newAccKeywords}
+                onChange={(e) => { setNewAccKeywords(e.target.value); setNewAccKeywordError(""); }}
+                className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}
+                placeholder="เช่น กรุงศรี, อยุธยา"
+              />
+              {newAccKeywordError && (
+                <p className="text-xs text-red-500 mt-1">{newAccKeywordError}</p>
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>
