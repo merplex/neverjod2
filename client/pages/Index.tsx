@@ -377,13 +377,13 @@ export default function Index() {
     <div className="h-[100dvh] flex flex-col pb-[72px] bg-white overflow-hidden">
       <div className="w-full flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Persistent Account Section - Top */}
-        <div className="px-4 py-3 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm font-semibold text-slate-600">Accounts</h3>
+        <div className="px-4 pt-3 pb-2 bg-white border-b border-slate-100">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Accounts</h3>
             {!isReorderMode && (
               <button
                 onClick={() => setIsReorderMode(true)}
-                className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded font-semibold hover:bg-indigo-200 transition-colors"
+                className="px-3 py-1 text-xs bg-slate-100 text-slate-500 rounded font-semibold hover:bg-slate-200 transition-colors"
               >
                 Reorder
               </button>
@@ -418,8 +418,8 @@ export default function Index() {
                         setSelectedForSwap(null);
                       }
                     } else {
-                      // Normal mode - navigate to transactions
-                      navigate(`/account/${account.id}/transactions`);
+                      // Normal mode - navigate to transactions filtered by account
+                      navigate(`/transactions?accountId=${account.id}`);
                     }
                   }}
                   className={`w-full py-2 px-3 rounded-lg transition-all flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold ${

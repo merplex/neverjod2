@@ -13,6 +13,7 @@ import TransactionDetail from "./pages/TransactionDetail";
 import Stats from "./pages/Stats";
 import Categories from "./pages/Categories";
 import AccountsManagement from "./pages/AccountsManagement";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import BottomNavLayout from "./components/BottomNavLayout";
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/stats" element={<Stats />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/accounts" element={<AccountsManagement />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

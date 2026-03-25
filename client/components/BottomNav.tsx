@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { FileText, BarChart3, Grid3x3, Settings } from "lucide-react";
+import { FileText, BarChart3, Grid3x3, User, Settings } from "lucide-react";
 
 export default function BottomNav() {
   const navigate = useNavigate();
@@ -9,7 +9,8 @@ export default function BottomNav() {
     { path: "/transactions", label: "Transaction", icon: FileText },
     { path: "/stats", label: "Stats", icon: BarChart3 },
     { path: "/categories", label: "Category", icon: Grid3x3 },
-    { path: "/accounts", label: "Account", icon: Settings },
+    { path: "/accounts", label: "Account", icon: User },
+    { path: "/settings", label: "Setting", icon: Settings },
   ];
 
   const isActive = (path: string) => location.pathname === path;

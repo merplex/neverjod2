@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ArrowUpDown } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronLeft, ArrowUpDown, X } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 
 type TimeRange = "week" | "month" | "all";
@@ -8,16 +8,25 @@ type SortOrder = "asc" | "desc";
 
 export default function AllTransactions() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const accountIdFilter = searchParams.get("accountId");
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
   const allTransactions = useMemo(() => getRealTransactionsList(), []);
+
+  const accountName = useMemo(() => {
+    if (!accountIdFilter) return null;
+    const found = allTransactions.find((t) => t.accountId === accountIdFilter);
+    return found?.accountName ?? accountIdFilter;
+  }, [accountIdFilter, allTransactions]);
 
   const filtered = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     return allTransactions.filter((transaction) => {
+      if (accountIdFilter && transaction.accountId !== accountIdFilter) return false;
       const transactionDate = new Date(
         transaction.date.getFullYear(),
         transaction.date.getMonth(),
@@ -78,10 +87,21 @@ export default function AllTransactions() {
           >
             <ChevronLeft size={24} />
           </button>
-          <div>
-            <h1 className="text-xl font-bold">All Transactions</h1>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold">
+              {accountName ? accountName : "All Transactions"}
+            </h1>
             <p className="text-sm text-indigo-100">{sorted.length} transactions</p>
           </div>
+          {accountIdFilter && (
+            <button
+              onClick={() => setSearchParams({})}
+              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-sm transition-colors"
+            >
+              <X size={14} />
+              All
+            </button>
+          )}
         </div>
       </div>
 
