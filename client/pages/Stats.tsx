@@ -118,21 +118,24 @@ export default function Stats() {
 
       {/* ===== Tab 1: Summary ===== */}
       {tab === "summary" && (
-        <div className="max-w-md mx-auto px-4 py-4 space-y-2">
-          {summaryData.length === 0 && (
+        <div className="max-w-md mx-auto px-4 py-4">
+          {summaryData.length === 0 ? (
             <div className="text-center py-12 text-slate-400 text-sm">No accounts found</div>
+          ) : (
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              {summaryData.map((acc: any, i: number) => {
+                const balance = (acc.balance || 0) + acc.income - acc.expense;
+                return (
+                  <div key={acc.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-slate-100" : ""}`}>
+                    <p className="font-medium text-slate-800">{acc.name}</p>
+                    <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
+                      {balance >= 0 ? "+" : "-"}฿{Math.abs(balance).toLocaleString()}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           )}
-          {summaryData.map((acc: any) => {
-            const balance = (acc.balance || 0) + acc.income - acc.expense;
-            return (
-              <div key={acc.id} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center justify-between">
-                <p className="font-semibold text-slate-800">{acc.name}</p>
-                <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
-                  {balance >= 0 ? "+" : "-"}฿{Math.abs(balance).toLocaleString()}
-                </p>
-              </div>
-            );
-          })}
         </div>
       )}
 
@@ -194,61 +197,53 @@ export default function Stats() {
             )}
           </div>
 
-          {/* Expense by category */}
+          {/* Single box: Expense + Income + Account breakdown */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100">
-              <p className="font-semibold text-slate-700 text-sm">รายจ่ายตาม Category</p>
+            {/* Expense section */}
+            <div className="px-4 py-3 bg-slate-50">
+              <p className="font-semibold text-slate-700 text-sm">รายจ่าย</p>
             </div>
             {expenseByCat.length === 0 ? (
-              <p className="text-xs text-slate-400 px-4 py-4 text-center">ไม่มีรายจ่ายในช่วงนี้</p>
+              <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">ไม่มีรายจ่ายในช่วงนี้</p>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {expenseByCat.map(([cat, total]) => (
-                  <div key={cat} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm text-slate-700">{cat}</span>
-                    <span className="text-sm font-semibold text-red-500">-฿{total.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
+              expenseByCat.map(([cat, total]) => (
+                <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                  <span className="text-sm text-slate-700">{cat}</span>
+                  <span className="text-sm font-semibold text-red-500">-฿{total.toLocaleString()}</span>
+                </div>
+              ))
             )}
-          </div>
 
-          {/* Income by category */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100">
-              <p className="font-semibold text-slate-700 text-sm">รายรับตาม Category</p>
+            {/* Income section */}
+            <div className="px-4 py-3 bg-slate-50">
+              <p className="font-semibold text-slate-700 text-sm">รายรับ</p>
             </div>
             {incomeByCat.length === 0 ? (
-              <p className="text-xs text-slate-400 px-4 py-4 text-center">ไม่มีรายรับในช่วงนี้</p>
+              <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">ไม่มีรายรับในช่วงนี้</p>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {incomeByCat.map(([cat, total]) => (
-                  <div key={cat} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm text-slate-700">{cat}</span>
-                    <span className="text-sm font-semibold text-green-600">+฿{total.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
+              incomeByCat.map(([cat, total]) => (
+                <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                  <span className="text-sm text-slate-700">{cat}</span>
+                  <span className="text-sm font-semibold text-green-600">+฿{total.toLocaleString()}</span>
+                </div>
+              ))
             )}
-          </div>
 
-          {/* Per-account breakdown */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100">
+            {/* Per-account section */}
+            <div className="px-4 py-3 bg-slate-50">
               <p className="font-semibold text-slate-700 text-sm">แยกตาม Account</p>
             </div>
             {accountMonthData.length === 0 ? (
-              <p className="text-xs text-slate-400 px-4 py-4 text-center">ไม่มีรายการในช่วงนี้</p>
+              <p className="text-xs text-slate-400 px-4 py-3 text-center">ไม่มีรายการในช่วงนี้</p>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {/* Header row */}
-                <div className="grid grid-cols-3 px-4 py-2 bg-slate-50">
+              <>
+                <div className="grid grid-cols-3 px-4 py-2 border-b border-slate-100">
                   <span className="text-xs font-medium text-slate-400">Account</span>
                   <span className="text-xs font-medium text-slate-400 text-center">รายรับ</span>
                   <span className="text-xs font-medium text-slate-400 text-right">รายจ่าย</span>
                 </div>
                 {accountMonthData.map((acc: any) => (
-                  <div key={acc.id} className="grid grid-cols-3 px-4 py-3 items-center">
+                  <div key={acc.id} className="grid grid-cols-3 px-4 py-3 items-center border-b border-slate-100 last:border-b-0">
                     <span className="text-sm text-slate-700 font-medium truncate pr-2">{acc.name}</span>
                     <span className="text-sm font-semibold text-green-600 text-center">
                       {acc.income > 0 ? `+฿${acc.income.toLocaleString()}` : "—"}
@@ -258,7 +253,7 @@ export default function Stats() {
                     </span>
                   </div>
                 ))}
-              </div>
+              </>
             )}
           </div>
         </div>
