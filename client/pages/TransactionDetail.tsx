@@ -288,14 +288,14 @@ export default function TransactionDetail() {
       {showCategoryPicker && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setShowCategoryPicker(false)} />
-          <div className="relative bg-white rounded-t-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "50vh" }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800">Category</h3>
               <button onClick={() => setShowCategoryPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto" style={{ height: 272 }}>
+            <div className="overflow-y-auto flex-1">
               <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
                 {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
                   const Icon = categoryIconMap[cat.id] || (cat.iconId ? categoryIconMap[cat.iconId] : null) || MoreHorizontal;
@@ -322,14 +322,14 @@ export default function TransactionDetail() {
       {showAccountPicker && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setShowAccountPicker(false)} />
-          <div className="relative bg-white rounded-t-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "50vh" }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800">Account</h3>
               <button onClick={() => setShowAccountPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto" style={{ height: 272 }}>
+            <div className="overflow-y-auto flex-1">
               <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
                 {accountsList.map((acc: any) => {
                   const Icon = accountIconMap[acc.id] || (acc.iconId ? accountIconMap[acc.iconId] : null) || CreditCard;

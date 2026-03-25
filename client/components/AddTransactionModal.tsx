@@ -368,14 +368,14 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
       {showCategoryPicker && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowCategoryPicker(false)} />
-          <div className="relative bg-white rounded-t-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "50vh" }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800">Category</h3>
               <button onClick={() => setShowCategoryPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto" style={{ height: 272 }}>
+            <div className="overflow-y-auto flex-1">
               <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
                 {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
                   const Icon = resolveIcon(cat, MoreHorizontal);
@@ -402,14 +402,14 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
       {showAccountPicker && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowAccountPicker(false)} />
-          <div className="relative bg-white rounded-t-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "50vh" }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800">Account</h3>
               <button onClick={() => setShowAccountPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto" style={{ height: 272 }}>
+            <div className="overflow-y-auto flex-1">
               <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
                 {accountsList.map((acc: any) => {
                   const Icon = resolveIcon(acc, CreditCard);
@@ -486,7 +486,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
       {showAmountPad && (
         <div className="fixed inset-0 z-[70] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowAmountPad(false)} />
-          <div className="relative bg-white rounded-t-2xl">
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "50vh" }}>
           {/* hidden Recording for voice calculator */}
           <div className="hidden">
             <Recording
@@ -497,9 +497,9 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             />
           </div>
 
-          <div className="px-4 pt-3 pb-4">
+          <div className="px-4 pt-3 pb-4 flex flex-col flex-1 min-h-0">
             {/* Section A: Size Controls */}
-            <div className="flex gap-2 items-center mb-2">
+            <div className="flex gap-2 items-center mb-2 flex-shrink-0">
               {[70, 75, 80, 85].map((size) => (
                 <button
                   key={size}
@@ -522,7 +522,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             </div>
 
             {/* Section B: Display */}
-            <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2">
+            <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2 flex-shrink-0">
               <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
                 {sign}฿{display}
               </div>
@@ -534,11 +534,11 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               </button>
             </div>
 
-            {/* Section C+D */}
-            <div className={`flex gap-2 ${isRightMode ? "flex-row-reverse" : ""}`} style={{ height: 200 }}>
+            {/* Section C+D — fills remaining height */}
+            <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
               {/* Section C: Numpad */}
-              <div className="flex flex-col gap-1.5" style={{ width: `${numpadSize}%` }}>
-                <div className="grid grid-cols-3 gap-1.5" style={{ height: 152 }}>
+              <div className="flex flex-col gap-1.5 min-h-0" style={{ width: `${numpadSize}%` }}>
+                <div className="grid grid-cols-3 gap-1.5 flex-1 min-h-0" style={{ gridTemplateRows: "repeat(3, 1fr)" }}>
                   {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
                     <button
                       key={num}
@@ -549,7 +549,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                     </button>
                   ))}
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 flex-1">
+                <div className="grid grid-cols-4 gap-1.5 flex-shrink-0" style={{ height: 44 }}>
                   {isRightMode ? (
                     <>
                       <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
@@ -568,38 +568,38 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                 </div>
               </div>
 
-              {/* Section D: Voice Calculator (long press) + Lock */}
-              <div className="flex flex-col gap-1.5 flex-1">
-                  <button
-                    onClick={handleVoiceCalcToggle}
-                    disabled={isLocked}
-                    className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
-                      isLocked
-                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                        : isVoiceCalcActive
-                        ? "bg-gradient-to-br from-green-400 to-green-500 text-white border-2 border-green-600"
-                        : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-1">
-                        <Calculator size={24} />
-                        <Mic size={24} />
-                      </div>
-                      <span className="text-xs">{isVoiceCalcActive ? "Listening…" : "Calc"}</span>
+              {/* Section D: Voice Calc + Lock */}
+              <div className="flex flex-col gap-1.5 flex-1 min-h-0">
+                <button
+                  onClick={handleVoiceCalcToggle}
+                  disabled={isLocked}
+                  className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
+                    isLocked
+                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                      : isVoiceCalcActive
+                      ? "bg-gradient-to-br from-green-400 to-green-500 text-white border-2 border-green-600"
+                      : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-1">
+                      <Calculator size={24} />
+                      <Mic size={24} />
                     </div>
-                  </button>
-                  <button
-                    onClick={() => setIsLocked(!isLocked)}
-                    className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
-                      isLocked
-                        ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
-                        : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
-                    }`}
-                  >
-                    {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
-                  </button>
-                </div>
+                    <span className="text-xs">{isVoiceCalcActive ? "Listening…" : "Calc"}</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setIsLocked(!isLocked)}
+                  className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
+                    isLocked
+                      ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
+                      : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
+                  }`}
+                >
+                  {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
+                </button>
+              </div>
             </div>
           </div>
           </div>
