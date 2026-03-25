@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSwipeBack } from "../hooks/useSwipeBack";
 import { getRealTransactionsList } from "../utils/transactionData";
 
 type TabType = "summary" | "stats";
@@ -12,6 +13,7 @@ const MONTHS = [
 
 export default function Stats() {
   const navigate = useNavigate();
+  useSwipeBack();
   const [tab, setTab] = useState<TabType>("summary");
 
   const now = new Date();
@@ -121,24 +123,11 @@ export default function Stats() {
             <div className="text-center py-12 text-slate-400 text-sm">No accounts found</div>
           )}
           {summaryData.map((acc: any) => (
-            <div key={acc.id} className="bg-white rounded-xl border border-slate-200 p-4">
-              <p className="font-semibold text-slate-800 mb-3">{acc.name}</p>
-              <div className="flex gap-3">
-                <div className="flex-1 text-center">
-                  <p className="text-xs text-slate-400 mb-0.5">Income</p>
-                  <p className="font-bold text-sm text-green-600 text-right">+฿{acc.income.toLocaleString()}</p>
-                </div>
-                <div className="flex-1 text-center">
-                  <p className="text-xs text-slate-400 mb-0.5">Expense</p>
-                  <p className="font-bold text-sm text-red-500 text-right">-฿{acc.expense.toLocaleString()}</p>
-                </div>
-                <div className="flex-1 text-center">
-                  <p className="text-xs text-slate-400 mb-0.5">Balance</p>
-                  <p className={`font-bold text-sm text-right ${acc.income - acc.expense >= 0 ? "text-slate-800" : "text-red-500"}`}>
-                    {acc.income - acc.expense >= 0 ? "+" : "-"}฿{Math.abs(acc.income - acc.expense).toLocaleString()}
-                  </p>
-                </div>
-              </div>
+            <div key={acc.id} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center justify-between">
+              <p className="font-semibold text-slate-800">{acc.name}</p>
+              <p className={`font-bold text-sm ${acc.income - acc.expense >= 0 ? "text-slate-800" : "text-red-500"}`}>
+                {acc.income - acc.expense >= 0 ? "+" : "-"}฿{Math.abs(acc.income - acc.expense).toLocaleString()}
+              </p>
             </div>
           ))}
         </div>

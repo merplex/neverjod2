@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSwipeBack } from "../hooks/useSwipeBack";
 import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 
@@ -161,6 +162,7 @@ function CalendarRangePicker({
 
 export default function AllTransactions() {
   const navigate = useNavigate();
+  useSwipeBack();
   const [searchParams, setSearchParams] = useSearchParams();
   const accountIdFilter = searchParams.get("accountId");
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
@@ -430,7 +432,7 @@ export default function AllTransactions() {
                       <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>
                     <div className="text-right">
-                      <span className={`font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-slate-900"}`}>
+                      <span className={`font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-red-500"}`}>
                         {transaction.type === "income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
                       </span>
                     </div>

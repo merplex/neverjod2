@@ -93,12 +93,24 @@ export default function Index() {
       const stored = localStorage.getItem("app_categories");
       if (stored) {
         const storedCategories = JSON.parse(stored);
+        const catIconMap: Record<string, React.ComponentType<any>> = {
+          food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
+          bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
+          travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
+          salary: TrendingUp, card: CreditCard, wallet: Wallet, phone: Smartphone,
+          cash: Banknote, other: MoreHorizontal,
+        };
         // Restore icons from default categories since they can't be serialized
         return storedCategories
           .map((cat: any) => {
             if (!cat || !cat.id) return null;
             const defaultCat = categories.find((d) => d.id === cat.id);
-            if (!defaultCat) return null;
+            if (!defaultCat) {
+              // Custom category — resolve icon by iconId
+              if (!cat.id.startsWith("custom_")) return null;
+              const icon = catIconMap[cat.iconId] || MoreHorizontal;
+              return { ...cat, icon };
+            }
             return {
               ...cat,
               icon: defaultCat.icon,
@@ -118,12 +130,24 @@ export default function Index() {
       const stored = localStorage.getItem("app_accounts");
       if (stored) {
         const storedAccounts = JSON.parse(stored);
+        const iconMap: Record<string, React.ComponentType<any>> = {
+          creditcard: CreditCard, card: CreditCard, wallet: Wallet, cash: Banknote,
+          invest: TrendingUp, salary: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+          food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
+          bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
+          travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
+        };
         // Restore icons from default accounts since they can't be serialized
         return storedAccounts
           .map((acc: any) => {
             if (!acc || !acc.id) return null;
             const defaultAcc = accounts.find((d) => d.id === acc.id);
-            if (!defaultAcc) return null;
+            if (!defaultAcc) {
+              // Custom account — resolve icon by iconId
+              if (!acc.id.startsWith("custom_acc_")) return null;
+              const icon = iconMap[acc.iconId] || MoreHorizontal;
+              return { ...acc, icon };
+            }
             return {
               ...acc,
               icon: defaultAcc.icon,
