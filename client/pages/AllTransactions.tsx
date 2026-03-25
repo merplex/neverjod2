@@ -36,7 +36,10 @@ export default function AllTransactions() {
 
     return allTransactions.filter((transaction) => {
       if (accountIdFilter && transaction.accountId !== accountIdFilter) return false;
-      if (q && !transaction.accountName.toLowerCase().includes(q) && !transaction.category.toLowerCase().includes(q)) return false;
+      if (q && !transaction.accountName.toLowerCase().includes(q) &&
+               !transaction.category.toLowerCase().includes(q) &&
+               !transaction.amount.toString().includes(q) &&
+               !(transaction.description || "").toLowerCase().includes(q)) return false;
       const transactionDate = new Date(
         transaction.date.getFullYear(),
         transaction.date.getMonth(),
