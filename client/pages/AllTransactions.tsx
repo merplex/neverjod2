@@ -116,17 +116,19 @@ function CalendarRangePicker({
           ))}
         </div>
 
-        {/* Calendar grid */}
+        {/* Calendar grid — always 6 rows (42 cells) */}
         <div className="grid grid-cols-7">
-          {Array.from({ length: firstDayOfWeek }).map((_, i) => <div key={`e${i}`} />)}
-          {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1;
+          {Array.from({ length: 42 }).map((_, i) => {
+            const day = i - firstDayOfWeek + 1;
+            if (day < 1 || day > daysInMonth) {
+              return <div key={`cell${i}`} className="w-9 h-9 mx-auto" />;
+            }
             const start = isStart(day);
             const end = isEnd(day);
             const inRange = isInRange(day);
             return (
               <button
-                key={day}
+                key={`cell${i}`}
                 onClick={() => handleDay(day)}
                 className={`aspect-square flex items-center justify-center text-sm font-medium transition-colors rounded-full mx-auto w-9 h-9
                   ${start || end ? "bg-indigo-600 text-white" : ""}
