@@ -34,7 +34,7 @@ export function useSwipeBack() {
       const direction = getSwipeBackDirection();
       const isSwipeRight = dx > 0;
       if ((direction === "right" && isSwipeRight) || (direction === "left" && !isSwipeRight)) {
-        navigate(-1);
+        navigate("/");
       }
 
       touchStartX.current = null;
