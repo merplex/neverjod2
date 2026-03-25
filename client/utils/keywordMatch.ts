@@ -135,9 +135,52 @@ export function extractNumberFromText(text: string): number | undefined {
   return total > 0 ? total : undefined;
 }
 
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j - 1], dp[i][j - 1], dp[i - 1][j]);
+    }
+  }
+  return dp[m][n];
+}
+
+function wordMatchesKeyword(word: string, keyword: string, threshold = 0.7): boolean {
+  if (word === keyword) return true;
+  // Short keywords (1-3 chars) require exact match only
+  if (keyword.length <= 3) return word === keyword;
+  const dist = levenshtein(word, keyword);
+  return 1 - dist / Math.max(word.length, keyword.length) >= threshold;
+}
+
 export function matchKeyword(text: string, keywords: string[]): boolean {
   const lowerText = text.toLowerCase().trim();
-  return keywords.some((keyword) => lowerText.includes(keyword.toLowerCase()));
+
+  for (const keyword of keywords) {
+    const lowerKeyword = keyword.toLowerCase();
+
+    // 1. Exact substring match
+    if (lowerText.includes(lowerKeyword)) return true;
+
+    // 2. Remove spaces (handles "U O B" → "uob", "baht pay" → "bahtpay")
+    const condensedText = lowerText.replace(/\s+/g, "");
+    const condensedKeyword = lowerKeyword.replace(/\s+/g, "");
+    if (condensedText.includes(condensedKeyword)) return true;
+
+    // 3. Per-word fuzzy match (~70% similarity)
+    const words = lowerText.split(/\s+/);
+    for (const word of words) {
+      if (word.length < 2) continue;
+      if (wordMatchesKeyword(word, lowerKeyword)) return true;
+    }
+  }
+
+  return false;
 }
 
 export function matchCategory(text: string): string | undefined {
