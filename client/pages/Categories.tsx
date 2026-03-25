@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Edit2, Plus, X, Lock } from "lucide-react";
+import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote } from "lucide-react";
 
@@ -40,32 +40,33 @@ const defaultCategories: Category[] = [
   { id: "pets", name: "Pets", type: "expense", icon: Heart, keywords: [] },
   { id: "childcare", name: "Childcare", type: "expense", icon: Gift, keywords: [] },
   { id: "loan", name: "Loan", type: "expense", icon: FileText, keywords: [] },
+  { id: "nocat", name: "No Category", type: "expense", icon: MoreHorizontal, keywords: [] },
 ];
 
 export default function Categories() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>(() => {
-    // Load from localStorage if available, otherwise use defaults
     try {
       const stored = localStorage.getItem("app_categories");
+      let list: Category[] = defaultCategories;
       if (stored) {
         const storedCategories = JSON.parse(stored);
-        // Restore icons from defaultCategories since they can't be serialized
-        return storedCategories
+        list = storedCategories
           .map((cat: any) => {
             if (!cat || !cat.id) return null;
             const defaultCat = defaultCategories.find((d) => d.id === cat.id);
             if (!defaultCat) return null;
-            return {
-              ...cat,
-              icon: defaultCat.icon,
-            };
+            return { ...cat, icon: defaultCat.icon };
           })
           .filter((cat: any) => cat !== null);
       }
-      return defaultCategories;
+      // Ensure nocat always exists
+      if (!list.find((c) => c.id === "nocat")) {
+        const nocatDefault = defaultCategories.find((c) => c.id === "nocat")!;
+        list = [...list, nocatDefault];
+      }
+      return list;
     } catch (e) {
-      console.error("Error loading categories from localStorage:", e);
       return defaultCategories;
     }
   });
@@ -74,8 +75,10 @@ export default function Categories() {
   const [editKeywords, setEditKeywords] = useState("");
   const [keywordError, setKeywordError] = useState("");
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [reorderSelectedId, setReorderSelectedId] = useState<string | null>(null);
 
-  const isProtected = (id: string) => id === "other";
+  const isProtected = (id: string) => id === "other" || id === "nocat";
 
   const startEditing = (category: Category) => {
     setEditingId(category.id);
@@ -123,6 +126,50 @@ export default function Categories() {
     setEditName("");
     setEditKeywords("");
     setKeywordError("");
+  };
+
+  const deleteTransactionCount = (catId: string): number => {
+    try {
+      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      return txns.filter((t: any) => t.categoryId === catId).length;
+    } catch { return 0; }
+  };
+
+  const confirmDelete = (catId: string) => {
+    try {
+      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const updated = txns.map((t: any) =>
+        t.categoryId === catId ? { ...t, categoryId: "nocat" } : t
+      );
+      localStorage.setItem("app_transactions", JSON.stringify(updated));
+    } catch {}
+    const updatedCats = categories.filter((c) => c.id !== catId);
+    setCategories(updatedCats);
+    localStorage.setItem("app_categories", JSON.stringify(updatedCats));
+    setDeleteConfirmId(null);
+    setEditingId(null);
+  };
+
+  const handleGripClick = (catId: string) => {
+    if (reorderSelectedId === null) {
+      setReorderSelectedId(catId);
+    } else if (reorderSelectedId === catId) {
+      setReorderSelectedId(null);
+    } else {
+      // Swap within the same type, keep nocat always last
+      const reorderable = categories.filter((c) => c.id !== "nocat");
+      const nocatItem = categories.find((c) => c.id === "nocat");
+      const firstIdx = reorderable.findIndex((c) => c.id === reorderSelectedId);
+      const secondIdx = reorderable.findIndex((c) => c.id === catId);
+      if (firstIdx !== -1 && secondIdx !== -1) {
+        const newList = [...reorderable];
+        [newList[firstIdx], newList[secondIdx]] = [newList[secondIdx], newList[firstIdx]];
+        const finalList = nocatItem ? [...newList, nocatItem] : newList;
+        setCategories(finalList);
+        localStorage.setItem("app_categories", JSON.stringify(finalList));
+      }
+      setReorderSelectedId(null);
+    }
   };
 
   return (
@@ -222,9 +269,35 @@ export default function Categories() {
                         Cancel
                       </button>
                     </div>
+                    {!isProtected(category.id) && (
+                      <button
+                        onClick={() => setDeleteConfirmId(category.id)}
+                        className="w-full px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={15} />
+                        Delete Category
+                      </button>
+                    )}
                   </div>
                 ) : (
-                  <div className="flex items-start justify-between">
+                  <div className={`flex items-start gap-2 rounded-lg transition-colors ${reorderSelectedId === category.id ? "bg-indigo-50 -mx-1 px-1" : ""}`}>
+                    {category.id !== "nocat" ? (
+                      <button
+                        onClick={() => handleGripClick(category.id)}
+                        className={`mt-1 p-1 rounded transition-colors flex-shrink-0 ${
+                          reorderSelectedId === category.id
+                            ? "text-indigo-600 bg-indigo-100"
+                            : reorderSelectedId !== null
+                            ? "text-indigo-400 hover:text-indigo-600"
+                            : "text-slate-300 hover:text-slate-500"
+                        }`}
+                      >
+                        <GripVertical size={18} />
+                      </button>
+                    ) : (
+                      <div className="w-7 flex-shrink-0" />
+                    )}
+                    <div className="flex items-start justify-between flex-1">
                     <div className="flex items-start gap-3 flex-1">
                       <IconComponent size={24} className="text-indigo-600 mt-1" />
                       <div>
@@ -246,12 +319,15 @@ export default function Categories() {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => startEditing(category)}
-                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-indigo-600"
-                    >
-                      <Edit2 size={18} />
-                    </button>
+                    {category.id !== "nocat" && (
+                      <button
+                        onClick={() => startEditing(category)}
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-indigo-600"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                    )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -259,6 +335,46 @@ export default function Categories() {
           })}
         </div>
       </div>
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirmId && (() => {
+        const cat = categories.find((c) => c.id === deleteConfirmId);
+        const count = deleteTransactionCount(deleteConfirmId);
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Trash2 size={20} className="text-red-500" />
+                </div>
+                <h2 className="text-base font-bold text-slate-900">ลบ Category</h2>
+              </div>
+              <p className="text-sm text-slate-700">
+                Category <span className="font-semibold">"{cat?.name}"</span> มี{" "}
+                <span className="font-bold text-red-600">{count} รายการ</span> ที่ใช้งานอยู่
+              </p>
+              <p className="text-sm text-slate-500">
+                ถ้ายืนยัน รายการทั้งหมดจะย้ายไปอยู่ใน{" "}
+                <span className="font-semibold text-slate-700">No Category</span> และลบ category นี้ออก
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => confirmDelete(deleteConfirmId)}
+                  className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+                >
+                  ยืนยันลบ
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

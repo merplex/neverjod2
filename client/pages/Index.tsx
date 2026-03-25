@@ -208,6 +208,8 @@ export default function Index() {
   const exitCategoryReorderMode = () => {
     setIsCategoryReorderMode(false);
     setSelectedCategoryForSwap(null);
+    // Persist reordered categories to localStorage so Categories page reflects it
+    localStorage.setItem("app_categories", JSON.stringify(categoriesList));
   };
 
   const handleVoiceInput = (voiceData: {

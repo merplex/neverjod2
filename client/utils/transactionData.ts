@@ -174,6 +174,7 @@ const defaultCategoryNames: Record<string, { name: string; type: "income" | "exp
   pets: { name: "Pets", type: "expense" },
   childcare: { name: "Childcare", type: "expense" },
   loan: { name: "Loan", type: "expense" },
+  nocat: { name: "No Category", type: "expense" },
 };
 
 const defaultAccountNames: Record<string, string> = {
