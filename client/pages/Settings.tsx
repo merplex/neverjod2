@@ -6,12 +6,14 @@ const SETTINGS_KEY = "app_settings";
 
 interface AppSettings {
   voiceInputDelay: number;
+  voiceAutoStart: boolean;
   cloudBackupEnabled: boolean;
   language: "en" | "th";
 }
 
 const defaultSettings: AppSettings = {
   voiceInputDelay: 3,
+  voiceAutoStart: true,
   cloudBackupEnabled: false,
   language: "en",
 };
@@ -67,26 +69,50 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {/* Auto Start Toggle */}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">หน่วงเวลา</span>
-              <span className="text-sm font-semibold text-indigo-600">
-                {settings.voiceInputDelay} วินาที
-              </span>
+              <div>
+                <span className="text-sm text-slate-700 font-medium">Auto Start</span>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {settings.voiceAutoStart ? "เปิดไมค์อัตโนมัติเมื่อเข้าหน้าแรก" : "ต้องกดปุ่มไมค์เองก่อนพูด"}
+                </p>
+              </div>
+              <button
+                onClick={() => update("voiceAutoStart", !settings.voiceAutoStart)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  settings.voiceAutoStart ? "bg-indigo-500" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                    settings.voiceAutoStart ? "translate-x-7" : "translate-x-1"
+                  }`}
+                />
+              </button>
             </div>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              step={1}
-              value={settings.voiceInputDelay}
-              onChange={(e) => update("voiceInputDelay", Number(e.target.value))}
-              className="w-full accent-indigo-600"
-            />
-            <div className="flex justify-between text-xs text-slate-400">
-              <span>1 วิ</span>
-              <span>5 วิ</span>
-              <span>10 วิ</span>
+
+            <div className="border-t border-slate-100 pt-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">หน่วงเวลา autosave</span>
+                <span className="text-sm font-semibold text-indigo-600">
+                  {settings.voiceInputDelay} วินาที
+                </span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                step={1}
+                value={settings.voiceInputDelay}
+                onChange={(e) => update("voiceInputDelay", Number(e.target.value))}
+                className="w-full accent-indigo-600"
+              />
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>1 วิ</span>
+                <span>5 วิ</span>
+                <span>10 วิ</span>
+              </div>
             </div>
           </div>
         </div>

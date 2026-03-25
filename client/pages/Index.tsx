@@ -73,8 +73,16 @@ const accounts = [
   { id: "paypal", name: "PayPal", type: "digital wallet", icon: Banknote },
 ];
 
+function readVoiceAutoStart(): boolean {
+  try {
+    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    return s.voiceAutoStart !== false; // default true
+  } catch { return true; }
+}
+
 export default function Index() {
   const navigate = useNavigate();
+  const [voiceAutoStart] = useState<boolean>(readVoiceAutoStart);
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -144,10 +152,10 @@ export default function Index() {
   const [isVoiceCalculatorMode, setIsVoiceCalculatorMode] = useState(false);
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
 
-  // Auto-start voice when category page is shown
+  // Auto-start voice when category page is shown (only if voiceAutoStart is on)
   const [voiceStartTrigger, setVoiceStartTrigger] = useState(0);
   useEffect(() => {
-    if (currentPage === "category") {
+    if (currentPage === "category" && voiceAutoStart) {
       setVoiceStartTrigger((n) => n + 1);
     }
   }, [currentPage]);
@@ -295,7 +303,7 @@ export default function Index() {
       setSelectedAccount(null);
       setCurrentPage("category");
       // currentPage may already be "category" so useEffect won't fire — force trigger
-      setVoiceStartTrigger((n) => n + 1);
+      if (voiceAutoStart) setVoiceStartTrigger((n) => n + 1);
       return;
     }
 
@@ -318,8 +326,7 @@ export default function Index() {
     setShowVoiceResult(false);
     setCurrentPage("category");
     voiceAccumulatorRef.current = {};
-    // Always re-trigger voice (currentPage may already be "category" so useEffect won't fire)
-    setVoiceStartTrigger((n) => n + 1);
+    if (voiceAutoStart) setVoiceStartTrigger((n) => n + 1);
   };
 
   const handleAccountSelect = (accountId: string) => {
@@ -492,7 +499,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} autoRestart={true} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} autoRestart={voiceAutoStart} />
                   </div>
                 </div>
                 <Carousel
