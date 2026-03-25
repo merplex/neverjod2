@@ -11,6 +11,7 @@ type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky";
 interface AppSettings {
   voiceInputDelay: number;
   voiceAutoStart: boolean;
+  voiceLanguage: "th-TH" | "zh-CN";
   cloudBackupEnabled: boolean;
   language: "en" | "th";
   colorTheme: ColorTheme;
@@ -20,6 +21,7 @@ interface AppSettings {
 const defaultSettings: AppSettings = {
   voiceInputDelay: 3,
   voiceAutoStart: true,
+  voiceLanguage: "th-TH",
   cloudBackupEnabled: false,
   language: "en",
   colorTheme: "teal",
@@ -205,6 +207,32 @@ export default function Settings() {
               >
                 <span className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${settings.voiceAutoStart ? "ml-auto" : ""}`} />
               </button>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3">
+              <span className="text-sm text-slate-700 font-medium">ภาษาพูด</span>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => update("voiceLanguage", "th-TH")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-colors ${
+                    settings.voiceLanguage === "th-TH"
+                      ? "bg-theme-50 border-theme-500 text-theme-700"
+                      : "bg-slate-100 border-transparent text-slate-600"
+                  }`}
+                >
+                  🇹🇭 ไทย
+                </button>
+                <button
+                  onClick={() => update("voiceLanguage", "zh-CN")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-colors ${
+                    settings.voiceLanguage === "zh-CN"
+                      ? "bg-theme-50 border-theme-500 text-theme-700"
+                      : "bg-slate-100 border-transparent text-slate-600"
+                  }`}
+                >
+                  🇨🇳 จีน
+                </button>
+              </div>
             </div>
 
             <div className="border-t border-slate-100 pt-3 space-y-3">
