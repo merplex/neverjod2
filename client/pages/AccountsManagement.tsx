@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSwipeBack } from "../hooks/useSwipeBack";
 import TimePicker from "../components/TimePicker";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Plane, ShoppingBag, Dumbbell, Gift } from "lucide-react";
 
@@ -37,6 +38,7 @@ const defaultAccounts: Account[] = [
 
 export default function AccountsManagement() {
   const navigate = useNavigate();
+  useSwipeBack();
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
       const stored = localStorage.getItem("app_accounts");
@@ -79,6 +81,8 @@ export default function AccountsManagement() {
   const [editType, setEditType] = useState("");
   const [editBalance, setEditBalance] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
+  const [editIconId, setEditIconId] = useState("other");
+  const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [reorderSelectedId, setReorderSelectedId] = useState<string | null>(null);
@@ -151,12 +155,14 @@ export default function AccountsManagement() {
   const [transferDate, setTransferDate] = useState(new Date().toISOString().split("T")[0]);
   const [transferTime, setTransferTime] = useState(new Date());
 
-  const startEditing = (account: Account) => {
+  const startEditing = (account: Account & { iconId?: string }) => {
     setEditingId(account.id);
     setEditName(account.name);
     setEditType(account.type);
     setEditBalance(account.balance?.toString() || "0");
     setEditKeywords((account.keywords || []).join(", "));
+    setEditIconId(account.iconId || "other");
+    setShowEditIconPicker(false);
     setKeywordError("");
   };
 
@@ -186,9 +192,10 @@ export default function AccountsManagement() {
     }
 
     setKeywordError("");
+    const iconEntry = accIconOptions.find((o) => o.id === editIconId) || accIconOptions[accIconOptions.length - 1];
     const updatedAccounts = accounts.map((acc) =>
       acc.id === editingId
-        ? { ...acc, name: editName, type: editType, balance: parseFloat(editBalance) || 0, keywords }
+        ? { ...acc, name: editName, type: editType, balance: parseFloat(editBalance) || 0, keywords, icon: iconEntry.icon, iconId: editIconId }
         : acc
     );
 
@@ -203,6 +210,8 @@ export default function AccountsManagement() {
     setEditType("");
     setEditBalance("");
     setEditKeywords("");
+    setEditIconId("other");
+    setShowEditIconPicker(false);
     setKeywordError("");
   };
 
@@ -345,12 +354,41 @@ export default function AccountsManagement() {
                   <div className="space-y-3">
                     <div>
                       <label className="text-xs font-semibold text-slate-600">Account Name</label>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                      />
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                        />
+                        <button
+                          onClick={() => setShowEditIconPicker((v) => !v)}
+                          className="flex-shrink-0 p-2 border border-slate-300 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                          title="Change icon"
+                        >
+                          {(() => { const opt = accIconOptions.find((o) => o.id === editIconId) || accIconOptions[accIconOptions.length - 1]; const Icon = opt.icon; return <Icon size={18} className="text-theme-600" />; })()}
+                        </button>
+                      </div>
+                      {showEditIconPicker && (
+                        <div className="mt-2 grid grid-cols-6 gap-2">
+                          {accIconOptions.map((opt) => {
+                            const Icon = opt.icon;
+                            return (
+                              <button
+                                key={opt.id}
+                                onClick={() => { setEditIconId(opt.id); setShowEditIconPicker(false); }}
+                                className={`p-2 rounded-lg flex items-center justify-center transition-colors ${
+                                  editIconId === opt.id
+                                    ? "bg-theme-600 text-white"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                }`}
+                              >
+                                <Icon size={18} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-600">Account Type</label>

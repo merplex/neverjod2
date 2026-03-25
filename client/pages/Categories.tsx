@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote } from "lucide-react";
 
 interface Category {
@@ -54,6 +55,7 @@ const iconOptions = [
 
 export default function Categories() {
   const navigate = useNavigate();
+  useSwipeBack();
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
       const stored = localStorage.getItem("app_categories");
@@ -86,6 +88,8 @@ export default function Categories() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
+  const [editIconId, setEditIconId] = useState("other");
+  const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -130,10 +134,12 @@ export default function Categories() {
 
   const isProtected = (id: string) => id === "other" || id === "nocat";
 
-  const startEditing = (category: Category) => {
+  const startEditing = (category: Category & { iconId?: string }) => {
     setEditingId(category.id);
     setEditName(category.name);
     setEditKeywords((category.keywords || []).join(", "));
+    setEditIconId(category.iconId || "other");
+    setShowEditIconPicker(false);
     setKeywordError("");
   };
 
@@ -163,9 +169,10 @@ export default function Categories() {
     }
 
     setKeywordError("");
+    const iconEntry = iconOptions.find((o) => o.id === editIconId) || iconOptions[iconOptions.length - 1];
     const updatedCategories = categories.map((cat) =>
       cat.id === editingId
-        ? { ...cat, name: isProtected(editingId) ? cat.name : editName, keywords }
+        ? { ...cat, name: isProtected(editingId) ? cat.name : editName, keywords, icon: iconEntry.icon, iconId: editIconId }
         : cat
     );
 
@@ -178,6 +185,8 @@ export default function Categories() {
     setEditingId(null);
     setEditName("");
     setEditKeywords("");
+    setEditIconId("other");
+    setShowEditIconPicker(false);
     setKeywordError("");
   };
 
@@ -297,13 +306,44 @@ export default function Categories() {
                         Category Name
                         {isProtected(category.id) && <Lock size={12} className="text-slate-400" />}
                       </label>
-                      <input
-                        type="text"
-                        value={isProtected(category.id) ? category.name : editName}
-                        onChange={(e) => !isProtected(category.id) && setEditName(e.target.value)}
-                        readOnly={isProtected(category.id)}
-                        className={`w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm ${isProtected(category.id) ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}
-                      />
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          type="text"
+                          value={isProtected(category.id) ? category.name : editName}
+                          onChange={(e) => !isProtected(category.id) && setEditName(e.target.value)}
+                          readOnly={isProtected(category.id)}
+                          className={`flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm ${isProtected(category.id) ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}
+                        />
+                        {!isProtected(category.id) && (
+                          <button
+                            onClick={() => setShowEditIconPicker((v) => !v)}
+                            className="flex-shrink-0 p-2 border border-slate-300 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                            title="Change icon"
+                          >
+                            {(() => { const opt = iconOptions.find((o) => o.id === editIconId) || iconOptions[iconOptions.length - 1]; const Icon = opt.icon; return <Icon size={18} className="text-theme-600" />; })()}
+                          </button>
+                        )}
+                      </div>
+                      {showEditIconPicker && !isProtected(category.id) && (
+                        <div className="mt-2 grid grid-cols-6 gap-2">
+                          {iconOptions.map((opt) => {
+                            const Icon = opt.icon;
+                            return (
+                              <button
+                                key={opt.id}
+                                onClick={() => { setEditIconId(opt.id); setShowEditIconPicker(false); }}
+                                className={`p-2 rounded-lg flex items-center justify-center transition-colors ${
+                                  editIconId === opt.id
+                                    ? "bg-theme-600 text-white"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                }`}
+                              >
+                                <Icon size={18} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-600">

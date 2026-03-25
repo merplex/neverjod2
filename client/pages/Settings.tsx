@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSwipeBack } from "../hooks/useSwipeBack";
 
 const SETTINGS_KEY = "app_settings";
 
@@ -12,6 +13,7 @@ interface AppSettings {
   cloudBackupEnabled: boolean;
   language: "en" | "th";
   colorTheme: ColorTheme;
+  swipeBackDirection: "right" | "left";
 }
 
 const defaultSettings: AppSettings = {
@@ -20,6 +22,7 @@ const defaultSettings: AppSettings = {
   cloudBackupEnabled: false,
   language: "en",
   colorTheme: "teal",
+  swipeBackDirection: "right",
 };
 
 const colorThemes: { id: ColorTheme; name: string; swatches: string[] }[] = [
@@ -45,6 +48,7 @@ function saveSettings(settings: AppSettings) {
 
 export default function Settings() {
   const navigate = useNavigate();
+  useSwipeBack();
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
 
   useEffect(() => {
@@ -57,7 +61,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-4 py-4 flex items-center gap-3 sticky top-0 z-10">
         <button
@@ -167,6 +171,39 @@ export default function Settings() {
                 <span>10 วิ</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Swipe Navigation */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-theme-100 rounded-xl flex items-center justify-center">
+              <Hand size={18} className="text-theme-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Swipe Navigation</h2>
+              <p className="text-xs text-slate-500">ทิศทาง swipe เพื่อย้อนกลับ</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm text-slate-700 font-medium">Swipe right to go back</span>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {settings.swipeBackDirection === "right" ? "swipe ขวา = ย้อนกลับ" : "swipe ซ้าย = ย้อนกลับ"}
+              </p>
+            </div>
+            <button
+              onClick={() => update("swipeBackDirection", settings.swipeBackDirection === "right" ? "left" : "right")}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                settings.swipeBackDirection === "right" ? "bg-theme-500" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  settings.swipeBackDirection === "right" ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
           </div>
         </div>
 
