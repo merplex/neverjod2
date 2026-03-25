@@ -97,14 +97,16 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
             onVoiceInputRef.current(voiceData);
           }
 
-          // Auto-stop after 2 seconds of silence (user finished speaking)
+          // After 2s of silence, call onVoiceEnd directly WITHOUT stopping recognition
+          // This avoids the browser ting sound from stop+restart cycle
           if (silenceTimeoutRef.current) {
             clearTimeout(silenceTimeoutRef.current);
           }
           silenceTimeoutRef.current = setTimeout(() => {
-            if (isListeningRef.current && recognitionRef.current) {
-              console.log("No speech detected for 2 seconds, finishing recording");
-              recognitionRef.current.stop();
+            if (isListeningRef.current && hasSpeechStartedRef.current) {
+              console.log("2s silence — firing onVoiceEnd without stopping recognition");
+              hasSpeechStartedRef.current = false;
+              if (onVoiceEndRef.current) onVoiceEndRef.current();
             }
           }, 2000);
         } else {
