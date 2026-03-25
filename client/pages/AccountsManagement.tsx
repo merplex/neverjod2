@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TimePicker from "../components/TimePicker";
-import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal } from "lucide-react";
+import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Plane, ShoppingBag, Dumbbell, Gift } from "lucide-react";
 
 interface Account {
   id: string;
@@ -51,8 +51,11 @@ export default function AccountsManagement() {
               // Custom account — resolve icon by type string or fall back to MoreHorizontal
               if (!acc.id.startsWith("custom_acc_")) return null;
               const iconMap: Record<string, React.ComponentType<any>> = {
-                creditcard: CreditCard, wallet: Wallet, cash: Banknote,
-                invest: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+                creditcard: CreditCard, card: CreditCard, wallet: Wallet, cash: Banknote,
+                invest: TrendingUp, salary: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+                food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
+                bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
+                travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
               };
               const icon = iconMap[acc.iconId] || MoreHorizontal;
               return { ...acc, icon };
@@ -83,17 +86,17 @@ export default function AccountsManagement() {
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
   const [newAccBalance, setNewAccBalance] = useState("0");
-  const [newAccIconId, setNewAccIconId] = useState("wallet");
+  const [newAccIconId, setNewAccIconId] = useState("other");
   const [newAccKeywords, setNewAccKeywords] = useState("");
   const [newAccKeywordError, setNewAccKeywordError] = useState("");
 
   const accIconOptions = [
-    { id: "creditcard", icon: CreditCard },
-    { id: "wallet", icon: Wallet },
-    { id: "cash", icon: Banknote },
-    { id: "invest", icon: TrendingUp },
-    { id: "phone", icon: Smartphone },
-    { id: "other", icon: MoreHorizontal },
+    { id: "food", icon: Utensils }, { id: "transport", icon: Bus }, { id: "entertainment", icon: Music },
+    { id: "shopping", icon: ShoppingCart }, { id: "bills", icon: FileText }, { id: "health", icon: Heart },
+    { id: "education", icon: BookOpen }, { id: "utilities", icon: Zap }, { id: "travel", icon: Plane },
+    { id: "clothing", icon: ShoppingBag }, { id: "sports", icon: Dumbbell }, { id: "gifts", icon: Gift },
+    { id: "salary", icon: TrendingUp }, { id: "card", icon: CreditCard }, { id: "wallet", icon: Wallet },
+    { id: "phone", icon: Smartphone }, { id: "cash", icon: Banknote }, { id: "other", icon: MoreHorizontal },
   ];
 
   const handleAddAccount = () => {
@@ -119,7 +122,7 @@ export default function AccountsManagement() {
       }
     }
 
-    const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[1];
+    const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[accIconOptions.length - 1];
     const newId = `custom_acc_${Date.now()}`;
     const newAcc: Account & { iconId?: string } = {
       id: newId,
@@ -135,7 +138,7 @@ export default function AccountsManagement() {
     const updated = deletedAcc ? [...rest, newAcc, deletedAcc] : [...rest, newAcc];
     setAccounts(updated);
     localStorage.setItem("app_accounts", JSON.stringify(updated));
-    setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet");
+    setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other");
     setNewAccKeywords(""); setNewAccKeywordError("");
     setShowAddForm(false);
   };
@@ -308,7 +311,7 @@ export default function AccountsManagement() {
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true); }}
+              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true); }}
               className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
               title="Add account"
             >
