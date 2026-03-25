@@ -20,7 +20,7 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
       <div className="flex-1">{children}</div>
       
       {/* Bottom Navigation - Fixed within mobile frame */}
-      <div className="fixed bottom-0 left-0 right-0 flex justify-center z-50">
+      <div className="fixed bottom-0 left-0 right-0 flex justify-center z-40">
         <div className="w-full max-w-md bg-white border-t-2 border-slate-300 shadow-2xl">
           <div className="px-4 py-3 flex justify-around items-center">
             {navItems.map((item) => {
