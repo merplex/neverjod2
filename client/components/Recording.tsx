@@ -20,6 +20,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
   const hasSpeechStartedRef = useRef(false);
   const silenceTimeoutRef = useRef<NodeJS.Timeout>();
+  const processedResultIndicesRef = useRef<Set<number>>(new Set());
   const onVoiceInputRef = useRef(onVoiceInput);
   const onVoiceEndRef = useRef(onVoiceEnd);
   const onTranscriptRef = useRef(onTranscript);
@@ -74,6 +75,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     recognition.onstart = () => {
       console.log("Speech recognition started - waiting for speech");
       hasSpeechStartedRef.current = false;
+      processedResultIndicesRef.current = new Set();
     };
 
     recognition.onresult = (event: any) => {
@@ -81,6 +83,11 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcriptPart = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
+          // Skip result indices already processed — Chrome Android sometimes re-fires
+          // the same resultIndex with revised text, causing duplicate transcripts
+          if (processedResultIndicesRef.current.has(i)) continue;
+          processedResultIndicesRef.current.add(i);
+
           console.log("Final transcript:", transcriptPart);
           // Mark that speech has started
           hasSpeechStartedRef.current = true;
