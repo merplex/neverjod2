@@ -81,11 +81,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcriptPart = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          // Skip result indices already processed — Chrome Android sometimes re-fires
-          // the same resultIndex with revised text, causing duplicate transcripts
-          if (processedResultIndicesRef.current.has(i)) continue;
-          processedResultIndicesRef.current.add(i);
-
           console.log("Final transcript:", transcriptPart);
           // Mark that speech has started
           hasSpeechStartedRef.current = true;
