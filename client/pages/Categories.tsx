@@ -450,8 +450,8 @@ export default function Categories() {
 
       {/* Add Category Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
-          <div className="bg-white rounded-t-2xl shadow-xl w-full max-w-sm flex flex-col" style={{ maxHeight: "70vh" }}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-[60]">
+          <div className="bg-white rounded-t-2xl shadow-xl w-full max-w-sm flex flex-col" style={{ maxHeight: "60vh" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
               <h2 className="text-base font-bold text-slate-900">Add {categoryType === "income" ? "Income" : "Expense"} Category</h2>

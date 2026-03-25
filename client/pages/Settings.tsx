@@ -326,7 +326,6 @@ export default function Settings() {
             <div>
               <div className="flex items-center gap-1.5">
                 <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
-                <span className="text-xs text-amber-500 font-medium">* One-time purchase บน App Store</span>
               </div>
               <p className="text-xs text-slate-500">รองรับการใช้หลายอุปกรณ์พร้อมกัน</p>
             </div>
