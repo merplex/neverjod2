@@ -15,11 +15,11 @@ interface Account {
 }
 
 const defaultAccounts: Account[] = [
-  { id: "kbank", name: "KBank", type: "savings account", icon: Smartphone, balance: 0, keywords: [] },
-  { id: "scb", name: "SCB", type: "savings account", icon: CreditCard, balance: 0, keywords: [] },
-  { id: "uob", name: "UOB", type: "credit card", icon: CreditCard, balance: 0, keywords: [] },
-  { id: "travel_card", name: "Travel Card", type: "debit card", icon: CreditCard, balance: 0, keywords: [] },
-  { id: "cash", name: "Cash", type: "cash", icon: Banknote, balance: 0, keywords: [] },
+  { id: "kbank", name: "KBank", type: "savings account", icon: Smartphone, balance: 0, keywords: ["กสิกรไทย", "กสิกร", "promptpay"] },
+  { id: "scb", name: "SCB", type: "savings account", icon: CreditCard, balance: 0, keywords: ["ไทยพาณิชย์"] },
+  { id: "uob", name: "UOB", type: "credit card", icon: CreditCard, balance: 0, keywords: ["ยูโอบี"] },
+  { id: "travel_card", name: "Travel Card", type: "debit card", icon: CreditCard, balance: 0, keywords: ["ทราเวลการ์ด"] },
+  { id: "cash", name: "Cash", type: "cash", icon: Banknote, balance: 0, keywords: ["เงินสด"] },
   { id: "account_deleted", name: "Account Deleted", type: "deleted", icon: Trash2, balance: 0, keywords: [] },
 ];
 
