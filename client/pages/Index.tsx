@@ -9,12 +9,13 @@ import { matchCategory, matchAccount } from "../utils/keywordMatch";
 
 type InputPage = "category" | "account" | "amount";
 
-function saveTransaction(categoryId: string, accountId: string, amount: number) {
+function saveTransaction(categoryId: string, accountId: string, amount: number, description = "") {
   const transaction = {
     id: Date.now().toString(),
     categoryId,
     accountId,
     amount,
+    description: description.trim(),
     date: new Date().toISOString(),
   };
   const existing = JSON.parse(localStorage.getItem("app_transactions") || "[]");
@@ -181,7 +182,7 @@ export default function Index() {
 
   // Refs for auto-save when app goes background / screen off / killed
   const showVoiceResultRef = useRef(false);
-  const pendingVoiceResultRef = useRef<{ categoryId?: string; accountId?: string; amount?: number }>({});
+  const pendingVoiceResultRef = useRef<{ categoryId?: string; accountId?: string; amount?: number; transcript?: string }>({});
 
   useEffect(() => { showVoiceResultRef.current = showVoiceResult; }, [showVoiceResult]);
   useEffect(() => { pendingVoiceResultRef.current = voiceResultData; }, [voiceResultData]);
@@ -191,7 +192,7 @@ export default function Index() {
       if (!showVoiceResultRef.current) return;
       const { categoryId, accountId, amount } = pendingVoiceResultRef.current;
       if (categoryId && accountId && amount) {
-        saveTransaction(categoryId, accountId, amount);
+        saveTransaction(categoryId, accountId, amount, pendingVoiceResultRef.current.transcript);
         showVoiceResultRef.current = false; // prevent double-save
       }
     };
@@ -290,13 +291,13 @@ export default function Index() {
   };
 
   const handleVoiceResultConfirm = () => {
-    const { categoryId, accountId, amount } = voiceResultData;
+    const { categoryId, accountId, amount, transcript } = voiceResultData;
 
     setShowVoiceResult(false);
 
     // If all 3 detected — save directly, no need to go to amount page
     if (categoryId && accountId && amount) {
-      saveTransaction(categoryId, accountId, amount);
+      saveTransaction(categoryId, accountId, amount, transcript);
       setDisplay("0");
       setValue(0);
       setSelectedCategory(null);
