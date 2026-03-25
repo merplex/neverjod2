@@ -495,7 +495,7 @@ export default function AccountsManagement() {
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600">Initial Balance</label>
+              <label className="text-xs font-semibold text-slate-600">Start Balance</label>
               <input
                 type="number"
                 value={newAccBalance}
