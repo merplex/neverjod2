@@ -155,6 +155,7 @@ export default function Index() {
 
   // Auto-start voice when category page is shown (only if voiceAutoStart is on)
   const [voiceStartTrigger, setVoiceStartTrigger] = useState(0);
+  const [voiceStopTrigger, setVoiceStopTrigger] = useState(0);
   useEffect(() => {
     if (currentPage === "category" && voiceAutoStart) {
       setVoiceStartTrigger((n) => n + 1);
@@ -269,10 +270,11 @@ export default function Index() {
       return next;
     });
 
-    // If all 3 detected — trigger summary immediately (don't wait for silence)
+    // If all 3 detected — stop mic and trigger summary immediately
     const acc = voiceAccumulatorRef.current;
     if (acc.categoryId && acc.accountId && acc.amount && !allDetectedRef.current) {
       allDetectedRef.current = true;
+      setVoiceStopTrigger((n) => n + 1);
       setTimeout(() => handleVoiceEnd(), 200);
     }
     // Smart transcript accumulation — avoids duplicates from Chrome Android's
@@ -558,7 +560,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} autoRestart={voiceAutoStart} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} stopTrigger={voiceStopTrigger} autoRestart={voiceAutoStart} />
                   </div>
                 </div>
                 <Carousel
