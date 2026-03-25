@@ -88,8 +88,10 @@ export default function AllTransactions() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Sticky header + controls wrapper */}
+      <div className="sticky top-0 z-10">
       {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4 sticky top-0 z-10">
+      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
         <div className="max-w-md mx-auto flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
@@ -122,7 +124,7 @@ export default function AllTransactions() {
       </div>
 
       {/* Controls */}
-      <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200 sticky top-14 z-10">
+      <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200">
         <div className="flex justify-between items-center gap-2">
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
@@ -168,6 +170,7 @@ export default function AllTransactions() {
           </div>
         )}
       </div>
+      </div>{/* end sticky wrapper */}
 
       {/* Transactions List */}
       <div className="max-w-md mx-auto px-4 py-4">
