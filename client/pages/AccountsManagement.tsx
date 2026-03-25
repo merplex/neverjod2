@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TimePicker from "../components/TimePicker";
-import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal } from "lucide-react";
+import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Plane, ShoppingBag, Dumbbell, Gift } from "lucide-react";
 
 interface Account {
   id: string;
@@ -51,8 +51,11 @@ export default function AccountsManagement() {
               // Custom account — resolve icon by type string or fall back to MoreHorizontal
               if (!acc.id.startsWith("custom_acc_")) return null;
               const iconMap: Record<string, React.ComponentType<any>> = {
-                creditcard: CreditCard, wallet: Wallet, cash: Banknote,
-                invest: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+                creditcard: CreditCard, card: CreditCard, wallet: Wallet, cash: Banknote,
+                invest: TrendingUp, salary: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+                food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
+                bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
+                travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
               };
               const icon = iconMap[acc.iconId] || MoreHorizontal;
               return { ...acc, icon };
@@ -83,20 +86,43 @@ export default function AccountsManagement() {
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
   const [newAccBalance, setNewAccBalance] = useState("0");
-  const [newAccIconId, setNewAccIconId] = useState("wallet");
+  const [newAccIconId, setNewAccIconId] = useState("other");
+  const [newAccKeywords, setNewAccKeywords] = useState("");
+  const [newAccKeywordError, setNewAccKeywordError] = useState("");
 
   const accIconOptions = [
-    { id: "creditcard", icon: CreditCard },
-    { id: "wallet", icon: Wallet },
-    { id: "cash", icon: Banknote },
-    { id: "invest", icon: TrendingUp },
-    { id: "phone", icon: Smartphone },
-    { id: "other", icon: MoreHorizontal },
+    { id: "food", icon: Utensils }, { id: "transport", icon: Bus }, { id: "entertainment", icon: Music },
+    { id: "shopping", icon: ShoppingCart }, { id: "bills", icon: FileText }, { id: "health", icon: Heart },
+    { id: "education", icon: BookOpen }, { id: "utilities", icon: Zap }, { id: "travel", icon: Plane },
+    { id: "clothing", icon: ShoppingBag }, { id: "sports", icon: Dumbbell }, { id: "gifts", icon: Gift },
+    { id: "salary", icon: TrendingUp }, { id: "card", icon: CreditCard }, { id: "wallet", icon: Wallet },
+    { id: "phone", icon: Smartphone }, { id: "cash", icon: Banknote }, { id: "other", icon: MoreHorizontal },
   ];
 
   const handleAddAccount = () => {
     if (!newAccName.trim()) return;
-    const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[1];
+
+    const keywords = newAccKeywords
+      .split(",")
+      .map((k) => k.trim().toLowerCase())
+      .filter((k) => k);
+
+    // Validate: keywords must not already exist in other accounts or categories
+    const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
+    for (const kw of keywords) {
+      const dupAcc = accounts.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupAcc) {
+        setNewAccKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        return;
+      }
+      const dupCat = storedCategories.find((c: any) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupCat) {
+        setNewAccKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        return;
+      }
+    }
+
+    const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[accIconOptions.length - 1];
     const newId = `custom_acc_${Date.now()}`;
     const newAcc: Account & { iconId?: string } = {
       id: newId,
@@ -105,14 +131,15 @@ export default function AccountsManagement() {
       icon: iconEntry.icon,
       iconId: newAccIconId,
       balance: parseFloat(newAccBalance) || 0,
-      keywords: [],
+      keywords,
     };
     const deletedAcc = accounts.find((a) => a.id === "account_deleted");
     const rest = accounts.filter((a) => a.id !== "account_deleted");
     const updated = deletedAcc ? [...rest, newAcc, deletedAcc] : [...rest, newAcc];
     setAccounts(updated);
     localStorage.setItem("app_accounts", JSON.stringify(updated));
-    setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet");
+    setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other");
+    setNewAccKeywords(""); setNewAccKeywordError("");
     setShowAddForm(false);
   };
 
@@ -284,7 +311,7 @@ export default function AccountsManagement() {
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet"); setShowAddForm(true); }}
+              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true); }}
               className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
               title="Add account"
             >
@@ -471,13 +498,26 @@ export default function AccountsManagement() {
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600">Initial Balance</label>
+              <label className="text-xs font-semibold text-slate-600">Start Balance</label>
               <input
                 type="number"
                 value={newAccBalance}
                 onChange={(e) => setNewAccBalance(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
               />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Keywords (คั่นด้วยจุลภาค)</label>
+              <input
+                type="text"
+                value={newAccKeywords}
+                onChange={(e) => { setNewAccKeywords(e.target.value); setNewAccKeywordError(""); }}
+                className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}
+                placeholder="เช่น กรุงศรี, อยุธยา"
+              />
+              {newAccKeywordError && (
+                <p className="text-xs text-red-500 mt-1">{newAccKeywordError}</p>
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>
