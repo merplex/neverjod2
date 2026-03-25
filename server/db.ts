@@ -57,4 +57,6 @@ export async function initDB() {
   for (const sql of tables) {
     await pool.query(sql);
   }
+  // Migration: make type nullable (safe to run multiple times)
+  await pool.query(`ALTER TABLE sync_transactions ALTER COLUMN type DROP NOT NULL`).catch(() => {});
 }

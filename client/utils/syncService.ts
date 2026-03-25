@@ -62,8 +62,13 @@ export async function syncPush(token: string) {
     .map((c) => ({ ...c, updated_at: c.updated_at || now }));
   const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
     .map((a) => ({ ...a, updated_at: a.updated_at || now }));
+  // Derive type from category if not stored on transaction
   const transactions = (JSON.parse(localStorage.getItem("app_transactions") || "[]") as any[])
-    .map((tx) => ({ ...tx, fingerprint: tx.fingerprint || makeFingerprint(tx), updated_at: tx.updated_at || now }));
+    .map((tx) => {
+      const cat = categories.find((c) => c.id === tx.categoryId);
+      const type = tx.type || cat?.type || "expense";
+      return { ...tx, type, fingerprint: tx.fingerprint || makeFingerprint(tx), updated_at: tx.updated_at || now };
+    });
 
   const res = await fetch(`${API_BASE}/sync/push`, {
     method: "POST",
