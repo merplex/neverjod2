@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ArrowUpDown, X } from "lucide-react";
+import { ChevronLeft, ArrowUpDown, X, Search } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 
 type TimeRange = "week" | "month" | "all";
@@ -12,6 +12,14 @@ export default function AllTransactions() {
   const accountIdFilter = searchParams.get("accountId");
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showSearch) searchInputRef.current?.focus();
+    else setSearchQuery("");
+  }, [showSearch]);
 
   const allTransactions = useMemo(() => getRealTransactionsList(), []);
 
@@ -24,9 +32,11 @@ export default function AllTransactions() {
   const filtered = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const q = searchQuery.trim().toLowerCase();
 
     return allTransactions.filter((transaction) => {
       if (accountIdFilter && transaction.accountId !== accountIdFilter) return false;
+      if (q && !transaction.accountName.toLowerCase().includes(q) && !transaction.category.toLowerCase().includes(q)) return false;
       const transactionDate = new Date(
         transaction.date.getFullYear(),
         transaction.date.getMonth(),
@@ -102,6 +112,12 @@ export default function AllTransactions() {
               All
             </button>
           )}
+          <button
+            onClick={() => setShowSearch((v) => !v)}
+            className={`p-2 rounded-lg transition-colors ${showSearch ? "bg-indigo-400" : "hover:bg-indigo-500"}`}
+          >
+            <Search size={20} />
+          </button>
         </div>
       </div>
 
@@ -131,6 +147,26 @@ export default function AllTransactions() {
             ))}
           </div>
         </div>
+
+        {/* Search bar — shown when search toggled */}
+        {showSearch && (
+          <div className="mt-2 flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2">
+            <Search size={15} className="text-slate-400 flex-shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ค้นหา account หรือ category..."
+              className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")}>
+                <X size={15} className="text-slate-400 hover:text-slate-600" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Transactions List */}
