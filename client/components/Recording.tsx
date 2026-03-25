@@ -104,11 +104,11 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
           }
           silenceTimeoutRef.current = setTimeout(() => {
             if (isListeningRef.current && hasSpeechStartedRef.current) {
-              console.log("2s silence — firing onVoiceEnd without stopping recognition");
+              console.log("3.5s silence — firing onVoiceEnd without stopping recognition");
               hasSpeechStartedRef.current = false;
               if (onVoiceEndRef.current) onVoiceEndRef.current();
             }
-          }, 2000);
+          }, 3500);
         } else {
           interim += transcriptPart;
         }
