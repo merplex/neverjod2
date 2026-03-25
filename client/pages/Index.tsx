@@ -189,6 +189,7 @@ export default function Index() {
   const [voiceCalcStartTrigger, setVoiceCalcStartTrigger] = useState(0);
   const [voiceCalcStopTrigger, setVoiceCalcStopTrigger] = useState(0);
   const voiceCalcTranscriptRef = useRef("");
+  const voiceCalcActiveRef = useRef(false);
 
   // Auto-start voice when category page is shown (only if voiceAutoStart is on)
   const [voiceStartTrigger, setVoiceStartTrigger] = useState(0);
@@ -272,6 +273,7 @@ export default function Index() {
 
   // Voice calculator handlers
   const handleVoiceCalcTranscript = (text: string) => {
+    if (!voiceCalcActiveRef.current) return; // ignore late transcripts after stop
     const accumulated = (voiceCalcTranscriptRef.current + " " + text).trim();
     voiceCalcTranscriptRef.current = accumulated;
     const { expression } = calculateFromVoice(accumulated);
@@ -281,20 +283,21 @@ export default function Index() {
   const handleVoiceCalcToggle = () => {
     if (isLocked) return;
     if (isVoiceCalcActive) {
-      // Stop recording
+      // Immediately block new transcripts, then stop recognition
+      voiceCalcActiveRef.current = false;
       setVoiceCalcStopTrigger((n) => n + 1);
       setIsVoiceCalcActive(false);
-      // Wait 300ms for any final transcript to arrive before calculating
-      setTimeout(() => {
-        const { result, error } = calculateFromVoice(voiceCalcTranscriptRef.current);
-        if (!error && result !== 0) {
-          setDisplay(result.toString());
-          setValue(result);
-        }
-        voiceCalcTranscriptRef.current = "";
-      }, 300);
+      // Calculate from snapshot at this exact moment
+      const snapshot = voiceCalcTranscriptRef.current;
+      voiceCalcTranscriptRef.current = "";
+      const { result, error } = calculateFromVoice(snapshot);
+      if (!error && result !== 0) {
+        setDisplay(result.toString());
+        setValue(result);
+      }
     } else {
       // Start recording
+      voiceCalcActiveRef.current = true;
       voiceCalcTranscriptRef.current = "";
       setIsVoiceCalcActive(true);
       setVoiceCalcStartTrigger((n) => n + 1);

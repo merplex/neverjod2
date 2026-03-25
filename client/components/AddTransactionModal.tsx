@@ -113,6 +113,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [voiceCalcStartTrigger, setVoiceCalcStartTrigger] = useState(0);
   const [voiceCalcStopTrigger, setVoiceCalcStopTrigger] = useState(0);
   const voiceCalcTranscriptRef = useRef("");
+  const voiceCalcActiveRef = useRef(false);
 
   // data from localStorage
   const [categoriesList] = useState<any[]>(() => {
@@ -178,6 +179,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
   // ---- voice calc handlers ----
   const handleVoiceCalcTranscript = (text: string) => {
+    if (!voiceCalcActiveRef.current) return; // ignore late transcripts after stop
     const accumulated = (voiceCalcTranscriptRef.current + " " + text).trim();
     voiceCalcTranscriptRef.current = accumulated;
     const { expression } = calculateFromVoice(accumulated);
@@ -187,17 +189,18 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const handleVoiceCalcToggle = () => {
     if (isLocked) return;
     if (isVoiceCalcActive) {
+      voiceCalcActiveRef.current = false;
       setVoiceCalcStopTrigger((n) => n + 1);
       setIsVoiceCalcActive(false);
-      setTimeout(() => {
-        const { result, error } = calculateFromVoice(voiceCalcTranscriptRef.current);
-        if (!error && result !== 0) {
-          setDisplay(result.toString());
-          setValue(result);
-        }
-        voiceCalcTranscriptRef.current = "";
-      }, 300);
+      const snapshot = voiceCalcTranscriptRef.current;
+      voiceCalcTranscriptRef.current = "";
+      const { result, error } = calculateFromVoice(snapshot);
+      if (!error && result !== 0) {
+        setDisplay(result.toString());
+        setValue(result);
+      }
     } else {
+      voiceCalcActiveRef.current = true;
       voiceCalcTranscriptRef.current = "";
       setIsVoiceCalcActive(true);
       setVoiceCalcStartTrigger((n) => n + 1);
