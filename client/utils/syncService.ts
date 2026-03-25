@@ -36,42 +36,39 @@ export function makeFingerprint(tx: any): string {
   ].join("|");
 }
 
+// --- Merge helper (O(n) via Map) ---
+
+function mergeIntoLocal(storageKey: string, serverItems: any[]) {
+  const local: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  const localMap = new Map(local.map((item) => [item.id, item]));
+  for (const serverItem of serverItems) {
+    if (serverItem.deleted_at) {
+      localMap.delete(serverItem.id);
+    } else {
+      const existing = localMap.get(serverItem.id);
+      if (!existing || !existing.updated_at || existing.updated_at < serverItem.updated_at) {
+        localMap.set(serverItem.id, { ...(existing || {}), ...serverItem });
+      }
+    }
+  }
+  localStorage.setItem(storageKey, JSON.stringify(Array.from(localMap.values())));
+}
+
 // --- Push local data to server ---
 
 export async function syncPush(token: string) {
-  const categories = JSON.parse(localStorage.getItem("app_categories") || "[]");
-  const accounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
-  const rawTxns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
-
   const now = new Date().toISOString();
-
-  const transactions = rawTxns.map((tx: any) => ({
-    ...tx,
-    fingerprint: tx.fingerprint || makeFingerprint(tx),
-    updated_at: tx.updated_at || now,
-  }));
-
-  const catsWithMeta = categories.map((c: any) => ({
-    ...c,
-    updated_at: c.updated_at || now,
-  }));
-
-  const accsWithMeta = accounts.map((a: any) => ({
-    ...a,
-    updated_at: a.updated_at || now,
-  }));
+  const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
+    .map((c) => ({ ...c, updated_at: c.updated_at || now }));
+  const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
+    .map((a) => ({ ...a, updated_at: a.updated_at || now }));
+  const transactions = (JSON.parse(localStorage.getItem("app_transactions") || "[]") as any[])
+    .map((tx) => ({ ...tx, fingerprint: tx.fingerprint || makeFingerprint(tx), updated_at: tx.updated_at || now }));
 
   const res = await fetch(`${API_BASE}/sync/push`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      categories: catsWithMeta,
-      accounts: accsWithMeta,
-      transactions,
-    }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ categories, accounts, transactions }),
   });
   if (!res.ok) throw new Error("Push failed");
   return true;
@@ -81,82 +78,17 @@ export async function syncPush(token: string) {
 
 export async function syncPull(token: string) {
   const lastSync = localStorage.getItem("last_sync_at") || null;
-
   const res = await fetch(`${API_BASE}/sync/pull`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ last_sync_at: lastSync }),
   });
   if (!res.ok) throw new Error("Pull failed");
 
   const data = await res.json();
-
-  // Merge categories
-  if (data.categories?.length) {
-    const local: any[] = JSON.parse(localStorage.getItem("app_categories") || "[]");
-    for (const serverCat of data.categories) {
-      if (serverCat.deleted_at) {
-        const idx = local.findIndex((c) => c.id === serverCat.id);
-        if (idx !== -1) local.splice(idx, 1);
-      } else {
-        const idx = local.findIndex((c) => c.id === serverCat.id);
-        if (idx !== -1) {
-          if (!local[idx].updated_at || local[idx].updated_at < serverCat.updated_at) {
-            local[idx] = { ...local[idx], ...serverCat };
-          }
-        } else {
-          local.push(serverCat);
-        }
-      }
-    }
-    localStorage.setItem("app_categories", JSON.stringify(local));
-  }
-
-  // Merge accounts
-  if (data.accounts?.length) {
-    const local: any[] = JSON.parse(localStorage.getItem("app_accounts") || "[]");
-    for (const serverAcc of data.accounts) {
-      if (serverAcc.deleted_at) {
-        const idx = local.findIndex((a) => a.id === serverAcc.id);
-        if (idx !== -1) local.splice(idx, 1);
-      } else {
-        const idx = local.findIndex((a) => a.id === serverAcc.id);
-        if (idx !== -1) {
-          if (!local[idx].updated_at || local[idx].updated_at < serverAcc.updated_at) {
-            local[idx] = { ...local[idx], ...serverAcc };
-          }
-        } else {
-          local.push(serverAcc);
-        }
-      }
-    }
-    localStorage.setItem("app_accounts", JSON.stringify(local));
-  }
-
-  // Merge transactions
-  if (data.transactions?.length) {
-    const local: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
-    for (const serverTx of data.transactions) {
-      if (serverTx.deleted_at) {
-        const idx = local.findIndex((t) => t.id === serverTx.id);
-        if (idx !== -1) local.splice(idx, 1);
-      } else {
-        const idx = local.findIndex((t) => t.id === serverTx.id);
-        if (idx !== -1) {
-          if (!local[idx].updated_at || local[idx].updated_at < serverTx.updated_at) {
-            local[idx] = { ...local[idx], ...serverTx };
-          }
-        } else {
-          local.push(serverTx);
-        }
-      }
-    }
-    localStorage.setItem("app_transactions", JSON.stringify(local));
-  }
-
+  if (data.categories?.length) mergeIntoLocal("app_categories", data.categories);
+  if (data.accounts?.length) mergeIntoLocal("app_accounts", data.accounts);
+  if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions);
   localStorage.setItem("last_sync_at", data.server_time);
   return true;
 }

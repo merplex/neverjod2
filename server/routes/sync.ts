@@ -1,9 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { pool } from "../db";
+import { pool, JWT_SECRET } from "../db";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
 // --- Auth middleware ---
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -26,64 +25,65 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
   const { categories = [], accounts = [], transactions = [] } = req.body;
 
   try {
-    // Categories
-    for (const cat of categories) {
-      await pool.query(
-        `INSERT INTO sync_categories (id, user_id, name, type, icon, updated_at, deleted_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
-         ON CONFLICT (id, user_id) DO UPDATE
-           SET name = EXCLUDED.name, type = EXCLUDED.type, icon = EXCLUDED.icon,
-               updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
-           WHERE sync_categories.updated_at < EXCLUDED.updated_at`,
-        [cat.id, userId, cat.name, cat.type, cat.icon || null,
-         cat.updated_at, cat.deleted_at || null]
-      );
-    }
+    // Categories + Accounts in parallel
+    await Promise.all([
+      ...categories.map((cat: any) =>
+        pool.query(
+          `INSERT INTO sync_categories (id, user_id, name, type, icon, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)
+           ON CONFLICT (id, user_id) DO UPDATE
+             SET name = EXCLUDED.name, type = EXCLUDED.type, icon = EXCLUDED.icon,
+                 updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
+             WHERE sync_categories.updated_at < EXCLUDED.updated_at`,
+          [cat.id, userId, cat.name, cat.type, cat.icon || null, cat.updated_at, cat.deleted_at || null]
+        )
+      ),
+      ...accounts.map((acc: any) =>
+        pool.query(
+          `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+           ON CONFLICT (id, user_id) DO UPDATE
+             SET name = EXCLUDED.name, type = EXCLUDED.type, start_balance = EXCLUDED.start_balance,
+                 icon = EXCLUDED.icon, updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
+             WHERE sync_accounts.updated_at < EXCLUDED.updated_at`,
+          [acc.id, userId, acc.name, acc.type || null, acc.startBalance || 0, acc.icon || null, acc.updated_at, acc.deleted_at || null]
+        )
+      ),
+    ]);
 
-    // Accounts
-    for (const acc of accounts) {
-      await pool.query(
-        `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, updated_at, deleted_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         ON CONFLICT (id, user_id) DO UPDATE
-           SET name = EXCLUDED.name, type = EXCLUDED.type, start_balance = EXCLUDED.start_balance,
-               icon = EXCLUDED.icon, updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
-           WHERE sync_accounts.updated_at < EXCLUDED.updated_at`,
-        [acc.id, userId, acc.name, acc.type || null, acc.startBalance || 0,
-         acc.icon || null, acc.updated_at, acc.deleted_at || null]
-      );
-    }
-
-    // Transactions — fingerprint dedup for new records
-    for (const tx of transactions) {
-      // Check fingerprint first (prevents duplicates from multiple devices)
-      if (tx.fingerprint) {
-        const existing = await pool.query(
-          "SELECT id FROM sync_transactions WHERE fingerprint = $1 AND user_id = $2",
-          [tx.fingerprint, userId]
-        );
-        if (existing.rows.length > 0 && existing.rows[0].id !== tx.id) {
-          // Duplicate fingerprint with different ID — skip
-          continue;
-        }
-      }
-
-      await pool.query(
-        `INSERT INTO sync_transactions
-           (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, updated_at, deleted_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-         ON CONFLICT (id, user_id) DO UPDATE
-           SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
-               amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
-               date = EXCLUDED.date, time = EXCLUDED.time, updated_at = EXCLUDED.updated_at,
-               deleted_at = EXCLUDED.deleted_at
-           WHERE sync_transactions.updated_at < EXCLUDED.updated_at`,
-        [tx.id, userId, tx.categoryId || null, tx.accountId || null,
-         tx.amount, tx.type, tx.description || null,
-         tx.date, tx.time || null, tx.fingerprint || null,
-         tx.updated_at, tx.deleted_at || null]
-      );
-    }
+    // Transactions: check fingerprints first (batch), then upsert (batch)
+    const txnsWithFingerprint = transactions.filter((tx: any) => tx.fingerprint);
+    const fingerprintResults = await Promise.all(
+      txnsWithFingerprint.map((tx: any) =>
+        pool.query("SELECT id FROM sync_transactions WHERE fingerprint = $1 AND user_id = $2", [tx.fingerprint, userId])
+      )
+    );
+    const dupIds = new Set(
+      txnsWithFingerprint
+        .filter((_: any, i: number) => fingerprintResults[i].rows.length > 0 && fingerprintResults[i].rows[0].id !== txnsWithFingerprint[i].id)
+        .map((tx: any) => tx.id)
+    );
+    await Promise.all(
+      transactions
+        .filter((tx: any) => !dupIds.has(tx.id))
+        .map((tx: any) =>
+          pool.query(
+            `INSERT INTO sync_transactions
+               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, updated_at, deleted_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+             ON CONFLICT (id, user_id) DO UPDATE
+               SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
+                   amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
+                   date = EXCLUDED.date, time = EXCLUDED.time, updated_at = EXCLUDED.updated_at,
+                   deleted_at = EXCLUDED.deleted_at
+               WHERE sync_transactions.updated_at < EXCLUDED.updated_at`,
+            [tx.id, userId, tx.categoryId || null, tx.accountId || null,
+             tx.amount, tx.type, tx.description || null,
+             tx.date, tx.time || null, tx.fingerprint || null,
+             tx.updated_at, tx.deleted_at || null]
+          )
+        )
+    );
 
     res.json({ ok: true });
   } catch (err) {

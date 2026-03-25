@@ -7,16 +7,17 @@ export const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+export const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+
 export async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
+  const tables = [
+    `CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS sync_categories (
+    )`,
+    `CREATE TABLE IF NOT EXISTS sync_categories (
       id TEXT NOT NULL,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
@@ -25,9 +26,8 @@ export async function initDB() {
       updated_at TIMESTAMPTZ NOT NULL,
       deleted_at TIMESTAMPTZ,
       PRIMARY KEY (id, user_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS sync_accounts (
+    )`,
+    `CREATE TABLE IF NOT EXISTS sync_accounts (
       id TEXT NOT NULL,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
@@ -37,9 +37,8 @@ export async function initDB() {
       updated_at TIMESTAMPTZ NOT NULL,
       deleted_at TIMESTAMPTZ,
       PRIMARY KEY (id, user_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS sync_transactions (
+    )`,
+    `CREATE TABLE IF NOT EXISTS sync_transactions (
       id TEXT NOT NULL,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       category_id TEXT,
@@ -53,6 +52,9 @@ export async function initDB() {
       updated_at TIMESTAMPTZ NOT NULL,
       deleted_at TIMESTAMPTZ,
       PRIMARY KEY (id, user_id)
-    );
-  `);
+    )`,
+  ];
+  for (const sql of tables) {
+    await pool.query(sql);
+  }
 }
