@@ -15,23 +15,11 @@ interface Account {
 }
 
 const defaultAccounts: Account[] = [
-  { id: "uob", name: "UOB", type: "credit card", icon: CreditCard, balance: 5000, keywords: [] },
-  { id: "banka", name: "BankA", type: "debit card", icon: CreditCard, balance: 15000, keywords: [] },
-  { id: "krungsri", name: "Krungsri", type: "savings account", icon: Wallet, balance: 50000, keywords: [] },
-  { id: "bangkok", name: "Bangkok Bank", type: "credit card", icon: CreditCard, balance: 8000, keywords: [] },
-  { id: "kasikorn", name: "Kasikornbank", type: "debit card", icon: CreditCard, balance: 12000, keywords: [] },
-  { id: "tmb", name: "TMB", type: "savings account", icon: Wallet, balance: 30000, keywords: [] },
-  { id: "scb", name: "SCB", type: "credit card", icon: CreditCard, balance: 6000, keywords: [] },
-  { id: "acme", name: "ACME", type: "debit card", icon: CreditCard, balance: 10000, keywords: [] },
-  { id: "cash", name: "Cash", type: "cash", icon: Banknote, balance: 2000, keywords: [] },
-  { id: "crypto", name: "Crypto", type: "cryptocurrency", icon: TrendingUp, balance: 100000, keywords: [] },
-  { id: "baht_pay", name: "Baht Pay", type: "digital wallet", icon: Smartphone, balance: 5000, keywords: [] },
-  { id: "other_acc", name: "Other", type: "other", icon: MoreHorizontal, balance: 0, keywords: [] },
-  { id: "kbank", name: "K-Bank", type: "digital bank", icon: Smartphone, balance: 20000, keywords: [] },
-  { id: "revolut", name: "Revolut", type: "digital wallet", icon: CreditCard, balance: 3000, keywords: [] },
-  { id: "wise", name: "Wise", type: "digital bank", icon: Wallet, balance: 5000, keywords: [] },
-  { id: "stripe", name: "Stripe", type: "payment gateway", icon: CreditCard, balance: 0, keywords: [] },
-  { id: "paypal", name: "PayPal", type: "digital wallet", icon: Banknote, balance: 1000, keywords: [] },
+  { id: "kbank", name: "KBank", type: "savings account", icon: Smartphone, balance: 0, keywords: [] },
+  { id: "scb", name: "SCB", type: "savings account", icon: CreditCard, balance: 0, keywords: [] },
+  { id: "uob", name: "UOB", type: "credit card", icon: CreditCard, balance: 0, keywords: [] },
+  { id: "travel_card", name: "Travel Card", type: "debit card", icon: CreditCard, balance: 0, keywords: [] },
+  { id: "cash", name: "Cash", type: "cash", icon: Banknote, balance: 0, keywords: [] },
   { id: "account_deleted", name: "Account Deleted", type: "deleted", icon: Trash2, balance: 0, keywords: [] },
 ];
 

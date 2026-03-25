@@ -178,10 +178,12 @@ const defaultCategoryNames: Record<string, { name: string; type: "income" | "exp
 };
 
 const defaultAccountNames: Record<string, string> = {
-  uob: "UOB", banka: "BankA", krungsri: "Krungsri", bangkok: "Bangkok Bank",
-  kasikorn: "Kasikornbank", tmb: "TMB", scb: "SCB", acme: "ACME",
-  cash: "Cash", crypto: "Crypto", baht_pay: "Baht Pay", other_acc: "Other",
-  kbank: "K-Bank", revolut: "Revolut", wise: "Wise", stripe: "Stripe", paypal: "PayPal",
+  kbank: "KBank", scb: "SCB", uob: "UOB", travel_card: "Travel Card", cash: "Cash",
+  // legacy ids (for old data)
+  banka: "BankA", krungsri: "Krungsri", bangkok: "Bangkok Bank",
+  kasikorn: "Kasikornbank", tmb: "TMB", acme: "ACME",
+  crypto: "Crypto", baht_pay: "Baht Pay", other_acc: "Other",
+  revolut: "Revolut", wise: "Wise", stripe: "Stripe", paypal: "PayPal",
 };
 
 // Read real transactions saved by the user from localStorage
