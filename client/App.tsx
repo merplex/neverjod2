@@ -1,12 +1,13 @@
 import "./global.css";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot, Root } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import OnboardingGuide from "./components/OnboardingGuide";
 
 function ThemeProvider() {
   useEffect(() => {
@@ -39,6 +40,35 @@ declare global {
   var __ROOT__: Root | undefined;
 }
 
+function AppContent() {
+  const [showGuide, setShowGuide] = useState(() => {
+    try { return !localStorage.getItem("app_onboarding_done"); } catch { return false; }
+  });
+
+  useEffect(() => {
+    const handler = () => setShowGuide(true);
+    window.addEventListener("show-guide", handler);
+    return () => window.removeEventListener("show-guide", handler);
+  }, []);
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/transactions" element={<AllTransactions />} />
+        <Route path="/account/:accountId/transactions" element={<Transactions />} />
+        <Route path="/account/:accountId/transactions/:transactionId" element={<TransactionDetail />} />
+        <Route path="/stats" element={<Stats />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/accounts" element={<AccountsManagement />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {showGuide && <OnboardingGuide onClose={() => setShowGuide(false)} />}
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -47,18 +77,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <BottomNavLayout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/transactions" element={<AllTransactions />} />
-            <Route path="/account/:accountId/transactions" element={<Transactions />} />
-            <Route path="/account/:accountId/transactions/:transactionId" element={<TransactionDetail />} />
-            <Route path="/stats" element={<Stats />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/accounts" element={<AccountsManagement />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContent />
         </BottomNavLayout>
       </BrowserRouter>
     </TooltipProvider>
