@@ -106,6 +106,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
   // repeat state (only used when isRepeatMode=true)
   const [repeatOption, setRepeatOption] = useState<RepeatOption>("monthly");
+  const [showRepeatPicker, setShowRepeatPicker] = useState(false);
 
   // voice calculator long-press state
   const [isVoiceCalcHeld, setIsVoiceCalcHeld] = useState(false);
@@ -172,6 +173,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const handleAmountSave = () => {
     setValue(parseFloat(display) || 0);
     setShowAmountPad(false);
+    setShowDatePicker(true);
   };
 
   // ---- voice calc handlers ----
@@ -310,34 +312,32 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
           </div>
 
           {/* Repeat Section — repeat mode only */}
-          {isRepeatMode && (
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <p className="text-xs text-slate-400 mb-3 font-semibold uppercase tracking-wide">Repeat</p>
-              <div className="relative">
-                <select
-                  value={repeatOption}
-                  onChange={(e) => setRepeatOption(e.target.value as RepeatOption)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 font-medium pr-8 outline-none focus:border-theme-400"
+          {isRepeatMode && (() => {
+            const selected = REPEAT_OPTIONS.find((o) => o.value === repeatOption)!;
+            return (
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <button
+                  onClick={() => setShowRepeatPicker(true)}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100"
                 >
-                  {REPEAT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}  —  {opt.desc}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <span className="text-xs text-slate-400 w-20 text-left">Repeat</span>
+                  <span className="flex-1 text-sm font-medium text-slate-800 text-left">{selected.label}</span>
+                  <span className="text-xs text-slate-400 mr-2">{selected.desc}</span>
+                  <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                </button>
+                <div className="px-4 py-2">
+                  <p className="text-xs text-slate-400">
+                    {repeatOption === "weekly" || repeatOption === "biweekly"
+                      ? `เริ่มวัน${["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"][currentDate.getDay()]} — ทุก ${repeatOption === "biweekly" ? "2 สัปดาห์" : "สัปดาห์"}`
+                      : repeatOption === "daily"
+                      ? "ทุกวัน เริ่มวันนี้"
+                      : `วันที่ ${currentDate.getDate()} ของแต่ละรอบ`
+                    }
+                  </p>
+                </div>
               </div>
-              {/* Reminder about date */}
-              <p className="text-xs text-slate-400 mt-2">
-                {repeatOption === "weekly" || repeatOption === "biweekly"
-                  ? `เริ่มวัน${["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"][currentDate.getDay()]} — ทุก ${repeatOption === "biweekly" ? "2 สัปดาห์" : "สัปดาห์"}`
-                  : repeatOption === "daily"
-                  ? "ทุกวัน เริ่มวันนี้"
-                  : `วันที่ ${currentDate.getDate()} ของแต่ละรอบ`
-                }
-              </p>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Save Button */}
           <button
@@ -426,7 +426,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
       {showDatePicker && (
         <DatePicker
           value={currentDate}
-          onChange={(d) => { setCurrentDate(d); setShowDatePicker(false); }}
+          onChange={(d) => { setCurrentDate(d); setShowDatePicker(false); setShowTimePicker(true); }}
           onClose={() => setShowDatePicker(false)}
         />
       )}
@@ -438,6 +438,38 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
           onChange={(t) => { setCurrentTime(t); setShowTimePicker(false); }}
           onClose={() => setShowTimePicker(false)}
         />
+      )}
+
+      {/* ---- Repeat Picker Bottom Sheet ---- */}
+      {showRepeatPicker && (
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowRepeatPicker(false)} />
+          <div className="relative bg-white rounded-t-2xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-800">ความถี่การทำซ้ำ</h3>
+              <button onClick={() => setShowRepeatPicker(false)}>
+                <span className="text-slate-400 text-lg">✕</span>
+              </button>
+            </div>
+            <div className="py-2 pb-8">
+              {REPEAT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setRepeatOption(opt.value); setShowRepeatPicker(false); }}
+                  className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors ${opt.value === repeatOption ? "bg-theme-50" : ""}`}
+                >
+                  <span className={`text-sm font-semibold w-28 text-left ${opt.value === repeatOption ? "text-theme-700" : "text-slate-800"}`}>
+                    {opt.label}
+                  </span>
+                  <span className="text-xs text-slate-400 flex-1 text-left">{opt.desc}</span>
+                  {opt.value === repeatOption && (
+                    <span className="text-theme-600 text-base">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ---- Amount Numpad Overlay (bottom sheet) ---- */}
