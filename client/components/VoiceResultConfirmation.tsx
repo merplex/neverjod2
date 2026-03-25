@@ -122,14 +122,14 @@ export default function VoiceResultConfirmation({
 
             {/* Miss Message */}
             <div className="mb-6 p-4 bg-orange-50 rounded-lg space-y-2">
-              <p className="text-sm text-slate-600">
-                Could not detect all required information. Please try again or select manually.
-              </p>
               {transcript && (
-                <p className="text-xs text-slate-500 border-t border-orange-200 pt-2">
-                  Heard: <span className="font-semibold text-slate-700">"{transcript.trim()}"</span>
+                <p className="text-sm text-slate-700">
+                  Heard: <span className="font-semibold">"{transcript.trim()}"</span>
                 </p>
               )}
+              <p className="text-xs text-slate-500 border-t border-orange-200 pt-2">
+                Please review the keyword at category and account setting for better result
+              </p>
             </div>
 
             {/* Button */}

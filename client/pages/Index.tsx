@@ -312,9 +312,10 @@ export default function Index() {
 
   const handleVoiceResultEdit = () => {
     setShowVoiceResult(false);
-    // Return to first page to speak again
     setCurrentPage("category");
     voiceAccumulatorRef.current = {};
+    // Always re-trigger voice (currentPage may already be "category" so useEffect won't fire)
+    setVoiceStartTrigger((n) => n + 1);
   };
 
   const handleAccountSelect = (accountId: string) => {
@@ -760,7 +761,7 @@ export default function Index() {
           isSuccess={voiceResultData.isSuccess}
           onConfirm={handleVoiceResultConfirm}
           onEdit={handleVoiceResultEdit}
-          onClose={() => setShowVoiceResult(false)}
+          onClose={() => { setShowVoiceResult(false); setVoiceStartTrigger((n) => n + 1); }}
         />
       )}
     </div>
