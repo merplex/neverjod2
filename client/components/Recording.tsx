@@ -25,6 +25,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const onTranscriptRef = useRef(onTranscript);
   const autoRestartRef = useRef(autoRestart);
   const manualStopRef = useRef(false);
+  const processedResultIndicesRef = useRef<Set<number>>(new Set());
 
   // Keep refs up-to-date without re-initializing recognition
   useEffect(() => { onVoiceInputRef.current = onVoiceInput; }, [onVoiceInput]);
@@ -74,6 +75,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     recognition.onstart = () => {
       console.log("Speech recognition started - waiting for speech");
       hasSpeechStartedRef.current = false;
+      processedResultIndicesRef.current.clear();
     };
 
     recognition.onresult = (event: any) => {
