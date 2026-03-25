@@ -171,6 +171,7 @@ export default function Index() {
     accountName?: string;
     transcript?: string;
     isSuccess: boolean;
+    isCategoryFallback?: boolean;
   }>({ isSuccess: false });
   const voiceTimeoutRef = useRef<NodeJS.Timeout>();
   const voiceAccumulatorRef = useRef<{
@@ -242,7 +243,21 @@ export default function Index() {
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
     if (voiceData.amount) voiceAccumulatorRef.current.amount = voiceData.amount;
-    voiceAccumulatorRef.current.transcript = (voiceAccumulatorRef.current.transcript || "") + voiceData.description + " ";
+    // Smart transcript accumulation — avoids duplicates from Chrome Android's
+    // progressive refinements and session restarts
+    const newText = voiceData.description.trim();
+    const existing = (voiceAccumulatorRef.current.transcript || "").trim();
+    if (!existing) {
+      voiceAccumulatorRef.current.transcript = newText;
+    } else if (existing.includes(newText)) {
+      // newText already covered by existing — skip
+    } else if (newText.includes(existing)) {
+      // newText is a superset (progressive refinement) — replace
+      voiceAccumulatorRef.current.transcript = newText;
+    } else {
+      // Genuinely new segment — append
+      voiceAccumulatorRef.current.transcript = existing + " " + newText;
+    }
 
     // If speech has started (has any data), always clear the initial 4-second wait timer
     // This allows users to speak for as long as needed once they start
@@ -282,6 +297,7 @@ export default function Index() {
       accountName,
       transcript,
       isSuccess: !!allMatched,
+      isCategoryFallback: !categoryId && effectiveCategoryId === "other",
     });
 
     setShowVoiceResult(true);
@@ -773,6 +789,7 @@ export default function Index() {
           amount={voiceResultData.amount}
           transcript={voiceResultData.transcript}
           isSuccess={voiceResultData.isSuccess}
+          isCategoryFallback={voiceResultData.isCategoryFallback}
           onConfirm={handleVoiceResultConfirm}
           onEdit={handleVoiceResultEdit}
           onClose={() => { setShowVoiceResult(false); setVoiceStartTrigger((n) => n + 1); }}

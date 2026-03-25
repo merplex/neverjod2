@@ -174,8 +174,10 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Sticky header + tab controls wrapper */}
+      <div className="sticky top-0 z-10">
       {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4 sticky top-0 z-10">
+      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
         <div className="max-w-md mx-auto flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
@@ -188,7 +190,7 @@ export default function Categories() {
       </div>
 
       {/* Tab Controls */}
-      <div className="max-w-md mx-auto bg-white border-b border-slate-200 sticky top-16 z-10">
+      <div className="max-w-md mx-auto bg-white border-b border-slate-200">
         <div className="flex gap-2 px-4 py-4">
           <button
             onClick={() => setCategoryType("expense")}
@@ -212,6 +214,7 @@ export default function Categories() {
           </button>
         </div>
       </div>
+      </div>{/* end sticky wrapper */}
 
       {/* Content */}
       <div className="max-w-md mx-auto px-4 py-4">

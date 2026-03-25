@@ -306,21 +306,19 @@ export default function TransactionDetail() {
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto divide-y divide-slate-100">
+            <div className="overflow-y-auto grid grid-cols-3 divide-x divide-y divide-slate-100">
               {accountsList.map((acc: any) => {
                 const Icon = accountIconMap[acc.id] || CreditCard;
                 return (
                   <button
                     key={acc.id}
                     onClick={() => handleAccountSelect(acc.id, acc.name)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors ${acc.id === currentAccountId ? "bg-indigo-50" : ""}`}
+                    className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${acc.id === currentAccountId ? "bg-indigo-50" : ""}`}
                   >
                     <Icon size={18} className={acc.id === currentAccountId ? "text-indigo-600" : "text-slate-500"} />
-                    <div className="flex-1 text-left">
-                      <p className={`text-sm font-medium ${acc.id === currentAccountId ? "text-indigo-600" : "text-slate-800"}`}>{acc.name}</p>
-                      <p className="text-xs text-slate-400">{acc.type}</p>
-                    </div>
-                    {acc.id === currentAccountId && <span className="text-indigo-500 text-sm">✓</span>}
+                    <span className={`text-xs text-center leading-tight ${acc.id === currentAccountId ? "text-indigo-600 font-semibold" : "text-slate-700"}`}>
+                      {acc.name}
+                    </span>
                   </button>
                 );
               })}
