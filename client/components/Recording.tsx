@@ -18,12 +18,6 @@ function readSilenceDelay(): number {
   } catch { return 3500; }
 }
 
-function readVoiceLanguage(): string {
-  try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
-    return s.voiceLanguage || "th-TH";
-  } catch { return "th-TH"; }
-}
 
 export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, startTrigger, stopTrigger, autoRestart }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
@@ -92,7 +86,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = readVoiceLanguage();
+    recognition.lang = "th-TH";
 
     recognition.onstart = () => {
       console.log("Speech recognition started - waiting for speech");
@@ -158,8 +152,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       // Auto-restart if: was listening, not manually stopped, autoRestart enabled
       if (isListeningRef.current && !manualStopRef.current && autoRestartRef.current) {
         try {
-          recognition.lang = readVoiceLanguage();
-          recognition.start();
+            recognition.start();
           return; // keep isListening = true, don't reset UI
         } catch (e) {
           console.error("Auto-restart failed:", e);
@@ -243,7 +236,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         isListeningRef.current = true;
 
         // Start recognition
-        recognitionRef.current.lang = readVoiceLanguage();
         recognitionRef.current.start();
       }
     } catch (error) {
