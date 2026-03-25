@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote } from "lucide-react";
+import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 
 interface Category {
   id: string;
@@ -51,6 +51,12 @@ const iconOptions = [
   { id: "clothing", icon: ShoppingBag }, { id: "sports", icon: Dumbbell }, { id: "gifts", icon: Gift },
   { id: "salary", icon: TrendingUp }, { id: "card", icon: CreditCard }, { id: "wallet", icon: Wallet },
   { id: "phone", icon: Smartphone }, { id: "cash", icon: Banknote }, { id: "other", icon: MoreHorizontal },
+  { id: "home", icon: Home }, { id: "car", icon: Car }, { id: "coffee", icon: Coffee },
+  { id: "briefcase", icon: Briefcase }, { id: "star", icon: Star }, { id: "clock", icon: Clock },
+  { id: "camera", icon: Camera }, { id: "headphones", icon: Headphones }, { id: "wrench", icon: Wrench },
+  { id: "scissors", icon: Scissors }, { id: "flame", icon: Flame }, { id: "leaf", icon: Leaf },
+  { id: "baby", icon: Baby }, { id: "package", icon: Package }, { id: "truck", icon: Truck },
+  { id: "train", icon: Train }, { id: "bike", icon: Bike }, { id: "building", icon: Building2 },
 ];
 
 export default function Categories() {
@@ -138,7 +144,8 @@ export default function Categories() {
     setEditingId(category.id);
     setEditName(category.name);
     setEditKeywords((category.keywords || []).join(", "));
-    setEditIconId(category.iconId || "other");
+    const matchedOpt = iconOptions.find((o) => o.icon === category.icon);
+    setEditIconId(category.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
     setKeywordError("");
   };
