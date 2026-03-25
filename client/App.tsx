@@ -1,6 +1,7 @@
 import "./global.css";
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot, Root } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -41,9 +42,14 @@ declare global {
 }
 
 function AppContent() {
+  const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(() => {
     try { return !localStorage.getItem("app_onboarding_done"); } catch { return false; }
   });
+
+  useEffect(() => {
+    navigate("/", { replace: true });
+  }, []);
 
   useEffect(() => {
     const handler = () => setShowGuide(true);
