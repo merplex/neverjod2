@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, CheckCircle, AlertCircle } from "lucide-react";
+import { X, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 
 interface VoiceResultConfirmationProps {
   categoryName?: string;
@@ -7,6 +7,7 @@ interface VoiceResultConfirmationProps {
   amount?: number;
   transcript?: string;
   isSuccess: boolean;
+  isCategoryFallback?: boolean;
   onConfirm: () => void;
   onEdit: () => void;
   onClose: () => void;
@@ -18,6 +19,7 @@ export default function VoiceResultConfirmation({
   amount,
   transcript,
   isSuccess,
+  isCategoryFallback,
   onConfirm,
   onEdit,
   onClose,
@@ -25,21 +27,21 @@ export default function VoiceResultConfirmation({
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
-    if (!isSuccess) return;
+    if (!isSuccess || !accountName) return;
 
     const interval = setInterval(() => {
       setCountdown((prev) => prev - 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isSuccess]);
+  }, [isSuccess, accountName]);
 
   // Separate effect to handle auto-confirm when countdown reaches 0
   useEffect(() => {
-    if (isSuccess && countdown === 0) {
+    if (isSuccess && accountName && countdown === 0) {
       onConfirm();
     }
-  }, [countdown, isSuccess, onConfirm]);
+  }, [countdown, isSuccess, accountName, onConfirm]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -62,16 +64,30 @@ export default function VoiceResultConfirmation({
 
             {/* Detected Information */}
             <div className="space-y-3 mb-6 bg-green-50 p-4 rounded-lg">
-              {categoryName && (
+              {isCategoryFallback ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-600">Category:</span>
+                  <span className="text-sm font-bold text-yellow-600 flex items-center gap-1">
+                    <XCircle size={14} /> missing → Other
+                  </span>
+                </div>
+              ) : categoryName ? (
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-slate-600">Category:</span>
                   <span className="text-sm font-bold text-green-600">{categoryName}</span>
                 </div>
-              )}
-              {accountName && (
+              ) : null}
+              {accountName ? (
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-slate-600">Account:</span>
                   <span className="text-sm font-bold text-green-600">{accountName}</span>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-600">Account:</span>
+                  <span className="text-sm font-bold text-red-500 flex items-center gap-1">
+                    <XCircle size={14} /> account missing
+                  </span>
                 </div>
               )}
               {amount && (

@@ -171,6 +171,7 @@ export default function Index() {
     accountName?: string;
     transcript?: string;
     isSuccess: boolean;
+    isCategoryFallback?: boolean;
   }>({ isSuccess: false });
   const voiceTimeoutRef = useRef<NodeJS.Timeout>();
   const voiceAccumulatorRef = useRef<{
@@ -282,6 +283,7 @@ export default function Index() {
       accountName,
       transcript,
       isSuccess: !!allMatched,
+      isCategoryFallback: !categoryId && effectiveCategoryId === "other",
     });
 
     setShowVoiceResult(true);
@@ -773,6 +775,7 @@ export default function Index() {
           amount={voiceResultData.amount}
           transcript={voiceResultData.transcript}
           isSuccess={voiceResultData.isSuccess}
+          isCategoryFallback={voiceResultData.isCategoryFallback}
           onConfirm={handleVoiceResultConfirm}
           onEdit={handleVoiceResultEdit}
           onClose={() => { setShowVoiceResult(false); setVoiceStartTrigger((n) => n + 1); }}
