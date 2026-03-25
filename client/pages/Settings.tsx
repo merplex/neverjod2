@@ -38,7 +38,14 @@ const colorThemes: { id: ColorTheme; name: string; swatches: string[] }[] = [
 function loadSettings(): AppSettings {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY);
-    if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migrate old data that stored voiceInputDelay in milliseconds
+      if (typeof parsed.voiceInputDelay === "number" && parsed.voiceInputDelay > 10) {
+        parsed.voiceInputDelay = Math.min(10, Math.max(1, Math.round(parsed.voiceInputDelay / 1000)));
+      }
+      return { ...defaultSettings, ...parsed };
+    }
   } catch {}
   return defaultSettings;
 }
