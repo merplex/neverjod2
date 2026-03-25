@@ -64,6 +64,7 @@ export default function AccountsManagement() {
   const [editName, setEditName] = useState("");
   const [editBalance, setEditBalance] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
+  const [keywordError, setKeywordError] = useState("");
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
@@ -77,6 +78,7 @@ export default function AccountsManagement() {
     setEditName(account.name);
     setEditBalance(account.balance?.toString() || "0");
     setEditKeywords((account.keywords || []).join(", "));
+    setKeywordError("");
   };
 
   const saveEdit = () => {
@@ -84,22 +86,31 @@ export default function AccountsManagement() {
 
     const keywords = editKeywords
       .split(",")
-      .map((k) => k.trim())
+      .map((k) => k.trim().toLowerCase())
       .filter((k) => k);
 
+    // Validate: keywords must not already exist in other accounts or any category
+    const otherAccKeywords = accounts
+      .filter((a) => a.id !== editingId)
+      .flatMap((a) => a.keywords || []);
+    const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
+    const catKeywords = storedCategories.flatMap((c: any) => c.keywords || []);
+    const allExisting = [...otherAccKeywords, ...catKeywords].map((k: string) => k.toLowerCase());
+    const duplicates = keywords.filter((k) => allExisting.includes(k));
+
+    if (duplicates.length > 0) {
+      setKeywordError(`Keyword ซ้ำกับที่มีอยู่แล้ว: ${duplicates.join(", ")}`);
+      return;
+    }
+
+    setKeywordError("");
     const updatedAccounts = accounts.map((acc) =>
       acc.id === editingId
-        ? {
-            ...acc,
-            name: editName,
-            balance: parseFloat(editBalance) || 0,
-            keywords,
-          }
+        ? { ...acc, name: editName, balance: parseFloat(editBalance) || 0, keywords }
         : acc
     );
 
     setAccounts(updatedAccounts);
-    // Save to localStorage so voice recognition can use updated keywords
     localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
     setEditingId(null);
   };
@@ -109,6 +120,7 @@ export default function AccountsManagement() {
     setEditName("");
     setEditBalance("");
     setEditKeywords("");
+    setKeywordError("");
   };
 
   const openTransferModal = () => {
@@ -219,15 +231,18 @@ export default function AccountsManagement() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-600">
-                        Keywords (comma-separated)
+                        Keywords (คั่นด้วยจุลภาค)
                       </label>
                       <input
                         type="text"
                         value={editKeywords}
-                        onChange={(e) => setEditKeywords(e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                        placeholder="e.g., uob, credit"
+                        onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
+                        className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
+                        placeholder="เช่น กรุงศรี, อยุธยา"
                       />
+                      {keywordError && (
+                        <p className="text-xs text-red-500 mt-1">{keywordError}</p>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button

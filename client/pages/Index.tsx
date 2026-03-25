@@ -205,15 +205,21 @@ export default function Index() {
       ? accountsList.find((a) => a.id === accountId)?.name
       : undefined;
 
-    // Check if minimum required parts are detected (category + amount; account optional)
-    const allMatched = categoryId && amount;
+    // If no category detected but account + amount found, fallback to "Other"
+    const effectiveCategoryId = categoryId || (accountId && amount ? "other" : undefined);
+    const effectiveCategoryName = effectiveCategoryId === "other" && !categoryId
+      ? "Other"
+      : categoryName;
+
+    // Success = category (or fallback) + amount
+    const allMatched = effectiveCategoryId && amount;
 
     // Always show result popup (either success or no-match)
     setVoiceResultData({
-      categoryId,
+      categoryId: effectiveCategoryId,
       accountId,
       amount,
-      categoryName,
+      categoryName: effectiveCategoryName,
       accountName,
       transcript,
       isSuccess: !!allMatched,

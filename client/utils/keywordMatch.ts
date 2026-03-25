@@ -7,41 +7,69 @@ export interface MatchResult {
   description: string;
 }
 
-// Default categories and accounts with keywords
+// Default categories — keywords are managed by the user via the Categories management page
 const defaultCategoriesWithKeywords: Record<string, { name: string; keywords: string[] }> = {
-  food: { name: "Food", keywords: ["food", "eat", "meal", "restaurant", "dining"] },
-  transport: { name: "Transport", keywords: ["transport", "taxi", "bus", "car", "fuel"] },
-  entertainment: { name: "Entertainment", keywords: ["entertainment", "movie", "game", "fun"] },
-  shopping: { name: "Shopping", keywords: ["shopping", "shop", "buy", "purchase"] },
-  bills: { name: "Bills", keywords: ["bills", "bill", "pay"] },
-  health: { name: "Health", keywords: ["health", "doctor", "medicine", "hospital"] },
-  education: { name: "Education", keywords: ["education", "school", "course", "study"] },
-  utilities: { name: "Utilities", keywords: ["utilities", "electric", "water", "internet"] },
-  salary: { name: "Salary", keywords: ["salary", "wage", "income"] },
-  bonus: { name: "Bonus", keywords: ["bonus", "incentive"] },
-  freelance: { name: "Freelance", keywords: ["freelance", "freelancing", "gig"] },
-  other: { name: "Other", keywords: ["other", "misc"] },
+  food: { name: "Food", keywords: [] },
+  transport: { name: "Transport", keywords: [] },
+  entertainment: { name: "Entertainment", keywords: [] },
+  shopping: { name: "Shopping", keywords: [] },
+  bills: { name: "Bills", keywords: [] },
+  health: { name: "Health", keywords: [] },
+  education: { name: "Education", keywords: [] },
+  utilities: { name: "Utilities", keywords: [] },
+  salary: { name: "Salary", keywords: [] },
+  bonus: { name: "Bonus", keywords: [] },
+  freelance: { name: "Freelance", keywords: [] },
+  other: { name: "Other", keywords: [] },
+  travel: { name: "Travel", keywords: [] },
+  gifts: { name: "Gifts", keywords: [] },
+  sports: { name: "Sports", keywords: [] },
+  clothing: { name: "Clothing", keywords: [] },
+  investment: { name: "Investment", keywords: [] },
+  rental: { name: "Rental", keywords: [] },
+  food_delivery: { name: "Food Delivery", keywords: [] },
+  subscription: { name: "Subscription", keywords: [] },
+  insurance: { name: "Insurance", keywords: [] },
+  car: { name: "Car", keywords: [] },
+  phone: { name: "Phone", keywords: [] },
+  internet: { name: "Internet", keywords: [] },
+  hobby: { name: "Hobby", keywords: [] },
+  pets: { name: "Pets", keywords: [] },
+  childcare: { name: "Childcare", keywords: [] },
+  loan: { name: "Loan", keywords: [] },
 };
 
+// Default accounts — keywords are managed by the user via the Accounts management page
 const defaultAccountsWithKeywords: Record<string, { name: string; keywords: string[] }> = {
-  uob: { name: "UOB", keywords: ["uob", "united", "you'll be", "you o b", "you oh be", "you be", "yob", "u o b"] },
-  banka: { name: "BankA", keywords: ["banka", "bank a"] },
-  krungsri: { name: "Krungsri", keywords: ["krungsri", "krungthai"] },
-  bangkok: { name: "Bangkok Bank", keywords: ["bangkok", "bank"] },
-  kasikorn: { name: "Kasikornbank", keywords: ["kasikorn", "kbank"] },
-  tmb: { name: "TMB", keywords: ["tmb", "thai military"] },
-  scb: { name: "SCB", keywords: ["scb", "siam commercial"] },
-  acme: { name: "ACME", keywords: ["acme"] },
-  cash: { name: "Cash", keywords: ["cash"] },
-  crypto: { name: "Crypto", keywords: ["crypto", "bitcoin", "ethereum"] },
-  baht_pay: { name: "Baht Pay", keywords: ["baht pay", "bahtpay"] },
-  other_acc: { name: "Other", keywords: ["other"] },
-  kbank: { name: "K-Bank", keywords: ["kbank", "k-bank"] },
-  revolut: { name: "Revolut", keywords: ["revolut"] },
-  wise: { name: "Wise", keywords: ["wise"] },
-  stripe: { name: "Stripe", keywords: ["stripe"] },
-  paypal: { name: "PayPal", keywords: ["paypal", "paypal"] },
+  uob: { name: "UOB", keywords: [] },
+  banka: { name: "BankA", keywords: [] },
+  krungsri: { name: "Krungsri", keywords: [] },
+  bangkok: { name: "Bangkok Bank", keywords: [] },
+  kasikorn: { name: "Kasikornbank", keywords: [] },
+  tmb: { name: "TMB", keywords: [] },
+  scb: { name: "SCB", keywords: [] },
+  acme: { name: "ACME", keywords: [] },
+  cash: { name: "Cash", keywords: [] },
+  crypto: { name: "Crypto", keywords: [] },
+  baht_pay: { name: "Baht Pay", keywords: [] },
+  other_acc: { name: "Other", keywords: [] },
+  kbank: { name: "K-Bank", keywords: [] },
+  revolut: { name: "Revolut", keywords: [] },
+  wise: { name: "Wise", keywords: [] },
+  stripe: { name: "Stripe", keywords: [] },
+  paypal: { name: "PayPal", keywords: [] },
 };
+
+// Always include the entity's name as a keyword alongside user-defined keywords
+function buildKeywordMap(
+  source: Record<string, { name: string; keywords: string[] }>
+): Record<string, { name: string; keywords: string[] }> {
+  const result: Record<string, { name: string; keywords: string[] }> = {};
+  for (const [id, { name, keywords }] of Object.entries(source)) {
+    result[id] = { name, keywords: [...keywords, name.toLowerCase()] };
+  }
+  return result;
+}
 
 // Get categories from localStorage or use defaults
 function getCategoriesWithKeywords(): Record<string, { name: string; keywords: string[] }> {
@@ -49,19 +77,16 @@ function getCategoriesWithKeywords(): Record<string, { name: string; keywords: s
     const stored = localStorage.getItem("app_categories");
     if (stored) {
       const categories = JSON.parse(stored);
-      const result: Record<string, { name: string; keywords: string[] }> = {};
+      const raw: Record<string, { name: string; keywords: string[] }> = {};
       for (const cat of categories) {
-        result[cat.id] = {
-          name: cat.name,
-          keywords: [...(cat.keywords || []), cat.name.toLowerCase()],
-        };
+        raw[cat.id] = { name: cat.name, keywords: cat.keywords || [] };
       }
-      return result;
+      return buildKeywordMap(raw);
     }
   } catch (e) {
     console.log("Could not load categories from localStorage");
   }
-  return defaultCategoriesWithKeywords;
+  return buildKeywordMap(defaultCategoriesWithKeywords);
 }
 
 // Get accounts from localStorage or use defaults
@@ -70,19 +95,16 @@ function getAccountsWithKeywords(): Record<string, { name: string; keywords: str
     const stored = localStorage.getItem("app_accounts");
     if (stored) {
       const accounts = JSON.parse(stored);
-      const result: Record<string, { name: string; keywords: string[] }> = {};
+      const raw: Record<string, { name: string; keywords: string[] }> = {};
       for (const acc of accounts) {
-        result[acc.id] = {
-          name: acc.name,
-          keywords: [...(acc.keywords || []), acc.name.toLowerCase()],
-        };
+        raw[acc.id] = { name: acc.name, keywords: acc.keywords || [] };
       }
-      return result;
+      return buildKeywordMap(raw);
     }
   } catch (e) {
     console.log("Could not load accounts from localStorage");
   }
-  return defaultAccountsWithKeywords;
+  return buildKeywordMap(defaultAccountsWithKeywords);
 }
 
 export function extractNumberFromText(text: string): number | undefined {
