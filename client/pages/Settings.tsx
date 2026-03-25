@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const SETTINGS_KEY = "app_settings";
@@ -204,6 +204,25 @@ export default function Settings() {
               🇹🇭 ภาษาไทย
             </button>
           </div>
+        </div>
+
+        {/* Guide */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-theme-100 rounded-xl flex items-center justify-center">
+              <BookOpen size={18} className="text-theme-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Guide</h2>
+              <p className="text-xs text-slate-500">คู่มือการใช้งานแอป</p>
+            </div>
+          </div>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("show-guide"))}
+            className="w-full py-2.5 rounded-xl bg-theme-50 text-theme-700 text-sm font-semibold hover:bg-theme-100 transition-colors border border-theme-200"
+          >
+            ดูคู่มือการใช้งาน
+          </button>
         </div>
 
         {/* Cloud Backup */}
