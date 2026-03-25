@@ -108,8 +108,8 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [repeatOption, setRepeatOption] = useState<RepeatOption>("monthly");
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
 
-  // voice calculator long-press state
-  const [isVoiceCalcHeld, setIsVoiceCalcHeld] = useState(false);
+  // voice calculator toggle state
+  const [isVoiceCalcActive, setIsVoiceCalcActive] = useState(false);
   const [voiceCalcStartTrigger, setVoiceCalcStartTrigger] = useState(0);
   const [voiceCalcStopTrigger, setVoiceCalcStopTrigger] = useState(0);
   const voiceCalcTranscriptRef = useRef("");
@@ -184,14 +184,24 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
     if (expression.trim()) setDisplay(expression);
   };
 
-  const handleVoiceCalcEnd = () => {
-    const { result, error } = calculateFromVoice(voiceCalcTranscriptRef.current);
-    if (!error && result !== 0) {
-      setDisplay(result.toString());
-      setValue(result);
+  const handleVoiceCalcToggle = () => {
+    if (isLocked) return;
+    if (isVoiceCalcActive) {
+      setVoiceCalcStopTrigger((n) => n + 1);
+      setIsVoiceCalcActive(false);
+      setTimeout(() => {
+        const { result, error } = calculateFromVoice(voiceCalcTranscriptRef.current);
+        if (!error && result !== 0) {
+          setDisplay(result.toString());
+          setValue(result);
+        }
+        voiceCalcTranscriptRef.current = "";
+      }, 300);
+    } else {
+      voiceCalcTranscriptRef.current = "";
+      setIsVoiceCalcActive(true);
+      setVoiceCalcStartTrigger((n) => n + 1);
     }
-    setIsVoiceCalcHeld(false);
-    voiceCalcTranscriptRef.current = "";
   };
 
   // ---- save ----
@@ -481,7 +491,6 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
           <div className="hidden">
             <Recording
               onTranscript={handleVoiceCalcTranscript}
-              onVoiceEnd={handleVoiceCalcEnd}
               startTrigger={voiceCalcStartTrigger}
               stopTrigger={voiceCalcStopTrigger}
               autoRestart={false}
@@ -562,24 +571,12 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               {/* Section D: Voice Calculator (long press) + Lock */}
               <div className="flex flex-col gap-1.5 flex-1">
                   <button
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      if (isLocked) return;
-                      voiceCalcTranscriptRef.current = "";
-                      setIsVoiceCalcHeld(true);
-                      setVoiceCalcStartTrigger((n) => n + 1);
-                    }}
-                    onPointerUp={() => {
-                      if (isVoiceCalcHeld) setVoiceCalcStopTrigger((n) => n + 1);
-                    }}
-                    onPointerLeave={() => {
-                      if (isVoiceCalcHeld) setVoiceCalcStopTrigger((n) => n + 1);
-                    }}
+                    onClick={handleVoiceCalcToggle}
                     disabled={isLocked}
                     className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
                       isLocked
                         ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                        : isVoiceCalcHeld
+                        : isVoiceCalcActive
                         ? "bg-gradient-to-br from-green-400 to-green-500 text-white border-2 border-green-600"
                         : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
                     }`}
@@ -589,7 +586,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                         <Calculator size={24} />
                         <Mic size={24} />
                       </div>
-                      <span className="text-xs">{isVoiceCalcHeld ? "Listening…" : "Hold"}</span>
+                      <span className="text-xs">{isVoiceCalcActive ? "Listening…" : "Calc"}</span>
                     </div>
                   </button>
                   <button
