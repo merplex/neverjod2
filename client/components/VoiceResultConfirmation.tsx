@@ -13,6 +13,13 @@ interface VoiceResultConfirmationProps {
   onClose: () => void;
 }
 
+function readConfirmDelay(): number {
+  try {
+    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    return typeof s.voiceInputDelay === "number" ? s.voiceInputDelay : 5;
+  } catch { return 5; }
+}
+
 export default function VoiceResultConfirmation({
   categoryName,
   accountName,
@@ -24,7 +31,7 @@ export default function VoiceResultConfirmation({
   onEdit,
   onClose,
 }: VoiceResultConfirmationProps) {
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(() => readConfirmDelay());
 
   useEffect(() => {
     if (!isSuccess || !accountName) return;
