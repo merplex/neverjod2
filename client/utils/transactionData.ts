@@ -138,3 +138,77 @@ export const updateTransaction = (id: string, updates: Partial<Transaction>): vo
     transactions[id] = { ...transactions[id], ...updates };
   }
 };
+
+// Default category/account name lookup (fallback when localStorage is empty)
+const defaultCategoryNames: Record<string, { name: string; type: "income" | "expense" }> = {
+  food: { name: "Food", type: "expense" },
+  transport: { name: "Transport", type: "expense" },
+  entertainment: { name: "Entertainment", type: "expense" },
+  shopping: { name: "Shopping", type: "expense" },
+  bills: { name: "Bills", type: "expense" },
+  health: { name: "Health", type: "expense" },
+  education: { name: "Education", type: "expense" },
+  utilities: { name: "Utilities", type: "expense" },
+  salary: { name: "Salary", type: "income" },
+  bonus: { name: "Bonus", type: "income" },
+  freelance: { name: "Freelance", type: "income" },
+  other: { name: "Other", type: "expense" },
+  travel: { name: "Travel", type: "expense" },
+  gifts: { name: "Gifts", type: "expense" },
+  sports: { name: "Sports", type: "expense" },
+  clothing: { name: "Clothing", type: "expense" },
+  investment: { name: "Investment", type: "income" },
+  rental: { name: "Rental", type: "income" },
+  food_delivery: { name: "Food Delivery", type: "expense" },
+  subscription: { name: "Subscription", type: "expense" },
+  insurance: { name: "Insurance", type: "expense" },
+  car: { name: "Car", type: "expense" },
+  phone: { name: "Phone", type: "expense" },
+  internet: { name: "Internet", type: "expense" },
+  hobby: { name: "Hobby", type: "expense" },
+  pets: { name: "Pets", type: "expense" },
+  childcare: { name: "Childcare", type: "expense" },
+  loan: { name: "Loan", type: "expense" },
+};
+
+const defaultAccountNames: Record<string, string> = {
+  uob: "UOB", banka: "BankA", krungsri: "Krungsri", bangkok: "Bangkok Bank",
+  kasikorn: "Kasikornbank", tmb: "TMB", scb: "SCB", acme: "ACME",
+  cash: "Cash", crypto: "Crypto", baht_pay: "Baht Pay", other_acc: "Other",
+  kbank: "K-Bank", revolut: "Revolut", wise: "Wise", stripe: "Stripe", paypal: "PayPal",
+};
+
+// Read real transactions saved by the user from localStorage
+export const getRealTransactionsList = (): Transaction[] => {
+  try {
+    const stored = localStorage.getItem("app_transactions");
+    if (!stored) return [];
+
+    const raw: any[] = JSON.parse(stored);
+    const storedCats: any[] = JSON.parse(localStorage.getItem("app_categories") || "[]");
+    const storedAccs: any[] = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+
+    return raw.map((t): Transaction => {
+      const cat = storedCats.find((c) => c.id === t.categoryId) || defaultCategoryNames[t.categoryId];
+      const acc = storedAccs.find((a) => a.id === t.accountId);
+      const accName = acc?.name || defaultAccountNames[t.accountId] || t.accountId;
+      const catName = (cat as any)?.name || t.categoryId;
+      const catType: "income" | "expense" = (cat as any)?.type === "income" ? "income" : "expense";
+      const date = new Date(t.date);
+
+      return {
+        id: t.id,
+        date,
+        time: date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
+        category: catName,
+        amount: t.amount,
+        description: "",
+        accountName: accName,
+        accountId: t.accountId,
+        type: catType,
+      };
+    });
+  } catch (e) {
+    return [];
+  }
+};

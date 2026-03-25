@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ArrowUpDown } from "lucide-react";
-import { getTransactionsList } from "../utils/transactionData";
+import { getRealTransactionsList } from "../utils/transactionData";
 
 type TimeRange = "week" | "month" | "all";
 type SortOrder = "asc" | "desc";
@@ -11,7 +11,7 @@ export default function AllTransactions() {
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
-  const allTransactions = getTransactionsList();
+  const allTransactions = useMemo(() => getRealTransactionsList(), []);
 
   const filtered = useMemo(() => {
     const now = new Date();
