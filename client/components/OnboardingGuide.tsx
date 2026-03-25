@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Mic, Tag, Wallet, BarChart2, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Slide {
   icon: React.ReactNode;
@@ -10,33 +10,13 @@ interface Slide {
 const slides: Slide[] = [
   {
     icon: <span className="text-5xl">👋</span>,
-    title: "ยินดีต้อนรับ!",
-    description: "แอปบันทึกรายรับ-รายจ่ายด้วยเสียง\nบันทึกง่าย รวดเร็ว แค่พูดก็จบ",
-  },
-  {
-    icon: <Mic size={52} className="text-theme-600" />,
-    title: "บันทึกด้วยเสียง",
-    description: "กดปุ่มไมค์ที่หน้าหลักแล้วพูด เช่น\n\"กินข้าว ห้าสิบบาท SCB\"\nระบบจะจับหมวดหมู่และบัญชีให้อัตโนมัติ",
-  },
-  {
-    icon: <Tag size={52} className="text-theme-600" />,
-    title: "ตั้ง Keywords",
-    description: "ไปที่ Category แล้วเพิ่ม Keywords\nเช่น หมวด Food ใส่ \"ข้าว, กิน, ร้านอาหาร\"\nเมื่อพูดคำเหล่านั้น ระบบจะเลือกหมวดให้เอง",
-  },
-  {
-    icon: <Wallet size={52} className="text-theme-600" />,
-    title: "จัดการบัญชี",
-    description: "ไปที่ Account แล้วเพิ่มบัญชีพร้อม Keywords\nเช่น ใส่ \"กรุงศรี, อยุธยา\"\nเพื่อให้ระบบเลือกบัญชีอัตโนมัติตอนพูด",
-  },
-  {
-    icon: <BarChart2 size={52} className="text-theme-600" />,
-    title: "ดูรายงาน",
-    description: "หน้า Stats แสดงสรุปรายรับ-รายจ่าย\nรายเดือน แยกตามหมวดหมู่\nพร้อมกราฟให้ดูภาพรวมได้ทันที",
+    title: "สไลด์ที่ 1",
+    description: "(เนื้อหาจะเพิ่มทีหลัง)",
   },
   {
     icon: <CheckCircle size={52} className="text-theme-600" />,
-    title: "พร้อมใช้งานแล้ว!",
-    description: "เริ่มบันทึกรายการได้เลย\nสามารถกลับมาดูคู่มือนี้ได้ที่\nSettings → Guide",
+    title: "สไลด์ที่ 2",
+    description: "(เนื้อหาจะเพิ่มทีหลัง)",
   },
 ];
 
