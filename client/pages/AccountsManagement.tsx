@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical } from "lucide-react";
+import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TimePicker from "../components/TimePicker";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal } from "lucide-react";
@@ -47,7 +47,16 @@ export default function AccountsManagement() {
           .map((acc: any) => {
             if (!acc || !acc.id) return null;
             const defaultAcc = defaultAccounts.find((d) => d.id === acc.id);
-            if (!defaultAcc) return null;
+            if (!defaultAcc) {
+              // Custom account — resolve icon by type string or fall back to MoreHorizontal
+              if (!acc.id.startsWith("custom_acc_")) return null;
+              const iconMap: Record<string, React.ComponentType<any>> = {
+                creditcard: CreditCard, wallet: Wallet, cash: Banknote,
+                invest: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+              };
+              const icon = iconMap[acc.iconId] || MoreHorizontal;
+              return { ...acc, icon };
+            }
             return { ...acc, icon: defaultAcc.icon };
           })
           .filter((acc: any) => acc !== null);
@@ -70,6 +79,43 @@ export default function AccountsManagement() {
   const [keywordError, setKeywordError] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [reorderSelectedId, setReorderSelectedId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newAccName, setNewAccName] = useState("");
+  const [newAccType, setNewAccType] = useState("savings account");
+  const [newAccBalance, setNewAccBalance] = useState("0");
+  const [newAccIconId, setNewAccIconId] = useState("wallet");
+
+  const accIconOptions = [
+    { id: "creditcard", icon: CreditCard },
+    { id: "wallet", icon: Wallet },
+    { id: "cash", icon: Banknote },
+    { id: "invest", icon: TrendingUp },
+    { id: "phone", icon: Smartphone },
+    { id: "other", icon: MoreHorizontal },
+  ];
+
+  const handleAddAccount = () => {
+    if (!newAccName.trim()) return;
+    const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[1];
+    const newId = `custom_acc_${Date.now()}`;
+    const newAcc: Account & { iconId?: string } = {
+      id: newId,
+      name: newAccName.trim(),
+      type: newAccType.trim(),
+      icon: iconEntry.icon,
+      iconId: newAccIconId,
+      balance: parseFloat(newAccBalance) || 0,
+      keywords: [],
+    };
+    const deletedAcc = accounts.find((a) => a.id === "account_deleted");
+    const rest = accounts.filter((a) => a.id !== "account_deleted");
+    const updated = deletedAcc ? [...rest, newAcc, deletedAcc] : [...rest, newAcc];
+    setAccounts(updated);
+    localStorage.setItem("app_accounts", JSON.stringify(updated));
+    setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet");
+    setShowAddForm(false);
+  };
+
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [transferFromId, setTransferFromId] = useState<string | null>(null);
@@ -233,14 +279,23 @@ export default function AccountsManagement() {
             </button>
             <h1 className="text-xl font-bold">Accounts</h1>
           </div>
-          <button
-            onClick={openTransferModal}
-            className="flex items-center gap-2 px-3 py-2 hover:bg-indigo-500 rounded-lg transition-colors text-sm font-semibold"
-            title="Transfer between accounts"
-          >
-            <span>Transfer</span>
-            <ArrowRightLeft size={20} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("wallet"); setShowAddForm(true); }}
+              className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+              title="Add account"
+            >
+              <Plus size={24} />
+            </button>
+            <button
+              onClick={openTransferModal}
+              className="flex items-center gap-2 px-3 py-2 hover:bg-indigo-500 rounded-lg transition-colors text-sm font-semibold"
+              title="Transfer between accounts"
+            >
+              <span>Transfer</span>
+              <ArrowRightLeft size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -380,6 +435,86 @@ export default function AccountsManagement() {
           })}
         </div>
       </div>
+
+      {/* Add Account Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">Add Account</h2>
+              <button onClick={() => setShowAddForm(false)} className="p-1 hover:bg-slate-100 rounded">
+                <X size={20} />
+              </button>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Account Name</label>
+              <input
+                type="text"
+                value={newAccName}
+                onChange={(e) => setNewAccName(e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                placeholder="e.g. My Bank"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Account Type</label>
+              <input
+                type="text"
+                value={newAccType}
+                onChange={(e) => setNewAccType(e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                placeholder="เช่น credit card, savings account"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Initial Balance</label>
+              <input
+                type="number"
+                value={newAccBalance}
+                onChange={(e) => setNewAccBalance(e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>
+              <div className="grid grid-cols-6 gap-2">
+                {accIconOptions.map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setNewAccIconId(opt.id)}
+                      className={`p-2 rounded-lg flex items-center justify-center transition-colors ${
+                        newAccIconId === opt.id
+                          ? "bg-indigo-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      <Icon size={18} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleAddAccount}
+                disabled={!newAccName.trim()}
+                className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirm Modal */}
       {deleteConfirmId && (() => {

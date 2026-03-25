@@ -43,6 +43,15 @@ const defaultCategories: Category[] = [
   { id: "nocat", name: "No Category", type: "expense", icon: MoreHorizontal, keywords: [] },
 ];
 
+const iconOptions = [
+  { id: "food", icon: Utensils }, { id: "transport", icon: Bus }, { id: "entertainment", icon: Music },
+  { id: "shopping", icon: ShoppingCart }, { id: "bills", icon: FileText }, { id: "health", icon: Heart },
+  { id: "education", icon: BookOpen }, { id: "utilities", icon: Zap }, { id: "travel", icon: Plane },
+  { id: "clothing", icon: ShoppingBag }, { id: "sports", icon: Dumbbell }, { id: "gifts", icon: Gift },
+  { id: "salary", icon: TrendingUp }, { id: "card", icon: CreditCard }, { id: "wallet", icon: Wallet },
+  { id: "phone", icon: Smartphone }, { id: "cash", icon: Banknote }, { id: "other", icon: MoreHorizontal },
+];
+
 export default function Categories() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>(() => {
@@ -55,7 +64,11 @@ export default function Categories() {
           .map((cat: any) => {
             if (!cat || !cat.id) return null;
             const defaultCat = defaultCategories.find((d) => d.id === cat.id);
-            if (!defaultCat) return null;
+            if (!defaultCat) {
+              if (!cat.id.startsWith("custom_")) return null;
+              const iconEntry = iconOptions.find((o) => o.id === cat.iconId) || iconOptions[iconOptions.length - 1];
+              return { ...cat, icon: iconEntry.icon };
+            }
             return { ...cat, icon: defaultCat.icon };
           })
           .filter((cat: any) => cat !== null);
@@ -77,6 +90,20 @@ export default function Categories() {
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [reorderSelectedId, setReorderSelectedId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newIconId, setNewIconId] = useState("other");
+
+  const handleAddCategory = () => {
+    if (!newName.trim()) return;
+    const iconEntry = iconOptions.find((o) => o.id === newIconId) || iconOptions[iconOptions.length - 1];
+    const newId = `custom_${Date.now()}`;
+    const newCat: Category & { iconId?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords: [] };
+    const updated = [...categories.filter((c) => c.id !== "nocat"), newCat, ...categories.filter((c) => c.id === "nocat")];
+    setCategories(updated);
+    localStorage.setItem("app_categories", JSON.stringify(updated));
+    setNewName(""); setNewIconId("other"); setShowAddForm(false);
+  };
 
   const isProtected = (id: string) => id === "other" || id === "nocat";
 
@@ -178,14 +205,23 @@ export default function Categories() {
       <div className="sticky top-0 z-10">
       {/* Header */}
       <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
-        <div className="max-w-md mx-auto flex items-center gap-3">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <h1 className="text-xl font-bold">Categories</h1>
+          </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => { setNewName(""); setNewIconId("other"); setShowAddForm(true); }}
             className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+            title="Add category"
           >
-            <ChevronLeft size={24} />
+            <Plus size={24} />
           </button>
-          <h1 className="text-xl font-bold">Categories</h1>
         </div>
       </div>
 
@@ -338,6 +374,67 @@ export default function Categories() {
           })}
         </div>
       </div>
+
+      {/* Add Category Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">Add {categoryType === "income" ? "Income" : "Expense"} Category</h2>
+              <button onClick={() => setShowAddForm(false)} className="p-1 hover:bg-slate-100 rounded">
+                <X size={20} />
+              </button>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Category Name</label>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                placeholder="e.g. Gaming"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>
+              <div className="grid grid-cols-6 gap-2">
+                {iconOptions.map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setNewIconId(opt.id)}
+                      className={`p-2 rounded-lg flex items-center justify-center transition-colors ${
+                        newIconId === opt.id
+                          ? "bg-indigo-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      <Icon size={18} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleAddCategory}
+                disabled={!newName.trim()}
+                className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirm Modal */}
       {deleteConfirmId && (() => {
