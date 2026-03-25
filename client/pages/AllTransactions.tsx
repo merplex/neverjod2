@@ -121,8 +121,8 @@ export default function AllTransactions() {
           {/* Scrollable account filter chips */}
           <div
             ref={chipScrollRef}
-            className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 items-center py-1"
-            style={{ maskImage: "linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)" }}
+            className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 items-center py-1 px-3"
+            style={{ maskImage: "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)" }}
           >
             <button
               onClick={() => setSearchParams({})}
