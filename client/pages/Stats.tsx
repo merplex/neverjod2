@@ -122,14 +122,17 @@ export default function Stats() {
           {summaryData.length === 0 && (
             <div className="text-center py-12 text-slate-400 text-sm">No accounts found</div>
           )}
-          {summaryData.map((acc: any) => (
-            <div key={acc.id} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center justify-between">
-              <p className="font-semibold text-slate-800">{acc.name}</p>
-              <p className={`font-bold text-sm ${acc.income - acc.expense >= 0 ? "text-slate-800" : "text-red-500"}`}>
-                {acc.income - acc.expense >= 0 ? "+" : "-"}฿{Math.abs(acc.income - acc.expense).toLocaleString()}
-              </p>
-            </div>
-          ))}
+          {summaryData.map((acc: any) => {
+            const balance = (acc.balance || 0) + acc.income - acc.expense;
+            return (
+              <div key={acc.id} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center justify-between">
+                <p className="font-semibold text-slate-800">{acc.name}</p>
+                <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
+                  {balance >= 0 ? "+" : "-"}฿{Math.abs(balance).toLocaleString()}
+                </p>
+              </div>
+            );
+          })}
         </div>
       )}
 

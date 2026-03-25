@@ -3,7 +3,7 @@ import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X } fro
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import TimePicker from "../components/TimePicker";
-import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Plane, ShoppingBag, Dumbbell, Gift } from "lucide-react";
+import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Plane, ShoppingBag, Dumbbell, Gift, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 
 interface Account {
   id: string;
@@ -58,6 +58,10 @@ export default function AccountsManagement() {
                 food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
                 bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
                 travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
+                home: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
+                clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
+                scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
+                truck: Truck, train: Train, bike: Bike, building: Building2,
               };
               const icon = iconMap[acc.iconId] || MoreHorizontal;
               return { ...acc, icon };
@@ -101,6 +105,12 @@ export default function AccountsManagement() {
     { id: "clothing", icon: ShoppingBag }, { id: "sports", icon: Dumbbell }, { id: "gifts", icon: Gift },
     { id: "salary", icon: TrendingUp }, { id: "card", icon: CreditCard }, { id: "wallet", icon: Wallet },
     { id: "phone", icon: Smartphone }, { id: "cash", icon: Banknote }, { id: "other", icon: MoreHorizontal },
+    { id: "home", icon: Home }, { id: "car", icon: Car }, { id: "coffee", icon: Coffee },
+    { id: "briefcase", icon: Briefcase }, { id: "star", icon: Star }, { id: "clock", icon: Clock },
+    { id: "camera", icon: Camera }, { id: "headphones", icon: Headphones }, { id: "wrench", icon: Wrench },
+    { id: "scissors", icon: Scissors }, { id: "flame", icon: Flame }, { id: "leaf", icon: Leaf },
+    { id: "baby", icon: Baby }, { id: "package", icon: Package }, { id: "truck", icon: Truck },
+    { id: "train", icon: Train }, { id: "bike", icon: Bike }, { id: "building", icon: Building2 },
   ];
 
   const handleAddAccount = () => {
@@ -161,7 +171,8 @@ export default function AccountsManagement() {
     setEditType(account.type);
     setEditBalance(account.balance?.toString() || "0");
     setEditKeywords((account.keywords || []).join(", "));
-    setEditIconId(account.iconId || "other");
+    const matchedOpt = accIconOptions.find((o) => o.icon === account.icon);
+    setEditIconId(account.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
     setKeywordError("");
   };

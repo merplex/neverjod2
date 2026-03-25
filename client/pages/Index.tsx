@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Mic } from "lucide-react";
+import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Mic, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import { calculateFromVoice } from "../utils/voiceCalculator";
@@ -99,6 +99,10 @@ export default function Index() {
           travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
           salary: TrendingUp, card: CreditCard, wallet: Wallet, phone: Smartphone,
           cash: Banknote, other: MoreHorizontal,
+          home: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
+          clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
+          scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
+          truck: Truck, train: Train, bike: Bike, building: Building2,
         };
         // Restore icons from default categories since they can't be serialized
         return storedCategories
@@ -136,6 +140,10 @@ export default function Index() {
           food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
           bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
           travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
+          home: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
+          clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
+          scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
+          truck: Truck, train: Train, bike: Bike, building: Building2,
         };
         // Restore icons from default accounts since they can't be serialized
         return storedAccounts
