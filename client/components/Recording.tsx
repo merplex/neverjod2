@@ -7,9 +7,10 @@ interface RecordingProps {
   onVoiceInput?: (data: { categoryId?: string; accountId?: string; amount?: number; description: string }) => void;
   onVoiceEnd?: () => void;
   startTrigger?: number;
+  autoRestart?: boolean;
 }
 
-export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, startTrigger }: RecordingProps) {
+export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, startTrigger, autoRestart }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
@@ -22,11 +23,14 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const onVoiceInputRef = useRef(onVoiceInput);
   const onVoiceEndRef = useRef(onVoiceEnd);
   const onTranscriptRef = useRef(onTranscript);
+  const autoRestartRef = useRef(autoRestart);
+  const manualStopRef = useRef(false);
 
   // Keep refs up-to-date without re-initializing recognition
   useEffect(() => { onVoiceInputRef.current = onVoiceInput; }, [onVoiceInput]);
   useEffect(() => { onVoiceEndRef.current = onVoiceEnd; }, [onVoiceEnd]);
   useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
+  useEffect(() => { autoRestartRef.current = autoRestart; }, [autoRestart]);
 
   // Auto-start when trigger increments (e.g. when category page becomes active)
   useEffect(() => {
@@ -118,11 +122,27 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         silenceTimeoutRef.current = undefined;
       }
 
+      const hadSpeech = hasSpeechStartedRef.current;
+      hasSpeechStartedRef.current = false;
+
       // Call onVoiceEnd callback when speech ends (if speech was detected)
-      if (hasSpeechStartedRef.current && onVoiceEndRef.current) {
+      if (hadSpeech && onVoiceEndRef.current) {
         console.log("Calling onVoiceEnd callback");
         onVoiceEndRef.current();
       }
+
+      // Auto-restart if: was listening, no speech yet, not manually stopped, autoRestart enabled
+      if (isListeningRef.current && !hadSpeech && !manualStopRef.current && autoRestartRef.current) {
+        console.log("Auto-restarting recognition...");
+        try {
+          recognition.start();
+          return; // keep isListening = true, don't reset UI
+        } catch (e) {
+          console.error("Auto-restart failed:", e);
+        }
+      }
+
+      manualStopRef.current = false;
 
       // Reset state to match reality - listening has stopped
       if (isListeningRef.current) {
@@ -130,8 +150,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         setIsListening(false);
         isListeningRef.current = false;
       }
-
-      hasSpeechStartedRef.current = false;
     };
 
     recognition.onerror = (event: any) => {
@@ -176,8 +194,9 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
     try {
       if (isListeningRef.current) {
-        // Stop listening
+        // Stop listening — mark as manual so auto-restart won't trigger
         console.log("User clicked stop - stopping listening");
+        manualStopRef.current = true;
         recognitionRef.current.stop();
         // Don't update state here - let onend handler do it
       } else {

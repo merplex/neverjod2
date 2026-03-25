@@ -485,7 +485,7 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} autoRestart={true} />
                   </div>
                 </div>
                 <Carousel
