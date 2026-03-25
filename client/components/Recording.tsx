@@ -20,7 +20,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
   const hasSpeechStartedRef = useRef(false);
   const silenceTimeoutRef = useRef<NodeJS.Timeout>();
-  const processedResultIndicesRef = useRef<Set<number>>(new Set());
   const onVoiceInputRef = useRef(onVoiceInput);
   const onVoiceEndRef = useRef(onVoiceEnd);
   const onTranscriptRef = useRef(onTranscript);
@@ -75,7 +74,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     recognition.onstart = () => {
       console.log("Speech recognition started - waiting for speech");
       hasSpeechStartedRef.current = false;
-      processedResultIndicesRef.current = new Set();
     };
 
     recognition.onresult = (event: any) => {
