@@ -75,7 +75,7 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
         </div>
 
         {/* Date Display */}
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-center py-4 rounded-lg mb-4">
+        <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white text-center py-4 rounded-lg mb-4">
           <div className="text-2xl font-bold font-mono">{formattedDate}</div>
         </div>
 
@@ -116,8 +116,8 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
                     currentDate.getDate() === day &&
                     currentDate.getMonth() === displayMonth.getMonth() &&
                     currentDate.getFullYear() === displayMonth.getFullYear()
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "hover:bg-indigo-50 text-slate-900"
+                      ? "bg-theme-600 text-white shadow-md"
+                      : "hover:bg-theme-50 text-slate-900"
                   }`}
                 >
                   {day}
@@ -133,7 +133,7 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
         <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors text-sm"
+            className="px-4 py-2 text-theme-600 font-semibold hover:text-theme-700 transition-colors text-sm"
           >
             CANCEL
           </button>

@@ -230,12 +230,12 @@ export default function Categories() {
       {/* Sticky header + tab controls wrapper */}
       <div className="sticky top-0 z-10">
       {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-4">
+      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 py-4">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/")}
-              className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+              className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
             >
               <ChevronLeft size={24} />
             </button>
@@ -243,7 +243,7 @@ export default function Categories() {
           </div>
           <button
             onClick={() => { setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true); }}
-            className="p-2 hover:bg-indigo-500 rounded-lg transition-colors"
+            className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
             title="Add category"
           >
             <Plus size={24} />
@@ -258,7 +258,7 @@ export default function Categories() {
             onClick={() => setCategoryType("expense")}
             className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
               categoryType === "expense"
-                ? "bg-indigo-600 text-white shadow-md"
+                ? "bg-theme-600 text-white shadow-md"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
@@ -268,7 +268,7 @@ export default function Categories() {
             onClick={() => setCategoryType("income")}
             className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
               categoryType === "income"
-                ? "bg-indigo-600 text-white shadow-md"
+                ? "bg-theme-600 text-white shadow-md"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
@@ -323,7 +323,7 @@ export default function Categories() {
                     <div className="flex gap-2">
                       <button
                         onClick={saveEdit}
-                        className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                        className="flex-1 px-3 py-2 bg-theme-600 text-white rounded-lg text-sm font-semibold hover:bg-theme-700 transition-colors"
                       >
                         Save
                       </button>
@@ -345,15 +345,15 @@ export default function Categories() {
                     )}
                   </div>
                 ) : (
-                  <div className={`flex items-start gap-2 rounded-lg transition-colors ${reorderSelectedId === category.id ? "bg-indigo-50 -mx-1 px-1" : ""}`}>
+                  <div className={`flex items-start gap-2 rounded-lg transition-colors ${reorderSelectedId === category.id ? "bg-theme-50 -mx-1 px-1" : ""}`}>
                     {category.id !== "nocat" ? (
                       <button
                         onClick={() => handleGripClick(category.id)}
                         className={`mt-1 p-1 rounded transition-colors flex-shrink-0 ${
                           reorderSelectedId === category.id
-                            ? "text-indigo-600 bg-indigo-100"
+                            ? "text-theme-600 bg-theme-100"
                             : reorderSelectedId !== null
-                            ? "text-indigo-400 hover:text-indigo-600"
+                            ? "text-theme-400 hover:text-theme-600"
                             : "text-slate-300 hover:text-slate-500"
                         }`}
                       >
@@ -364,7 +364,7 @@ export default function Categories() {
                     )}
                     <div className="flex items-start justify-between flex-1">
                     <div className="flex items-start gap-3 flex-1">
-                      <IconComponent size={24} className="text-indigo-600 mt-1" />
+                      <IconComponent size={24} className="text-theme-600 mt-1" />
                       <div>
                         <p className="font-semibold text-slate-900">{category.name}</p>
                         <p className="text-xs text-slate-500">
@@ -387,7 +387,7 @@ export default function Categories() {
                     {category.id !== "nocat" && (
                       <button
                         onClick={() => startEditing(category)}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-indigo-600"
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-theme-600"
                       >
                         <Edit2 size={18} />
                       </button>
@@ -446,7 +446,7 @@ export default function Categories() {
                       onClick={() => setNewIconId(opt.id)}
                       className={`p-2 rounded-lg flex items-center justify-center transition-colors ${
                         newIconId === opt.id
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-theme-600 text-white"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
@@ -460,7 +460,7 @@ export default function Categories() {
               <button
                 onClick={handleAddCategory}
                 disabled={!newName.trim()}
-                className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="flex-1 px-3 py-2 bg-theme-600 text-white rounded-lg text-sm font-semibold hover:bg-theme-700 transition-colors disabled:opacity-50"
               >
                 Add
               </button>

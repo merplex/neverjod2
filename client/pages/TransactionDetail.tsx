@@ -224,7 +224,7 @@ export default function TransactionDetail() {
                 onChange={(e) => setAmount(e.target.value)}
                 onBlur={handleAmountBlur}
                 autoFocus
-                className="flex-1 text-sm font-semibold text-slate-800 outline-none border-b border-indigo-400 bg-transparent"
+                className="flex-1 text-sm font-semibold text-slate-800 outline-none border-b border-theme-400 bg-transparent"
               />
             ) : (
               <button
@@ -281,10 +281,10 @@ export default function TransactionDetail() {
                   <button
                     key={cat.id}
                     onClick={() => handleCategorySelect(cat.id, cat.name)}
-                    className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-indigo-50" : ""}`}
+                    className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
                   >
-                    <Icon size={18} className={cat.id === categoryId ? "text-indigo-600" : "text-slate-500"} />
-                    <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-indigo-600 font-semibold" : "text-slate-700"}`}>
+                    <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
+                    <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
                       {cat.name}
                     </span>
                   </button>
@@ -313,10 +313,10 @@ export default function TransactionDetail() {
                   <button
                     key={acc.id}
                     onClick={() => handleAccountSelect(acc.id, acc.name)}
-                    className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${acc.id === currentAccountId ? "bg-indigo-50" : ""}`}
+                    className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${acc.id === currentAccountId ? "bg-theme-50" : ""}`}
                   >
-                    <Icon size={18} className={acc.id === currentAccountId ? "text-indigo-600" : "text-slate-500"} />
-                    <span className={`text-xs text-center leading-tight ${acc.id === currentAccountId ? "text-indigo-600 font-semibold" : "text-slate-700"}`}>
+                    <Icon size={18} className={acc.id === currentAccountId ? "text-theme-600" : "text-slate-500"} />
+                    <span className={`text-xs text-center leading-tight ${acc.id === currentAccountId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
                       {acc.name}
                     </span>
                   </button>

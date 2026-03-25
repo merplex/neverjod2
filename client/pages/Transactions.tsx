@@ -165,7 +165,7 @@ export default function Transactions() {
               }}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                 isSelectMode
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-theme-600 text-white"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
@@ -180,7 +180,7 @@ export default function Transactions() {
                 {/* Sort Button */}
                 <button
                   onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                  className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg transition-colors text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-theme-50 hover:bg-theme-100 text-theme-700 font-semibold rounded-lg transition-colors text-sm"
                 >
                   {sortOrder === "asc" ? (
                     <ArrowUpDown size={16} />
@@ -198,7 +198,7 @@ export default function Transactions() {
                       onClick={() => setTimeRange(range as TimeRange)}
                       className={`flex-1 px-2 py-2 rounded-lg font-semibold text-sm transition-all capitalize ${
                         timeRange === range
-                          ? "bg-indigo-600 text-white shadow-md"
+                          ? "bg-theme-600 text-white shadow-md"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
@@ -230,7 +230,7 @@ export default function Transactions() {
                   className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all border ${
                     selectedTransactions.size === 0
                       ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
-                      : "bg-white text-slate-700 border-indigo-300 hover:border-indigo-500"
+                      : "bg-white text-slate-700 border-theme-300 hover:border-theme-500"
                   }`}
                 >
                   <option value="">Move to Account...</option>
@@ -283,7 +283,7 @@ export default function Transactions() {
                           key={transaction.id}
                           className={`flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
                             selectedTransactions.has(transaction.id)
-                              ? "bg-indigo-100 border-2 border-indigo-500"
+                              ? "bg-theme-100 border-2 border-theme-500"
                               : "bg-slate-50 hover:bg-slate-100"
                           }`}
                           onClick={() => {

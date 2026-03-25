@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const SETTINGS_KEY = "app_settings";
+
+type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky";
 
 interface AppSettings {
   voiceInputDelay: number;
   voiceAutoStart: boolean;
   cloudBackupEnabled: boolean;
   language: "en" | "th";
+  colorTheme: ColorTheme;
 }
 
 const defaultSettings: AppSettings = {
@@ -16,7 +19,17 @@ const defaultSettings: AppSettings = {
   voiceAutoStart: true,
   cloudBackupEnabled: false,
   language: "en",
+  colorTheme: "teal",
 };
+
+const colorThemes: { id: ColorTheme; name: string; swatches: string[] }[] = [
+  { id: "teal",   name: "Teal",   swatches: ["#ccfbf1", "#2dd4bf", "#0d9488", "#0f766e"] },
+  { id: "blue",   name: "Blue",   swatches: ["#e0e7ff", "#818cf8", "#4f46e5", "#4338ca"] },
+  { id: "purple", name: "Purple", swatches: ["#ede9fe", "#a78bfa", "#7c3aed", "#6d28d9"] },
+  { id: "rose",   name: "Rose",   swatches: ["#ffe4e6", "#fb7185", "#e11d48", "#be123c"] },
+  { id: "amber",  name: "Amber",  swatches: ["#fef3c7", "#fbbf24", "#d97706", "#b45309"] },
+  { id: "sky",    name: "Sky",    swatches: ["#e0f2fe", "#38bdf8", "#0284c7", "#0369a1"] },
+];
 
 function loadSettings(): AppSettings {
   try {
@@ -36,6 +49,7 @@ export default function Settings() {
 
   useEffect(() => {
     saveSettings(settings);
+    document.documentElement.setAttribute("data-theme", settings.colorTheme);
   }, [settings]);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -57,20 +71,59 @@ export default function Settings() {
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
-        {/* Voice Input Delay */}
+        {/* Color Theme */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <Mic size={18} className="text-indigo-600" />
+            <div className="w-10 h-10 bg-theme-100 rounded-xl flex items-center justify-center">
+              <Palette size={18} className="text-theme-600" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">Voice Input Delay</h2>
+              <h2 className="text-sm font-semibold text-slate-800">Color Theme</h2>
+              <p className="text-xs text-slate-500">ธีมสีของแอป</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            {colorThemes.map((theme) => {
+              const isSelected = settings.colorTheme === theme.id;
+              return (
+                <button
+                  key={theme.id}
+                  onClick={() => update("colorTheme", theme.id)}
+                  className={`relative rounded-xl overflow-hidden border-2 transition-all ${
+                    isSelected ? "border-slate-700 shadow-md" : "border-transparent hover:border-slate-300"
+                  }`}
+                >
+                  {/* Swatch strip */}
+                  <div className="flex h-10">
+                    {theme.swatches.map((color) => (
+                      <div key={color} className="flex-1" style={{ backgroundColor: color }} />
+                    ))}
+                  </div>
+                  {/* Label */}
+                  <div className="py-1.5 px-2 bg-white flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-700">{theme.name}</span>
+                    {isSelected && <Check size={12} className="text-slate-700" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Voice Input */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-theme-100 rounded-xl flex items-center justify-center">
+              <Mic size={18} className="text-theme-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Voice Input</h2>
               <p className="text-xs text-slate-500">ระยะเวลาหลังหยุดพูดก่อน autosave</p>
             </div>
           </div>
 
           <div className="space-y-4">
-            {/* Auto Start Toggle */}
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-sm text-slate-700 font-medium">Auto Start</span>
@@ -81,7 +134,7 @@ export default function Settings() {
               <button
                 onClick={() => update("voiceAutoStart", !settings.voiceAutoStart)}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  settings.voiceAutoStart ? "bg-indigo-500" : "bg-slate-300"
+                  settings.voiceAutoStart ? "bg-theme-500" : "bg-slate-300"
                 }`}
               >
                 <span
@@ -95,7 +148,7 @@ export default function Settings() {
             <div className="border-t border-slate-100 pt-3 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-600">หน่วงเวลา autosave</span>
-                <span className="text-sm font-semibold text-indigo-600">
+                <span className="text-sm font-semibold text-theme-600">
                   {settings.voiceInputDelay} วินาที
                 </span>
               </div>
@@ -106,7 +159,7 @@ export default function Settings() {
                 step={1}
                 value={settings.voiceInputDelay}
                 onChange={(e) => update("voiceInputDelay", Number(e.target.value))}
-                className="w-full accent-indigo-600"
+                className="w-full accent-theme-600"
               />
               <div className="flex justify-between text-xs text-slate-400">
                 <span>1 วิ</span>
