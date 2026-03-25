@@ -142,17 +142,20 @@ export default function AccountsManagement() {
       .filter((k) => k);
 
     // Validate: keywords must not already exist in other accounts or any category
-    const otherAccKeywords = accounts
-      .filter((a) => a.id !== editingId)
-      .flatMap((a) => a.keywords || []);
+    const otherAccs = accounts.filter((a) => a.id !== editingId);
     const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
-    const catKeywords = storedCategories.flatMap((c: any) => c.keywords || []);
-    const allExisting = [...otherAccKeywords, ...catKeywords].map((k: string) => k.toLowerCase());
-    const duplicates = keywords.filter((k) => allExisting.includes(k));
 
-    if (duplicates.length > 0) {
-      setKeywordError(`Keyword ซ้ำกับที่มีอยู่แล้ว: ${duplicates.join(", ")}`);
-      return;
+    for (const kw of keywords) {
+      const dupAcc = otherAccs.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupAcc) {
+        setKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        return;
+      }
+      const dupCat = storedCategories.find((c: any) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
+      if (dupCat) {
+        setKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        return;
+      }
     }
 
     setKeywordError("");

@@ -155,6 +155,7 @@ export default function Index() {
 
   // Auto-start voice when category page is shown (only if voiceAutoStart is on)
   const [voiceStartTrigger, setVoiceStartTrigger] = useState(0);
+  const [voiceStopTrigger, setVoiceStopTrigger] = useState(0);
   useEffect(() => {
     if (currentPage === "category" && voiceAutoStart) {
       setVoiceStartTrigger((n) => n + 1);
@@ -173,6 +174,13 @@ export default function Index() {
     isSuccess: boolean;
     isCategoryFallback?: boolean;
   }>({ isSuccess: false });
+  const [liveVoiceStatus, setLiveVoiceStatus] = useState<{
+    categoryId?: string; categoryName?: string;
+    accountId?: string; accountName?: string;
+    amount?: number;
+  }>({});
+  const allDetectedRef = useRef(false);
+
   const voiceTimeoutRef = useRef<NodeJS.Timeout>();
   const voiceAccumulatorRef = useRef<{
     categoryId?: string;
@@ -212,6 +220,9 @@ export default function Index() {
     if (!isCategoryReorderMode) {
       setSelectedCategory(categoryId);
       setCurrentPage("account");
+      setLiveVoiceStatus({});
+      voiceAccumulatorRef.current = {};
+      allDetectedRef.current = false;
     }
   };
 
@@ -243,6 +254,29 @@ export default function Index() {
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
     if (voiceData.amount) voiceAccumulatorRef.current.amount = voiceData.amount;
+
+    // Update live status for the status widget
+    setLiveVoiceStatus(prev => {
+      const next = { ...prev };
+      if (voiceData.categoryId) {
+        next.categoryId = voiceData.categoryId;
+        next.categoryName = categoriesList.find((c) => c.id === voiceData.categoryId)?.name;
+      }
+      if (voiceData.accountId) {
+        next.accountId = voiceData.accountId;
+        next.accountName = accountsList.find((a) => a.id === voiceData.accountId)?.name;
+      }
+      if (voiceData.amount) next.amount = voiceData.amount;
+      return next;
+    });
+
+    // If all 3 detected — stop mic and trigger summary immediately
+    const acc = voiceAccumulatorRef.current;
+    if (acc.categoryId && acc.accountId && acc.amount && !allDetectedRef.current) {
+      allDetectedRef.current = true;
+      setVoiceStopTrigger((n) => n + 1);
+      setTimeout(() => handleVoiceEnd(), 200);
+    }
     // Smart transcript accumulation — avoids duplicates from Chrome Android's
     // progressive refinements and session restarts
     const newText = voiceData.description.trim();
@@ -267,17 +301,25 @@ export default function Index() {
     }
   };
 
-  // Handle voice recognition end - show result when speech ends
+  // Handle voice recognition end - show result only when all 3 detected
   const handleVoiceEnd = () => {
     const { categoryId, accountId, amount, transcript } = voiceAccumulatorRef.current;
 
+    // If no data at all — ignore
+    if (!categoryId && !accountId && !amount) return;
+
+    // If not all 3 detected — keep listening (voice will auto-restart), don't show popup
+    if (!categoryId || !accountId || !amount) {
+      allDetectedRef.current = false;
+      return;
+    }
+
+    // All 3 detected — show summary
+    allDetectedRef.current = false;
+
     // Get category and account names for display
-    const categoryName = categoryId
-      ? categoriesList.find((c) => c.id === categoryId)?.name
-      : undefined;
-    const accountName = accountId
-      ? accountsList.find((a) => a.id === accountId)?.name
-      : undefined;
+    const categoryName = categoriesList.find((c) => c.id === categoryId)?.name;
+    const accountName = accountsList.find((a) => a.id === accountId)?.name;
 
     // If no category detected but account + amount found, fallback to "Other"
     const effectiveCategoryId = categoryId || (accountId && amount ? "other" : undefined);
@@ -288,7 +330,6 @@ export default function Index() {
     // Success = category (or fallback) + amount
     const allMatched = effectiveCategoryId && amount;
 
-    // Always show result popup (either success or no-match)
     setVoiceResultData({
       categoryId: effectiveCategoryId,
       accountId,
@@ -301,6 +342,7 @@ export default function Index() {
     });
 
     setShowVoiceResult(true);
+    setLiveVoiceStatus({});
 
     // Reset accumulator
     voiceAccumulatorRef.current = {};
@@ -343,6 +385,8 @@ export default function Index() {
     setShowVoiceResult(false);
     setCurrentPage("category");
     voiceAccumulatorRef.current = {};
+    setLiveVoiceStatus({});
+    allDetectedRef.current = false;
     if (voiceAutoStart) setVoiceStartTrigger((n) => n + 1);
   };
 
@@ -516,15 +560,43 @@ export default function Index() {
                         Reorder
                       </button>
                     )}
-                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} autoRestart={voiceAutoStart} />
+                    <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} stopTrigger={voiceStopTrigger} autoRestart={voiceAutoStart} />
                   </div>
                 </div>
                 <Carousel
-                  items={categoriesList.filter((c) => c.type === categoryType)}
+                  items={(() => {
+                    const filtered = categoriesList.filter((c) => c.type === categoryType);
+                    return [
+                      ...filtered.slice(0, 3),
+                      { id: "__voice_status__", name: "", type: categoryType, icon: null } as any,
+                      ...filtered.slice(3),
+                    ];
+                  })()}
                   itemsPerPage={16}
                   cols={4}
                   rows={4}
                   renderItem={(category) => {
+                    // Voice status widget at position 3
+                    if (category.id === "__voice_status__") {
+                      const { categoryName, accountName, amount } = liveVoiceStatus;
+                      return (
+                        <div key="__voice_status__" className="w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center px-2 py-1 gap-0.5 overflow-hidden">
+                          <div className="flex items-center gap-1">
+                            <span className={`text-xs font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
+                            <span className="text-xs text-slate-600 truncate">{categoryName || "Category"}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className={`text-xs font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
+                            <span className="text-xs text-slate-600 truncate">{accountName || "Account"}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className={`text-xs font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
+                            <span className="text-xs text-slate-600 truncate">{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     const IconComponent = category.icon;
                     const categoryIndex = categoriesList.findIndex((c) => c.id === category.id);
                     const isSelected = selectedCategoryForSwap === category.id;
@@ -535,13 +607,10 @@ export default function Index() {
                         onClick={() => {
                           if (isCategoryReorderMode) {
                             if (selectedCategoryForSwap === null) {
-                              // First selection - select this category
                               setSelectedCategoryForSwap(category.id);
                             } else if (selectedCategoryForSwap === category.id) {
-                              // Deselect if clicking the same category
                               setSelectedCategoryForSwap(null);
                             } else {
-                              // Second selection - swap the two categories
                               const firstIndex = categoriesList.findIndex((c) => c.id === selectedCategoryForSwap);
                               const newList = [...categoriesList];
                               [newList[firstIndex], newList[categoryIndex]] = [newList[categoryIndex], newList[firstIndex]];
@@ -549,7 +618,6 @@ export default function Index() {
                               setSelectedCategoryForSwap(null);
                             }
                           } else {
-                            // Normal mode - select category
                             handleCategorySelect(category.id);
                           }
                         }}

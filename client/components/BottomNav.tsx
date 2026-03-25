@@ -7,7 +7,7 @@ export default function BottomNav() {
 
   const navItems = [
     { path: "/transactions", label: "Transaction", icon: FileText },
-    { path: "/stats", label: "Stats", icon: BarChart3 },
+    { path: "/stats", label: "Report", icon: BarChart3 },
     { path: "/categories", label: "Category", icon: Grid3x3 },
     { path: "/accounts", label: "Account", icon: User },
     { path: "/settings", label: "Setting", icon: Settings },

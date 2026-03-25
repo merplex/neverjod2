@@ -7,10 +7,18 @@ interface RecordingProps {
   onVoiceInput?: (data: { categoryId?: string; accountId?: string; amount?: number; description: string }) => void;
   onVoiceEnd?: () => void;
   startTrigger?: number;
+  stopTrigger?: number;
   autoRestart?: boolean;
 }
 
-export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, startTrigger, autoRestart }: RecordingProps) {
+function readSilenceDelay(): number {
+  try {
+    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    return typeof s.voiceInputDelay === "number" ? s.voiceInputDelay * 1000 : 3500;
+  } catch { return 3500; }
+}
+
+export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, startTrigger, stopTrigger, autoRestart }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
@@ -32,6 +40,13 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   useEffect(() => { onVoiceEndRef.current = onVoiceEnd; }, [onVoiceEnd]);
   useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
   useEffect(() => { autoRestartRef.current = autoRestart; }, [autoRestart]);
+
+  // Stop when stopTrigger increments (e.g. when all 3 detected)
+  useEffect(() => {
+    if (!stopTrigger || !recognitionRef.current || !isListeningRef.current) return;
+    manualStopRef.current = true;
+    recognitionRef.current.stop();
+  }, [stopTrigger]);
 
   // Auto-start when trigger increments (e.g. when category page becomes active)
   useEffect(() => {
@@ -83,11 +98,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcriptPart = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          // Skip result indices already processed — Chrome Android sometimes re-fires
-          // the same resultIndex with revised text, causing duplicate transcripts
-          if (processedResultIndicesRef.current.has(i)) continue;
-          processedResultIndicesRef.current.add(i);
-
           console.log("Final transcript:", transcriptPart);
           // Mark that speech has started
           hasSpeechStartedRef.current = true;
@@ -104,18 +114,16 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
             onVoiceInputRef.current(voiceData);
           }
 
-          // After 2s of silence, call onVoiceEnd directly WITHOUT stopping recognition
-          // This avoids the browser ting sound from stop+restart cycle
+          // After silence delay, call onVoiceEnd without stopping recognition
           if (silenceTimeoutRef.current) {
             clearTimeout(silenceTimeoutRef.current);
           }
           silenceTimeoutRef.current = setTimeout(() => {
             if (isListeningRef.current && hasSpeechStartedRef.current) {
-              console.log("2s silence — firing onVoiceEnd without stopping recognition");
               hasSpeechStartedRef.current = false;
               if (onVoiceEndRef.current) onVoiceEndRef.current();
             }
-          }, 2000);
+          }, readSilenceDelay());
         } else {
           interim += transcriptPart;
         }
@@ -140,9 +148,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         onVoiceEndRef.current();
       }
 
-      // Auto-restart if: was listening, no speech yet, not manually stopped, autoRestart enabled
-      if (isListeningRef.current && !hadSpeech && !manualStopRef.current && autoRestartRef.current) {
-        console.log("Auto-restarting recognition...");
+      // Auto-restart if: was listening, not manually stopped, autoRestart enabled
+      if (isListeningRef.current && !manualStopRef.current && autoRestartRef.current) {
         try {
           recognition.start();
           return; // keep isListening = true, don't reset UI
