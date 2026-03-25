@@ -98,11 +98,13 @@ export default function VoiceResultConfirmation({
               )}
             </div>
 
-            {/* Countdown */}
-            <div className="flex items-center justify-between mb-4 p-3 bg-indigo-50 rounded-lg">
-              <span className="text-sm font-semibold text-slate-600">Auto-confirming in:</span>
-              <span className="text-2xl font-bold text-indigo-600">{countdown}s</span>
-            </div>
+            {/* Countdown — only when account is present */}
+            {accountName && (
+              <div className="flex items-center justify-between mb-4 p-3 bg-indigo-50 rounded-lg">
+                <span className="text-sm font-semibold text-slate-600">Auto-confirming in:</span>
+                <span className="text-2xl font-bold text-indigo-600">{countdown}s</span>
+              </div>
+            )}
 
             {/* Buttons */}
             <div className="flex gap-2">
@@ -112,12 +114,14 @@ export default function VoiceResultConfirmation({
               >
                 Edit
               </button>
-              <button
-                onClick={onConfirm}
-                className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
-              >
-                Confirm Now
-              </button>
+              {accountName && (
+                <button
+                  onClick={onConfirm}
+                  className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  Confirm Now
+                </button>
+              )}
             </div>
           </>
         ) : (
