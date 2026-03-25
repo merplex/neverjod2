@@ -294,6 +294,8 @@ export default function Index() {
       setSelectedCategory(null);
       setSelectedAccount(null);
       setCurrentPage("category");
+      // currentPage may already be "category" so useEffect won't fire — force trigger
+      setVoiceStartTrigger((n) => n + 1);
       return;
     }
 
