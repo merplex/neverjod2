@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
+import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
 
 const SETTINGS_KEY = "app_settings";
 
@@ -51,6 +52,17 @@ export default function Settings() {
   useSwipeBack();
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
 
+  // Cloud Backup state
+  const [cloudToken, setCloudToken] = useState<string>(() => localStorage.getItem("cloud_token") || "");
+  const [cloudEmail, setCloudEmail] = useState<string>(() => localStorage.getItem("cloud_email") || "");
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "ok" | "error">("idle");
+  const [showAuthForm, setShowAuthForm] = useState(false);
+
   useEffect(() => {
     saveSettings(settings);
     document.documentElement.setAttribute("data-theme", settings.colorTheme);
@@ -58,6 +70,49 @@ export default function Settings() {
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleAuth = async () => {
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      const fn = authMode === "login" ? apiLogin : apiRegister;
+      const result = await fn(authEmail, authPassword);
+      localStorage.setItem("cloud_token", result.token);
+      localStorage.setItem("cloud_email", result.email);
+      setCloudToken(result.token);
+      setCloudEmail(result.email);
+      setShowAuthForm(false);
+      setAuthEmail("");
+      setAuthPassword("");
+      // Auto sync after login
+      await syncAll(result.token);
+      setSyncStatus("ok");
+    } catch (err: any) {
+      setAuthError(err.message || "เกิดข้อผิดพลาด");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    if (!cloudToken) return;
+    setSyncStatus("syncing");
+    try {
+      await syncAll(cloudToken);
+      setSyncStatus("ok");
+    } catch {
+      setSyncStatus("error");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("cloud_token");
+    localStorage.removeItem("cloud_email");
+    localStorage.removeItem("last_sync_at");
+    setCloudToken("");
+    setCloudEmail("");
+    setSyncStatus("idle");
   };
 
   return (
@@ -137,7 +192,7 @@ export default function Settings() {
               </div>
               <button
                 onClick={() => update("voiceAutoStart", !settings.voiceAutoStart)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${
+                className={`relative w-12 h-6 rounded-full transition-colors overflow-hidden ${
                   settings.voiceAutoStart ? "bg-theme-500" : "bg-slate-300"
                 }`}
               >
@@ -194,7 +249,7 @@ export default function Settings() {
             </div>
             <button
               onClick={() => update("swipeBackDirection", settings.swipeBackDirection === "right" ? "left" : "right")}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
+              className={`relative w-12 h-6 rounded-full transition-colors overflow-hidden ${
                 settings.swipeBackDirection === "right" ? "bg-theme-500" : "bg-slate-300"
               }`}
             >
@@ -269,25 +324,94 @@ export default function Settings() {
               <Cloud size={18} className="text-sky-600" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">Cloud Backup</h2>
-              <p className="text-xs text-slate-500">สำรองข้อมูลขึ้น Cloud</p>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
+                <span className="text-xs text-amber-500 font-medium">* One-time purchase บน App Store</span>
+              </div>
+              <p className="text-xs text-slate-500">รองรับการใช้หลายอุปกรณ์พร้อมกัน</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-600">เปิดใช้งาน</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                Coming Soon
-              </span>
+          {cloudToken ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">เชื่อมต่อแล้ว</p>
+                  <p className="text-xs text-slate-400">{cloudEmail}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={12} />
+                  ออกจากระบบ
+                </button>
+              </div>
               <button
-                disabled
-                className="relative w-12 h-6 rounded-full bg-slate-200 cursor-not-allowed opacity-50"
+                onClick={handleSync}
+                disabled={syncStatus === "syncing"}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200 disabled:opacity-50"
               >
-                <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform" />
+                <RefreshCw size={15} className={syncStatus === "syncing" ? "animate-spin" : ""} />
+                {syncStatus === "syncing" ? "กำลังซิงค์..." : syncStatus === "ok" ? "ซิงค์แล้ว ✓" : syncStatus === "error" ? "ซิงค์ล้มเหลว ✗" : "ซิงค์ตอนนี้"}
               </button>
             </div>
-          </div>
+          ) : showAuthForm ? (
+            <div className="space-y-3">
+              <div className="flex gap-2 text-xs mb-1">
+                <button
+                  onClick={() => setAuthMode("login")}
+                  className={`px-3 py-1 rounded-full font-medium ${authMode === "login" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
+                >
+                  เข้าสู่ระบบ
+                </button>
+                <button
+                  onClick={() => setAuthMode("register")}
+                  className={`px-3 py-1 rounded-full font-medium ${authMode === "register" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
+                >
+                  สมัครสมาชิก
+                </button>
+              </div>
+              <input
+                type="email"
+                placeholder="Email"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-sky-400"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAuth()}
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-sky-400"
+              />
+              {authError && <p className="text-xs text-red-500">{authError}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAuthForm(false)}
+                  className="flex-1 py-2.5 rounded-xl text-sm text-slate-500 border border-slate-200 hover:bg-slate-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleAuth}
+                  disabled={authLoading}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50"
+                >
+                  {authLoading ? "..." : authMode === "login" ? "เข้าสู่ระบบ" : "สมัคร"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAuthForm(true)}
+              className="w-full py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200"
+            >
+              เชื่อมต่อ Cloud Backup
+            </button>
+          )}
         </div>
 
       </div>

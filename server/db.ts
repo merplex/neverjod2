@@ -1,0 +1,58 @@
+import pg from "pg";
+
+const { Pool } = pg;
+
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+export async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS sync_categories (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      icon TEXT,
+      updated_at TIMESTAMPTZ NOT NULL,
+      deleted_at TIMESTAMPTZ,
+      PRIMARY KEY (id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS sync_accounts (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      type TEXT,
+      start_balance NUMERIC DEFAULT 0,
+      icon TEXT,
+      updated_at TIMESTAMPTZ NOT NULL,
+      deleted_at TIMESTAMPTZ,
+      PRIMARY KEY (id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS sync_transactions (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      category_id TEXT,
+      account_id TEXT,
+      amount NUMERIC NOT NULL,
+      type TEXT NOT NULL,
+      description TEXT,
+      date TIMESTAMPTZ NOT NULL,
+      time TEXT,
+      fingerprint TEXT,
+      updated_at TIMESTAMPTZ NOT NULL,
+      deleted_at TIMESTAMPTZ,
+      PRIMARY KEY (id, user_id)
+    );
+  `);
+}

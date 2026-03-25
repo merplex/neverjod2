@@ -1,0 +1,52 @@
+import { Router, Request, Response } from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { pool } from "../db";
+
+const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+
+router.post("/register", async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ error: "Email and password required" });
+
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email",
+      [email.toLowerCase(), hash]
+    );
+    const user = result.rows[0];
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "30d" });
+    res.json({ token, email: user.email });
+  } catch (err: any) {
+    if (err.code === "23505") return res.status(409).json({ error: "Email already registered" });
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/login", async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ error: "Email and password required" });
+
+  try {
+    const result = await pool.query(
+      "SELECT id, email, password_hash FROM users WHERE email = $1",
+      [email.toLowerCase()]
+    );
+    if (!result.rows.length) return res.status(401).json({ error: "Invalid email or password" });
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: "Invalid email or password" });
+
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "30d" });
+    res.json({ token, email: user.email });
+  } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+export default router;
