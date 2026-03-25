@@ -1,14 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { FileText, BarChart3, Grid3x3, Landmark, Settings } from "lucide-react";
+import { Mic, FileText, BarChart3, Grid3x3, Landmark, Settings } from "lucide-react";
 
 export default function BottomNavLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
+    { path: "/", label: "Input", icon: Mic },
     { path: "/transactions", label: "Transaction", icon: FileText },
     { path: "/stats", label: "Stats", icon: BarChart3 },
-    { path: "/categories", label: "Category", icon: Grid3x3 },
     { path: "/accounts", label: "Account", icon: Landmark },
     { path: "/settings", label: "Setting", icon: Settings },
   ];

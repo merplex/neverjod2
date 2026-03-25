@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ArrowUpDown, ArrowDownUp } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSwipeBack } from "../hooks/useSwipeBack";
 import { getTransactionsList, type Transaction } from "../utils/transactionData";
 
 type SortOrder = "asc" | "desc";
@@ -26,6 +27,7 @@ const accountData: Record<string, { name: string; type: string }> = {
 export default function Transactions() {
   const { accountId } = useParams();
   const navigate = useNavigate();
+  useSwipeBack();
   const account = accountData[accountId || ""];
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
