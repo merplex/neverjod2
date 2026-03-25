@@ -5,26 +5,21 @@ import { getTransaction, updateTransaction, type Transaction } from "../utils/tr
 import DatePicker from "../components/DatePicker";
 import TimePicker from "../components/TimePicker";
 
-const accountData: Record<string, { name: string; type: string }> = {
-  uob: { name: "UOB", type: "credit card" },
-  banka: { name: "BankA", type: "debit card" },
-  krungsri: { name: "Krungsri", type: "savings account" },
-  bangkok: { name: "Bangkok Bank", type: "credit card" },
-  kasikorn: { name: "Kasikornbank", type: "debit card" },
-  tmb: { name: "TMB", type: "savings account" },
-  scb: { name: "SCB", type: "credit card" },
-  acme: { name: "ACME", type: "debit card" },
-  cash: { name: "Cash", type: "cash" },
-  crypto: { name: "Crypto", type: "cryptocurrency" },
-  baht_pay: { name: "Baht Pay", type: "digital wallet" },
-  other_acc: { name: "Other", type: "other" },
-};
-
 export default function TransactionDetail() {
   const { accountId, transactionId } = useParams();
   const navigate = useNavigate();
-  const account = accountData[accountId || ""];
   const transaction = transactionId ? getTransaction(transactionId) : null;
+  const account = transaction
+    ? (() => {
+        try {
+          const accs = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+          const found = accs.find((a: any) => a.id === transaction.accountId);
+          return { name: transaction.accountName, type: found?.type || "" };
+        } catch {
+          return { name: transaction.accountName, type: "" };
+        }
+      })()
+    : null;
   const [isEditing, setIsEditing] = useState(false);
   const [editedDescription, setEditedDescription] = useState(transaction?.description || "");
   const [editedAmount, setEditedAmount] = useState(transaction?.amount.toString() || "0");

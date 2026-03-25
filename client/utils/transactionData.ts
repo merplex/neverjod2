@@ -125,6 +125,11 @@ export const getTransactions = (): Record<string, Transaction> => {
 };
 
 export const getTransaction = (id: string): Transaction | undefined => {
+  // Search real user transactions first
+  const real = getRealTransactionsList();
+  const realFound = real.find((t) => t.id === id);
+  if (realFound) return realFound;
+  // Fallback to generated demo data
   return getTransactions()[id];
 };
 
