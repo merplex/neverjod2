@@ -440,9 +440,11 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
         />
       )}
 
-      {/* ---- Amount Numpad Overlay ---- */}
+      {/* ---- Amount Numpad Overlay (bottom sheet) ---- */}
       {showAmountPad && (
-        <div className="fixed inset-0 z-[60] bg-white flex flex-col pb-[72px]">
+        <div className="fixed inset-0 z-[70] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowAmountPad(false)} />
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "72vh" }}>
           {/* hidden Recording for voice calculator */}
           <div className="hidden">
             <Recording
@@ -454,7 +456,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             />
           </div>
 
-          <div className="px-4 pt-2 pb-4 flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="px-4 pt-3 pb-4 flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Section A: Size Controls */}
             <div className="flex gap-4 items-center mb-3">
               {[70, 75, 80, 85].map((size) => (
@@ -574,6 +576,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               </div>
             </div>
           </div>
+          </div>{/* end rounded inner */}
         </div>
       )}
     </div>

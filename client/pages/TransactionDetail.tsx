@@ -286,7 +286,7 @@ export default function TransactionDetail() {
 
       {/* Category Bottom Sheet */}
       {showCategoryPicker && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setShowCategoryPicker(false)} />
           <div className="relative bg-white rounded-t-2xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
