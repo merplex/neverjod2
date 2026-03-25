@@ -172,8 +172,9 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
     window.addEventListener("blur", handleBlur);
 
-    // Cleanup
+    // Cleanup — prevent auto-restart after unmount
     return () => {
+      manualStopRef.current = true;
       window.removeEventListener("blur", handleBlur);
       if (recognition) {
         recognition.stop();

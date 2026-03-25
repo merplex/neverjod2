@@ -659,8 +659,8 @@ export default function Index() {
                 <div className="flex flex-col flex-1 min-h-0 gap-2">
                   {/* Section B: Display */}
                   <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 px-3 py-3 rounded-lg flex justify-between items-center flex-shrink-0">
-                    <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                      ฿{display}
+                    <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
+                      {categoryType === "income" ? "+" : "-"}฿{display}
                     </div>
                     <button
                       onClick={() => setCurrentPage("account")}
