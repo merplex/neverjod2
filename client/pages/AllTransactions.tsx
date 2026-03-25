@@ -15,6 +15,11 @@ export default function AllTransactions() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const chipScrollRef = useRef<HTMLDivElement>(null);
+
+  const storedAccounts = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
+  }, []);
 
   useEffect(() => {
     if (showSearch) searchInputRef.current?.focus();
@@ -102,19 +107,38 @@ export default function AllTransactions() {
           >
             <ChevronLeft size={24} />
           </button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">
-              {accountName ? accountName : "All Transactions"}
-            </h1>
-            <p className="text-sm text-indigo-100">{sorted.length} transactions</p>
+          {/* Scrollable account filter chips */}
+          <div ref={chipScrollRef} className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 items-center py-1">
+            <button
+              onClick={() => setSearchParams({})}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                !accountIdFilter
+                  ? "bg-white text-indigo-600"
+                  : "bg-indigo-500 text-indigo-100 hover:bg-indigo-400"
+              }`}
+            >
+              All
+            </button>
+            {storedAccounts.map((acc: any) => (
+              <button
+                key={acc.id}
+                onClick={() => setSearchParams({ accountId: acc.id })}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                  accountIdFilter === acc.id
+                    ? "bg-white text-indigo-600"
+                    : "bg-indigo-500 text-indigo-100 hover:bg-indigo-400"
+                }`}
+              >
+                {acc.name}
+              </button>
+            ))}
           </div>
           {accountIdFilter && (
             <button
               onClick={() => setSearchParams({})}
-              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-sm transition-colors"
+              className="flex-shrink-0 p-2 hover:bg-indigo-500 rounded-lg transition-colors"
             >
-              <X size={14} />
-              All
+              <X size={20} />
             </button>
           )}
           <button
@@ -128,6 +152,9 @@ export default function AllTransactions() {
 
       {/* Controls */}
       <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200">
+        <div className="flex justify-between items-center gap-2 mb-1">
+          <span className="text-xs text-slate-400">{sorted.length} transactions</span>
+        </div>
         <div className="flex justify-between items-center gap-2">
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
