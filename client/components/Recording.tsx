@@ -49,7 +49,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-US"; // Use English for better number recognition, but supports Thai keywords too
+    recognition.lang = "th-TH";
 
     recognition.onstart = () => {
       console.log("Speech recognition started - waiting for speech");
