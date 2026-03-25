@@ -70,10 +70,10 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd }: Re
             onTranscriptRef.current(transcriptPart);
           }
 
-          // Parse voice input for category, account, and amount
+          // Parse voice input for category, account, and amount — always call
           const voiceData = parseVoiceInput(transcriptPart);
-          if (onVoiceInputRef.current && (voiceData.categoryId || voiceData.accountId || voiceData.amount)) {
-            console.log("Voice data detected:", voiceData);
+          if (onVoiceInputRef.current) {
+            console.log("Voice data:", voiceData);
             onVoiceInputRef.current(voiceData);
           }
 

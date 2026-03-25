@@ -5,6 +5,7 @@ interface VoiceResultConfirmationProps {
   categoryName?: string;
   accountName?: string;
   amount?: number;
+  transcript?: string;
   isSuccess: boolean;
   onConfirm: () => void;
   onEdit: () => void;
@@ -15,6 +16,7 @@ export default function VoiceResultConfirmation({
   categoryName,
   accountName,
   amount,
+  transcript,
   isSuccess,
   onConfirm,
   onEdit,
@@ -119,10 +121,15 @@ export default function VoiceResultConfirmation({
             </div>
 
             {/* Miss Message */}
-            <div className="mb-6 p-4 bg-orange-50 rounded-lg">
+            <div className="mb-6 p-4 bg-orange-50 rounded-lg space-y-2">
               <p className="text-sm text-slate-600">
-                Could not detect all required information (category, account, and amount). Please try again or select manually.
+                Could not detect all required information. Please try again or select manually.
               </p>
+              {transcript && (
+                <p className="text-xs text-slate-500 border-t border-orange-200 pt-2">
+                  Heard: <span className="font-semibold text-slate-700">"{transcript.trim()}"</span>
+                </p>
+              )}
             </div>
 
             {/* Button */}

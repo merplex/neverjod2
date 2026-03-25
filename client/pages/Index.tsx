@@ -139,6 +139,7 @@ export default function Index() {
     amount?: number;
     categoryName?: string;
     accountName?: string;
+    transcript?: string;
     isSuccess: boolean;
   }>({ isSuccess: false });
   const voiceTimeoutRef = useRef<NodeJS.Timeout>();
@@ -146,6 +147,7 @@ export default function Index() {
     categoryId?: string;
     accountId?: string;
     amount?: number;
+    transcript?: string;
   }>({});
 
   const handleCategorySelect = (categoryId: string) => {
@@ -181,6 +183,7 @@ export default function Index() {
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
     if (voiceData.amount) voiceAccumulatorRef.current.amount = voiceData.amount;
+    voiceAccumulatorRef.current.transcript = (voiceAccumulatorRef.current.transcript || "") + voiceData.description + " ";
 
     // If speech has started (has any data), always clear the initial 4-second wait timer
     // This allows users to speak for as long as needed once they start
@@ -192,7 +195,7 @@ export default function Index() {
 
   // Handle voice recognition end - show result when speech ends
   const handleVoiceEnd = () => {
-    const { categoryId, accountId, amount } = voiceAccumulatorRef.current;
+    const { categoryId, accountId, amount, transcript } = voiceAccumulatorRef.current;
 
     // Get category and account names for display
     const categoryName = categoryId
@@ -212,6 +215,7 @@ export default function Index() {
       amount,
       categoryName,
       accountName,
+      transcript,
       isSuccess: !!allMatched,
     });
 
@@ -691,6 +695,7 @@ export default function Index() {
           categoryName={voiceResultData.categoryName}
           accountName={voiceResultData.accountName}
           amount={voiceResultData.amount}
+          transcript={voiceResultData.transcript}
           isSuccess={voiceResultData.isSuccess}
           onConfirm={handleVoiceResultConfirm}
           onEdit={handleVoiceResultEdit}
