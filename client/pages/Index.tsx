@@ -182,8 +182,13 @@ export default function Index() {
   const [numpadSize, setNumpadSize] = useState(80);
   const [isLocked, setIsLocked] = useState(false);
   const [isRightMode, setIsRightMode] = useState(false);
-  const [isVoiceCalculatorMode, setIsVoiceCalculatorMode] = useState(false);
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
+
+  // Voice calculator long-press state
+  const [isVoiceCalcHeld, setIsVoiceCalcHeld] = useState(false);
+  const [voiceCalcStartTrigger, setVoiceCalcStartTrigger] = useState(0);
+  const [voiceCalcStopTrigger, setVoiceCalcStopTrigger] = useState(0);
+  const voiceCalcTranscriptRef = useRef("");
 
   // Auto-start voice when category page is shown (only if voiceAutoStart is on)
   const [voiceStartTrigger, setVoiceStartTrigger] = useState(0);
@@ -265,23 +270,30 @@ export default function Index() {
     localStorage.setItem("app_categories", JSON.stringify(categoriesList));
   };
 
+  // Voice calculator handlers
+  const handleVoiceCalcTranscript = (text: string) => {
+    const accumulated = (voiceCalcTranscriptRef.current + " " + text).trim();
+    voiceCalcTranscriptRef.current = accumulated;
+    const { expression } = calculateFromVoice(accumulated);
+    if (expression.trim()) setDisplay(expression);
+  };
+
+  const handleVoiceCalcEnd = () => {
+    const { result, error } = calculateFromVoice(voiceCalcTranscriptRef.current);
+    if (!error && result !== 0) {
+      setDisplay(result.toString());
+      setValue(result);
+    }
+    setIsVoiceCalcHeld(false);
+    voiceCalcTranscriptRef.current = "";
+  };
+
   const handleVoiceInput = (voiceData: {
     categoryId?: string;
     accountId?: string;
     amount?: number;
     description: string;
   }) => {
-    // If in voice calculator mode, parse the transcript as a mathematical expression
-    if (isVoiceCalculatorMode) {
-      const result = calculateFromVoice(voiceData.description);
-      if (!result.error) {
-        setDisplay(result.result.toString());
-        setValue(result.result);
-      }
-      setIsVoiceCalculatorMode(false);
-      return;
-    }
-
     // Accumulate voice data
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
@@ -837,31 +849,49 @@ export default function Index() {
                       </div>
                     </div>
 
-                    {/* Section D: Voice Calculator & Lock */}
+                    {/* Section D: Voice Calculator (long press) & Lock */}
                     <div className="flex flex-col gap-2 flex-1 min-h-0">
-                      {!isVoiceCalculatorMode ? (
-                        <button
-                          onClick={() => setIsVoiceCalculatorMode(true)}
-                          disabled={isLocked}
-                          className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 ${
-                            isLocked
-                              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                              : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
-                          }`}
-                        >
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex items-center gap-1">
-                              <Calculator size={24} />
-                              <Mic size={24} />
-                            </div>
-                            <span className="text-xs">Voice</span>
+                      {/* Hidden Recording for voice calculator */}
+                      <div className="hidden">
+                        <Recording
+                          onTranscript={handleVoiceCalcTranscript}
+                          onVoiceEnd={handleVoiceCalcEnd}
+                          startTrigger={voiceCalcStartTrigger}
+                          stopTrigger={voiceCalcStopTrigger}
+                          autoRestart={false}
+                        />
+                      </div>
+                      <button
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          if (isLocked) return;
+                          voiceCalcTranscriptRef.current = "";
+                          setIsVoiceCalcHeld(true);
+                          setVoiceCalcStartTrigger((n) => n + 1);
+                        }}
+                        onPointerUp={() => {
+                          if (isVoiceCalcHeld) setVoiceCalcStopTrigger((n) => n + 1);
+                        }}
+                        onPointerLeave={() => {
+                          if (isVoiceCalcHeld) setVoiceCalcStopTrigger((n) => n + 1);
+                        }}
+                        disabled={isLocked}
+                        className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
+                          isLocked
+                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                            : isVoiceCalcHeld
+                            ? "bg-gradient-to-br from-green-400 to-green-500 text-white border-2 border-green-600"
+                            : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-1">
+                            <Calculator size={24} />
+                            <Mic size={24} />
                           </div>
-                        </button>
-                      ) : (
-                        <div className="rounded-lg bg-green-100 border-2 border-green-500 flex items-center justify-center flex-1 p-2">
-                          <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} />
+                          <span className="text-xs">{isVoiceCalcHeld ? "Listening…" : "Hold"}</span>
                         </div>
-                      )}
+                      </button>
                       <button
                         onClick={handleToggleLock}
                         className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${

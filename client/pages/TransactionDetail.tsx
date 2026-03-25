@@ -9,6 +9,8 @@ import {
   Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap,
   Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal,
   CreditCard, Wallet, Smartphone, Banknote, Trash2 as Trash2Icon,
+  Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones,
+  Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2,
 } from "lucide-react";
 
 // ---- helpers ----
@@ -38,6 +40,7 @@ function deleteLocalTransaction(id: string) {
   } catch {}
 }
 
+// maps both category IDs and iconIds (for custom categories/accounts)
 const categoryIconMap: Record<string, React.ComponentType<any>> = {
   food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
   bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
@@ -47,6 +50,12 @@ const categoryIconMap: Record<string, React.ComponentType<any>> = {
   subscription: Zap, insurance: FileText, car: Bus, phone: Smartphone,
   internet: Zap, hobby: Music, pets: Heart, childcare: Gift, loan: FileText,
   nocat: MoreHorizontal,
+  // iconIds for custom categories
+  home: Home, coffee: Coffee, briefcase: Briefcase, star: Star, clock: Clock,
+  camera: Camera, headphones: Headphones, wrench: Wrench, scissors: Scissors,
+  flame: Flame, leaf: Leaf, baby: Baby, package: Package, truck: Truck,
+  train: Train, bike: Bike, building: Building2,
+  card: CreditCard, wallet: Wallet, cash: Banknote, invest: TrendingUp,
 };
 
 const accountIconMap: Record<string, React.ComponentType<any>> = {
@@ -54,7 +63,17 @@ const accountIconMap: Record<string, React.ComponentType<any>> = {
   kasikorn: CreditCard, tmb: Wallet, scb: CreditCard, acme: CreditCard,
   cash: Banknote, crypto: TrendingUp, baht_pay: Smartphone, other_acc: MoreHorizontal,
   kbank: Smartphone, revolut: CreditCard, wise: Wallet, stripe: CreditCard,
-  paypal: Banknote, account_deleted: Trash2Icon,
+  paypal: Banknote, account_deleted: Trash2Icon, travel_card: CreditCard,
+  // iconIds for custom accounts
+  creditcard: CreditCard, card: CreditCard, wallet: Wallet, invest: TrendingUp,
+  salary: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+  food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
+  bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
+  travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
+  home: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
+  clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
+  scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
+  truck: Truck, train: Train, bike: Bike, building: Building2,
 };
 
 // ---- component ----
@@ -269,29 +288,31 @@ export default function TransactionDetail() {
       {showCategoryPicker && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setShowCategoryPicker(false)} />
-          <div className="relative bg-white rounded-t-2xl max-h-[60vh] flex flex-col">
+          <div className="relative bg-white rounded-t-2xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
               <h3 className="text-sm font-semibold text-slate-800">Category</h3>
               <button onClick={() => setShowCategoryPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto grid grid-cols-3 divide-x divide-y divide-slate-100 pb-6">
-              {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
-                const Icon = categoryIconMap[cat.id] || MoreHorizontal;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleCategorySelect(cat.id, cat.name)}
-                    className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
-                  >
-                    <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
-                    <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
-                      {cat.name}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="overflow-y-auto" style={{ height: 272 }}>
+              <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
+                {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
+                  const Icon = categoryIconMap[cat.id] || (cat.iconId ? categoryIconMap[cat.iconId] : null) || MoreHorizontal;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => handleCategorySelect(cat.id, cat.name)}
+                      className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
+                    >
+                      <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
+                      <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
+                        {cat.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -301,29 +322,31 @@ export default function TransactionDetail() {
       {showAccountPicker && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setShowAccountPicker(false)} />
-          <div className="relative bg-white rounded-t-2xl max-h-[60vh] flex flex-col">
+          <div className="relative bg-white rounded-t-2xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
               <h3 className="text-sm font-semibold text-slate-800">Account</h3>
               <button onClick={() => setShowAccountPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
             </div>
-            <div className="overflow-y-auto grid grid-cols-3 divide-x divide-y divide-slate-100 pb-6">
-              {accountsList.map((acc: any) => {
-                const Icon = accountIconMap[acc.id] || CreditCard;
-                return (
-                  <button
-                    key={acc.id}
-                    onClick={() => handleAccountSelect(acc.id, acc.name)}
-                    className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${acc.id === currentAccountId ? "bg-theme-50" : ""}`}
-                  >
-                    <Icon size={18} className={acc.id === currentAccountId ? "text-theme-600" : "text-slate-500"} />
-                    <span className={`text-xs text-center leading-tight ${acc.id === currentAccountId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
-                      {acc.name}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="overflow-y-auto" style={{ height: 272 }}>
+              <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
+                {accountsList.map((acc: any) => {
+                  const Icon = accountIconMap[acc.id] || (acc.iconId ? accountIconMap[acc.iconId] : null) || CreditCard;
+                  return (
+                    <button
+                      key={acc.id}
+                      onClick={() => handleAccountSelect(acc.id, acc.name)}
+                      className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${acc.id === currentAccountId ? "bg-theme-50" : ""}`}
+                    >
+                      <Icon size={18} className={acc.id === currentAccountId ? "text-theme-600" : "text-slate-500"} />
+                      <span className={`text-xs text-center leading-tight ${acc.id === currentAccountId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
+                        {acc.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

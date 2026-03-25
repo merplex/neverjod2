@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
+import AddTransactionModal from "../components/AddTransactionModal";
 
 type TimeRange = "custom" | "month" | "all";
 type SortOrder = "asc" | "desc";
@@ -174,6 +175,8 @@ export default function AllTransactions() {
   const [customStart, setCustomStart] = useState<Date | null>(null);
   const [customEnd, setCustomEnd] = useState<Date | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const storedAccounts = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
@@ -184,7 +187,7 @@ export default function AllTransactions() {
     else setSearchQuery("");
   }, [showSearch]);
 
-  const allTransactions = useMemo(() => getRealTransactionsList(), []);
+  const allTransactions = useMemo(() => getRealTransactionsList(), [refreshKey]);
 
   const selectedAccountName = useMemo(() => {
     if (!accountIdFilter) return "All Accounts";
@@ -295,7 +298,7 @@ export default function AllTransactions() {
 
             {/* + Add transaction */}
             <button
-              onClick={() => navigate("/")}
+              onClick={() => setShowAddModal(true)}
               className="flex-shrink-0 p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
             >
               <Plus size={20} />
@@ -457,6 +460,14 @@ export default function AllTransactions() {
           rangeEnd={customEnd}
           onSelect={handleCustomSelect}
           onClose={() => setShowCustomPicker(false)}
+        />
+      )}
+
+      {/* Add Transaction Modal */}
+      {showAddModal && (
+        <AddTransactionModal
+          onClose={() => setShowAddModal(false)}
+          onSaved={() => setRefreshKey((k) => k + 1)}
         />
       )}
     </div>

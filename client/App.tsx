@@ -1,6 +1,7 @@
 import "./global.css";
 
 import { useEffect, useState } from "react";
+import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot, Root } from "react-dom/client";
@@ -32,6 +33,7 @@ import Stats from "./pages/Stats";
 import Categories from "./pages/Categories";
 import AccountsManagement from "./pages/AccountsManagement";
 import Settings from "./pages/Settings";
+import RepeatTransactions from "./pages/RepeatTransactions";
 import NotFound from "./pages/NotFound";
 import BottomNavLayout from "./components/BottomNavLayout";
 
@@ -48,6 +50,7 @@ function AppContent() {
   });
 
   useEffect(() => {
+    checkAndExecuteRepeats();
     navigate("/", { replace: true });
   }, []);
 
@@ -68,6 +71,7 @@ function AppContent() {
         <Route path="/categories" element={<Categories />} />
         <Route path="/accounts" element={<AccountsManagement />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/repeat-transactions" element={<RepeatTransactions />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showGuide && <OnboardingGuide onClose={() => setShowGuide(false)} />}

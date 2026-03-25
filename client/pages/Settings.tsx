@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
@@ -136,6 +136,21 @@ export default function Settings() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+
+        {/* Repeat Transactions — first item */}
+        <button
+          onClick={() => navigate("/repeat-transactions")}
+          className="w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4 hover:bg-slate-50 transition-colors text-left"
+        >
+          <div className="w-10 h-10 bg-theme-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Repeat size={18} className="text-theme-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-semibold text-slate-800">Repeat Transactions</h2>
+            <p className="text-xs text-slate-500">สร้างและจัดการ transaction ที่ทำซ้ำอัตโนมัติ</p>
+          </div>
+          <ChevronLeft size={16} className="text-slate-300 rotate-180 flex-shrink-0" />
+        </button>
 
         {/* Color Theme */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
