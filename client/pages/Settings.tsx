@@ -192,15 +192,11 @@ export default function Settings() {
               </div>
               <button
                 onClick={() => update("voiceAutoStart", !settings.voiceAutoStart)}
-                className={`relative w-12 h-6 rounded-full transition-colors overflow-hidden ${
+                className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 ${
                   settings.voiceAutoStart ? "bg-theme-500" : "bg-slate-300"
                 }`}
               >
-                <span
-                  className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                    settings.voiceAutoStart ? "translate-x-7" : "translate-x-1"
-                  }`}
-                />
+                <span className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${settings.voiceAutoStart ? "ml-auto" : ""}`} />
               </button>
             </div>
 
@@ -249,15 +245,11 @@ export default function Settings() {
             </div>
             <button
               onClick={() => update("swipeBackDirection", settings.swipeBackDirection === "right" ? "left" : "right")}
-              className={`relative w-12 h-6 rounded-full transition-colors overflow-hidden ${
+              className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 ${
                 settings.swipeBackDirection === "right" ? "bg-theme-500" : "bg-slate-300"
               }`}
             >
-              <span
-                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                  settings.swipeBackDirection === "right" ? "translate-x-7" : "translate-x-1"
-                }`}
-              />
+              <span className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${settings.swipeBackDirection === "right" ? "ml-auto" : ""}`} />
             </button>
           </div>
         </div>
