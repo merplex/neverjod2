@@ -57,7 +57,7 @@ export default function AllTransactions() {
       }
       return true;
     });
-  }, [allTransactions, timeRange]);
+  }, [allTransactions, timeRange, searchQuery, accountIdFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
