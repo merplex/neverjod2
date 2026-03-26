@@ -58,7 +58,15 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       hasSpeechStartedRef.current = false;
       setIsListening(true);
       isListeningRef.current = true;
-      muteBeep().then(() => recognitionRef.current.start()).catch(() => recognitionRef.current.start());
+      muteBeep()
+        .catch(() => {})
+        .then(() => {
+          try { recognitionRef.current.start(); }
+          catch (e) {
+            setIsListening(false);
+            isListeningRef.current = false;
+          }
+        });
     } catch (e) {
       setIsListening(false);
       isListeningRef.current = false;
@@ -153,12 +161,19 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
       // Auto-restart if: was listening, not manually stopped, autoRestart enabled
       if (isListeningRef.current && !manualStopRef.current && autoRestartRef.current) {
-        try {
-            muteBeep().then(() => recognition.start()).catch(() => recognition.start());
-          return; // keep isListening = true, don't reset UI
-        } catch (e) {
-          console.error("Auto-restart failed:", e);
-        }
+        muteBeep()
+          .catch(() => {})
+          .then(() => {
+            if (!isListeningRef.current) return;
+            try {
+              recognition.start();
+            } catch (e) {
+              console.error("Auto-restart failed:", e);
+              setIsListening(false);
+              isListeningRef.current = false;
+            }
+          });
+        return; // keep isListening = true, don't reset UI
       }
 
       manualStopRef.current = false;
@@ -238,7 +253,15 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         isListeningRef.current = true;
 
         // Start recognition (mute Android beep first)
-        muteBeep().then(() => recognitionRef.current.start()).catch(() => recognitionRef.current.start());
+        muteBeep()
+          .catch(() => {})
+          .then(() => {
+            try { recognitionRef.current.start(); }
+            catch (e) {
+              setIsListening(false);
+              isListeningRef.current = false;
+            }
+          });
       }
     } catch (error) {
       console.error("Error toggling recognition:", (error as Error).message);

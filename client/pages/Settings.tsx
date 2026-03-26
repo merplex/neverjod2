@@ -72,9 +72,15 @@ export default function Settings() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "ok" | "error">("idle");
-  const [syncDirection, setSyncDirection] = useState<"server" | "user" | null>(null);
+  const [syncDirection, setSyncDirection] = useState<"server" | "client" | null>(() => {
+    const d = localStorage.getItem("sync_direction");
+    return d === "server" || d === "client" ? d : null;
+  });
   const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
-    const t = localStorage.getItem("last_sync_at");
+    const direction = localStorage.getItem("sync_direction");
+    const t = direction === "client"
+      ? localStorage.getItem("last_client_sync_at")
+      : localStorage.getItem("last_push_at");
     if (!t) return "";
     try { return new Date(t).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
     catch { return ""; }
@@ -112,6 +118,7 @@ export default function Settings() {
       // Auto sync after login
       setSyncStatus("syncing");
       await syncAll(result.token, false);
+      localStorage.setItem("sync_direction", "server");
       setSyncDirection("server");
       setSyncStatus("ok");
       refreshLastSyncTime(false);
@@ -131,7 +138,7 @@ export default function Settings() {
 
   const refreshLastSyncTime = (useLocalTime = false) => {
     const t = useLocalTime
-      ? new Date().toISOString()
+      ? localStorage.getItem("last_client_sync_at")
       : (localStorage.getItem("last_push_at") || localStorage.getItem("last_sync_at"));
     if (!t) return;
     setLastSyncTime(formatTime(t));
@@ -142,6 +149,9 @@ export default function Settings() {
     setSyncStatus("syncing");
     try {
       await syncAll(cloudToken, true);
+      const now = new Date().toISOString();
+      localStorage.setItem("last_client_sync_at", now);
+      localStorage.setItem("sync_direction", "client");
       setSyncDirection("client");
       setSyncStatus("ok");
       refreshLastSyncTime(true);
@@ -154,9 +164,13 @@ export default function Settings() {
     localStorage.removeItem("cloud_token");
     localStorage.removeItem("cloud_email");
     localStorage.removeItem("last_sync_at");
+    localStorage.removeItem("sync_direction");
+    localStorage.removeItem("last_client_sync_at");
     setCloudToken("");
     setCloudEmail("");
     setSyncStatus("idle");
+    setSyncDirection(null);
+    setLastSyncTime("");
   };
 
   return (
@@ -406,7 +420,7 @@ export default function Settings() {
                     ? "กำลังซิงค์อยู่..."
                     : syncStatus === "error"
                     ? "ซิงค์ล้มเหลว ✗"
-                    : syncStatus === "ok" && lastSyncTime
+                    : lastSyncTime
                     ? `ซิงค์แล้ว · ${lastSyncTime} · from ${syncDirection ?? "server"}`
                     : "ซิงค์ตอนนี้"}
                 </span>
