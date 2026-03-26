@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic } from "lucide-react";
 import { parseVoiceInput } from "../utils/keywordMatch";
+import { muteBeep, unmuteBeep } from "../utils/audioHelper";
 
 interface RecordingProps {
   onTranscript?: (text: string) => void;
@@ -57,7 +58,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       hasSpeechStartedRef.current = false;
       setIsListening(true);
       isListeningRef.current = true;
-      recognitionRef.current.start();
+      muteBeep().then(() => recognitionRef.current.start()).catch(() => recognitionRef.current.start());
     } catch (e) {
       setIsListening(false);
       isListeningRef.current = false;
@@ -92,6 +93,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       console.log("Speech recognition started - waiting for speech");
       hasSpeechStartedRef.current = false;
       processedResultIndicesRef.current.clear();
+      unmuteBeep(); // restore volume after recognition has started
     };
 
     recognition.onresult = (event: any) => {
@@ -152,7 +154,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       // Auto-restart if: was listening, not manually stopped, autoRestart enabled
       if (isListeningRef.current && !manualStopRef.current && autoRestartRef.current) {
         try {
-            recognition.start();
+            muteBeep().then(() => recognition.start()).catch(() => recognition.start());
           return; // keep isListening = true, don't reset UI
         } catch (e) {
           console.error("Auto-restart failed:", e);
@@ -235,8 +237,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         setIsListening(true);
         isListeningRef.current = true;
 
-        // Start recognition
-        recognitionRef.current.start();
+        // Start recognition (mute Android beep first)
+        muteBeep().then(() => recognitionRef.current.start()).catch(() => recognitionRef.current.start());
       }
     } catch (error) {
       console.error("Error toggling recognition:", (error as Error).message);
