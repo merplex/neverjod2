@@ -2,6 +2,7 @@ import "./global.css";
 
 import { useEffect, useState } from "react";
 import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
+import { syncAll } from "./utils/syncService";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot, Root } from "react-dom/client";
@@ -52,6 +53,20 @@ function AppContent() {
   useEffect(() => {
     checkAndExecuteRepeats();
     navigate("/", { replace: true });
+    // Auto-sync on startup if logged in and premium
+    const token = localStorage.getItem("cloud_token");
+    if (token) syncAll(token).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        const token = localStorage.getItem("cloud_token");
+        if (token) syncAll(token).catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   useEffect(() => {
