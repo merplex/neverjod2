@@ -178,6 +178,12 @@ export default function AllTransactions() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    const handler = () => setRefreshKey((k) => k + 1);
+    window.addEventListener("repeats-updated", handler);
+    return () => window.removeEventListener("repeats-updated", handler);
+  }, []);
+
   const storedAccounts = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
   }, []);
@@ -431,6 +437,8 @@ export default function AllTransactions() {
                         <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
                         <span className="text-xs font-medium text-slate-600">{transaction.accountName}</span>
                         <span className="text-xs font-semibold text-theme-600">{transaction.category}</span>
+                        {transaction.isRepeat && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-theme-100 text-theme-600 leading-none flex-shrink-0">repeat</span>}
+                        {transaction.isTransfer && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-500 leading-none flex-shrink-0">transfer</span>}
                       </div>
                       <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>

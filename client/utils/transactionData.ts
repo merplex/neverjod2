@@ -8,6 +8,8 @@ export interface Transaction {
   accountName: string;
   accountId: string;
   type: "income" | "expense";
+  isRepeat?: boolean;
+  isTransfer?: boolean;
 }
 
 const categories = [
@@ -175,6 +177,8 @@ const defaultCategoryNames: Record<string, { name: string; type: "income" | "exp
   childcare: { name: "Childcare", type: "expense" },
   loan: { name: "Loan", type: "expense" },
   nocat: { name: "No Category", type: "expense" },
+  transfer_out: { name: "Transfer", type: "expense" },
+  transfer_in: { name: "Transfer", type: "income" },
 };
 
 const defaultAccountNames: Record<string, string> = {
@@ -214,6 +218,8 @@ export const getRealTransactionsList = (): Transaction[] => {
         accountName: accName,
         accountId: t.accountId,
         type: catType,
+        isRepeat: t.isRepeat || false,
+        isTransfer: t.isTransfer || false,
       };
     });
   } catch (e) {

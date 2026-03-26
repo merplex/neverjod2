@@ -51,7 +51,7 @@ function AppContent() {
   });
 
   useEffect(() => {
-    checkAndExecuteRepeats();
+    if (checkAndExecuteRepeats()) window.dispatchEvent(new CustomEvent("repeats-updated"));
     navigate("/", { replace: true });
     // Refresh app_premium from JWT payload (in case DB was updated since last login)
     const token = localStorage.getItem("cloud_token");
