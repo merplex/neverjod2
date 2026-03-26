@@ -391,13 +391,30 @@ export default function Categories() {
                           <input
                             type="text"
                             value={editNewKeyword}
-                            onChange={(e) => { setEditNewKeyword(e.target.value); setKeywordError(""); }}
+                            onChange={(e) => {
+                              setKeywordError("");
+                              const val = e.target.value;
+                              if (val.includes(",")) {
+                                const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
+                                const remaining = val.endsWith(",") ? "" : parts.pop() || "";
+                                setEditKeywords((prev) => {
+                                  const next = [...prev];
+                                  for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
+                                  return next;
+                                });
+                                setEditNewKeyword(remaining);
+                              } else {
+                                setEditNewKeyword(val);
+                              }
+                            }}
                             onKeyDown={(e) => {
-                              if ((e.key === "Enter" || e.key === ",") && editNewKeyword.trim()) {
+                              if (e.key === "Enter" && editNewKeyword.trim()) {
                                 e.preventDefault();
                                 const kw = editNewKeyword.trim().toLowerCase();
+                                const el = e.currentTarget;
                                 if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
                                 setEditNewKeyword("");
+                                requestAnimationFrame(() => el.focus());
                               }
                             }}
                             onBlur={() => {
@@ -552,13 +569,30 @@ export default function Categories() {
                     <input
                       type="text"
                       value={newKeyword}
-                      onChange={(e) => { setNewKeyword(e.target.value); setNewKeywordError(""); }}
+                      onChange={(e) => {
+                        setNewKeywordError("");
+                        const val = e.target.value;
+                        if (val.includes(",")) {
+                          const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
+                          const remaining = val.endsWith(",") ? "" : parts.pop() || "";
+                          setNewKeywords((prev) => {
+                            const next = [...prev];
+                            for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
+                            return next;
+                          });
+                          setNewKeyword(remaining);
+                        } else {
+                          setNewKeyword(val);
+                        }
+                      }}
                       onKeyDown={(e) => {
-                        if ((e.key === "Enter" || e.key === ",") && newKeyword.trim()) {
+                        if (e.key === "Enter" && newKeyword.trim()) {
                           e.preventDefault();
                           const kw = newKeyword.trim().toLowerCase();
+                          const el = e.currentTarget;
                           if (!newKeywords.includes(kw)) setNewKeywords((prev) => [...prev, kw]);
                           setNewKeyword("");
+                          requestAnimationFrame(() => el.focus());
                         }
                       }}
                       onBlur={() => {

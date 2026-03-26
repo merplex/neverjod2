@@ -470,13 +470,30 @@ export default function AccountsManagement() {
                           <input
                             type="text"
                             value={editNewKeyword}
-                            onChange={(e) => { setEditNewKeyword(e.target.value); setKeywordError(""); }}
+                            onChange={(e) => {
+                              setKeywordError("");
+                              const val = e.target.value;
+                              if (val.includes(",")) {
+                                const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
+                                const remaining = val.endsWith(",") ? "" : parts.pop() || "";
+                                setEditKeywords((prev) => {
+                                  const next = [...prev];
+                                  for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
+                                  return next;
+                                });
+                                setEditNewKeyword(remaining);
+                              } else {
+                                setEditNewKeyword(val);
+                              }
+                            }}
                             onKeyDown={(e) => {
-                              if ((e.key === "Enter" || e.key === ",") && editNewKeyword.trim()) {
+                              if (e.key === "Enter" && editNewKeyword.trim()) {
                                 e.preventDefault();
                                 const kw = editNewKeyword.trim().toLowerCase();
+                                const el = e.currentTarget;
                                 if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
                                 setEditNewKeyword("");
+                                requestAnimationFrame(() => el.focus());
                               }
                             }}
                             onBlur={() => {
@@ -651,13 +668,30 @@ export default function AccountsManagement() {
                     <input
                       type="text"
                       value={newAccKeyword}
-                      onChange={(e) => { setNewAccKeyword(e.target.value); setNewAccKeywordError(""); }}
+                      onChange={(e) => {
+                        setNewAccKeywordError("");
+                        const val = e.target.value;
+                        if (val.includes(",")) {
+                          const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
+                          const remaining = val.endsWith(",") ? "" : parts.pop() || "";
+                          setNewAccKeywords((prev) => {
+                            const next = [...prev];
+                            for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
+                            return next;
+                          });
+                          setNewAccKeyword(remaining);
+                        } else {
+                          setNewAccKeyword(val);
+                        }
+                      }}
                       onKeyDown={(e) => {
-                        if ((e.key === "Enter" || e.key === ",") && newAccKeyword.trim()) {
+                        if (e.key === "Enter" && newAccKeyword.trim()) {
                           e.preventDefault();
                           const kw = newAccKeyword.trim().toLowerCase();
+                          const el = e.currentTarget;
                           if (!newAccKeywords.includes(kw)) setNewAccKeywords((prev) => [...prev, kw]);
                           setNewAccKeyword("");
+                          requestAnimationFrame(() => el.focus());
                         }
                       }}
                       onBlur={() => {
