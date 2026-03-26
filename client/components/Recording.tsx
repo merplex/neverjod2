@@ -58,15 +58,12 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       hasSpeechStartedRef.current = false;
       setIsListening(true);
       isListeningRef.current = true;
-      muteBeep()
-        .catch(() => {})
-        .then(() => {
-          try { recognitionRef.current.start(); }
-          catch (e) {
-            setIsListening(false);
-            isListeningRef.current = false;
-          }
-        });
+      muteBeep().catch(() => {}); // fire-and-forget — don't block start
+      try { recognitionRef.current.start(); }
+      catch (e) {
+        setIsListening(false);
+        isListeningRef.current = false;
+      }
     } catch (e) {
       setIsListening(false);
       isListeningRef.current = false;
@@ -161,19 +158,13 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
       // Auto-restart if: was listening, not manually stopped, autoRestart enabled
       if (isListeningRef.current && !manualStopRef.current && autoRestartRef.current) {
-        muteBeep()
-          .catch(() => {})
-          .then(() => {
-            if (!isListeningRef.current) return;
-            try {
-              recognition.start();
-            } catch (e) {
-              console.error("Auto-restart failed:", e);
-              setIsListening(false);
-              isListeningRef.current = false;
-            }
-          });
-        return; // keep isListening = true, don't reset UI
+        muteBeep().catch(() => {}); // fire-and-forget
+        try {
+          recognition.start();
+          return; // keep isListening = true, don't reset UI
+        } catch (e) {
+          console.error("Auto-restart failed:", e);
+        }
       }
 
       manualStopRef.current = false;
@@ -252,16 +243,13 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         setIsListening(true);
         isListeningRef.current = true;
 
-        // Start recognition (mute Android beep first)
-        muteBeep()
-          .catch(() => {})
-          .then(() => {
-            try { recognitionRef.current.start(); }
-            catch (e) {
-              setIsListening(false);
-              isListeningRef.current = false;
-            }
-          });
+        // Start recognition — mute beep fire-and-forget (must not delay start for WebView gesture context)
+        muteBeep().catch(() => {});
+        try { recognitionRef.current.start(); }
+        catch (e) {
+          setIsListening(false);
+          isListeningRef.current = false;
+        }
       }
     } catch (error) {
       console.error("Error toggling recognition:", (error as Error).message);
