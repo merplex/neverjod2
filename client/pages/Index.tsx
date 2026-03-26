@@ -178,7 +178,7 @@ export default function Index() {
   // Amount input state
   const [display, setDisplay] = useState("0");
   const [value, setValue] = useState(0);
-  const [numpadSize, setNumpadSize] = useState(80);
+  const [numpadSize, setNumpadSize] = useState(70);
   const [isLocked, setIsLocked] = useState(false);
   const [isRightMode, setIsRightMode] = useState(false);
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
@@ -268,7 +268,6 @@ export default function Index() {
 
   // Calculator mode operator
   const handleOperator = (op: string) => {
-    if (isLocked) return;
     const last = display.slice(-1);
     if (['+', '-', '*', '/'].includes(last)) {
       setDisplay(display.slice(0, -1) + op);
@@ -467,23 +466,24 @@ export default function Index() {
     if (!isCalcMode) setValue(parseFloat(newDisplay) || 0);
   };
 
-  const handleConfirm = () => {
-    if (isCalcMode) {
-      try {
-        const clean = display.replace(/\s+/g, "");
-        if (/^[\d+\-*/.]+$/.test(clean) && clean) {
-          // eslint-disable-next-line no-new-func
-          const result = new Function(`return ${clean}`)() as number;
-          if (typeof result === "number" && isFinite(result) && result > 0) {
-            const val = parseFloat(result.toFixed(4));
-            setDisplay(String(val));
-            setValue(val);
-          }
+  const handleEquals = () => {
+    try {
+      const clean = display.replace(/\s+/g, "");
+      if (/^[\d+\-*/.]+$/.test(clean) && clean) {
+        // eslint-disable-next-line no-new-func
+        const result = new Function(`return ${clean}`)() as number;
+        if (typeof result === "number" && isFinite(result) && result > 0) {
+          const val = parseFloat(result.toFixed(4));
+          setDisplay(String(val));
+          setValue(val);
         }
-      } catch {}
-      setIsCalcMode(false);
-      return;
-    }
+      }
+    } catch {}
+    setIsCalcMode(false);
+  };
+
+  const handleConfirm = () => {
+    if (isCalcMode) { handleEquals(); return; }
     if (selectedCategory && selectedAccount && value > 0) {
       saveTransaction(selectedCategory, selectedAccount, value);
     }
@@ -790,10 +790,11 @@ export default function Index() {
                     <button
                       key={size}
                       onClick={() => setNumpadSize(size)}
+                      disabled={isLocked}
                       className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                         numpadSize === size
                           ? "bg-theme-600 text-white shadow-md"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          : isLocked ? "bg-slate-100 text-slate-300 cursor-not-allowed" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
                       {size}%
@@ -801,10 +802,11 @@ export default function Index() {
                   ))}
                   <button
                     onClick={() => setIsRightMode(!isRightMode)}
+                    disabled={isLocked}
                     className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
                       isRightMode
-                        ? "bg-theme-600 text-white shadow-md"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        ? isLocked ? "bg-theme-300 text-white cursor-not-allowed" : "bg-theme-600 text-white shadow-md"
+                        : isLocked ? "bg-slate-100 text-slate-300 cursor-not-allowed" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
                     Right
@@ -863,7 +865,7 @@ export default function Index() {
                       </div>
                     </div>
 
-                    {/* Section D: Calc toggle & Lock */}
+                    {/* Section D: Calc toggle & Lock/= */}
                     <div className="flex flex-col gap-2 flex-1 min-h-0">
                       {isCalcMode ? (
                         <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
@@ -871,8 +873,7 @@ export default function Index() {
                             <button
                               key={op}
                               onClick={() => handleOperator(op)}
-                              disabled={isLocked}
-                              className="h-full bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm disabled:opacity-40"
+                              className="h-full bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
                             >
                               {op === '*' ? '×' : op === '/' ? '÷' : op}
                             </button>
@@ -880,13 +881,8 @@ export default function Index() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => { if (!isLocked) setIsCalcMode(true); }}
-                          disabled={isLocked}
-                          className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
-                            isLocked
-                              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                              : "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold"
-                          }`}
+                          onClick={() => setIsCalcMode(true)}
+                          className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none"
                         >
                           <div className="flex flex-col items-center gap-1">
                             <Calculator size={24} />
@@ -894,16 +890,25 @@ export default function Index() {
                           </div>
                         </button>
                       )}
-                      <button
-                        onClick={handleToggleLock}
-                        className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
-                          isLocked
-                            ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
-                            : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
-                        }`}
-                      >
-                        {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
-                      </button>
+                      {isCalcMode ? (
+                        <button
+                          onClick={handleEquals}
+                          className="rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold text-2xl flex-1 bg-gradient-to-br from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white"
+                        >
+                          =
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleToggleLock}
+                          className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
+                            isLocked
+                              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
+                              : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
+                          }`}
+                        >
+                          {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
