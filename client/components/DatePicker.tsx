@@ -137,6 +137,12 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
           >
             CANCEL
           </button>
+          <button
+            onClick={() => { onChange(currentDate); onClose(); }}
+            className="px-4 py-2 text-theme-600 font-semibold hover:text-theme-700 transition-colors text-sm"
+          >
+            OK
+          </button>
         </div>
       </div>
     </div>
