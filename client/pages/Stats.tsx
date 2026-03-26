@@ -134,6 +134,17 @@ export default function Stats() {
                   </div>
                 );
               })}
+              {summaryData.length > 0 && (() => {
+                const total = summaryData.reduce((s: number, acc: any) => s + Number(acc.balance || 0) + acc.income - acc.expense, 0);
+                return (
+                  <div className="flex items-center justify-between px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
+                    <p className="font-semibold text-slate-600 text-sm">รวมทั้งหมด</p>
+                    <p className={`font-bold text-sm ${total >= 0 ? "text-slate-800" : "text-red-500"}`}>
+                      {total >= 0 ? "+" : "-"}฿{Math.abs(total).toLocaleString()}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -206,12 +217,18 @@ export default function Stats() {
             {expenseByCat.length === 0 ? (
               <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">ไม่มีรายจ่ายในช่วงนี้</p>
             ) : (
-              expenseByCat.map(([cat, total]) => (
-                <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                  <span className="text-sm text-slate-700">{cat}</span>
-                  <span className="text-sm font-semibold text-red-500">-฿{total.toLocaleString()}</span>
+              <>
+                {expenseByCat.map(([cat, total]) => (
+                  <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                    <span className="text-sm text-slate-700">{cat}</span>
+                    <span className="text-sm font-semibold text-red-500">-฿{total.toLocaleString()}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+                  <span className="text-sm font-semibold text-slate-600">รวมรายจ่าย</span>
+                  <span className="text-sm font-bold text-red-500">-฿{expenseByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
                 </div>
-              ))
+              </>
             )}
 
             {/* Income section */}
@@ -221,12 +238,18 @@ export default function Stats() {
             {incomeByCat.length === 0 ? (
               <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">ไม่มีรายรับในช่วงนี้</p>
             ) : (
-              incomeByCat.map(([cat, total]) => (
-                <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                  <span className="text-sm text-slate-700">{cat}</span>
-                  <span className="text-sm font-semibold text-green-600">+฿{total.toLocaleString()}</span>
+              <>
+                {incomeByCat.map(([cat, total]) => (
+                  <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                    <span className="text-sm text-slate-700">{cat}</span>
+                    <span className="text-sm font-semibold text-green-600">+฿{total.toLocaleString()}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+                  <span className="text-sm font-semibold text-slate-600">รวมรายรับ</span>
+                  <span className="text-sm font-bold text-green-600">+฿{incomeByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
                 </div>
-              ))
+              </>
             )}
 
             {/* Per-account section */}
@@ -243,7 +266,7 @@ export default function Stats() {
                   <span className="text-xs font-medium text-slate-400 text-right">รายจ่าย</span>
                 </div>
                 {accountMonthData.map((acc: any) => (
-                  <div key={acc.id} className="grid grid-cols-3 px-4 py-3 items-center border-b border-slate-100 last:border-b-0">
+                  <div key={acc.id} className="grid grid-cols-3 px-4 py-3 items-center border-b border-slate-100">
                     <span className="text-sm text-slate-700 font-medium truncate pr-2">{acc.name}</span>
                     <span className="text-sm font-semibold text-green-600 text-center">
                       {acc.income > 0 ? `+฿${acc.income.toLocaleString()}` : "—"}
@@ -253,6 +276,15 @@ export default function Stats() {
                     </span>
                   </div>
                 ))}
+                <div className="grid grid-cols-3 px-4 py-3 items-center bg-slate-50">
+                  <span className="text-sm font-semibold text-slate-600">รวม</span>
+                  <span className="text-sm font-bold text-green-600 text-center">
+                    +฿{accountMonthData.reduce((s: number, a: any) => s + a.income, 0).toLocaleString()}
+                  </span>
+                  <span className="text-sm font-bold text-red-500 text-right">
+                    -฿{accountMonthData.reduce((s: number, a: any) => s + a.expense, 0).toLocaleString()}
+                  </span>
+                </div>
               </>
             )}
           </div>

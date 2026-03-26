@@ -195,6 +195,19 @@ export default function AllTransactions() {
 
   const allTransactions = useMemo(() => getRealTransactionsList(), [refreshKey]);
 
+  // Running balance per transaction (ascending order, based on start balance + all txns)
+  const runningBalances = useMemo(() => {
+    const currentBalance: Record<string, number> = {};
+    storedAccounts.forEach((acc: any) => { currentBalance[acc.id] = Number(acc.balance) || 0; });
+    const asc = [...allTransactions].sort((a, b) => a.date.getTime() - b.date.getTime() || a.id.localeCompare(b.id));
+    const map: Record<string, number> = {};
+    asc.forEach((t) => {
+      currentBalance[t.accountId] = (currentBalance[t.accountId] || 0) + (t.type === "income" ? t.amount : -t.amount);
+      map[t.id] = currentBalance[t.accountId];
+    });
+    return map;
+  }, [allTransactions, storedAccounts]);
+
   const selectedAccountName = useMemo(() => {
     if (!accountIdFilter) return "All Accounts";
     const acc = storedAccounts.find((a: any) => a.id === accountIdFilter);
@@ -446,6 +459,11 @@ export default function AllTransactions() {
                       <span className={`font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-red-500"}`}>
                         {transaction.type === "income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
                       </span>
+                      {runningBalances[transaction.id] !== undefined && (
+                        <p className={`text-[10px] mt-0.5 ${runningBalances[transaction.id] >= 0 ? "text-slate-400" : "text-red-400"}`}>
+                          ฿{runningBalances[transaction.id].toLocaleString()}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
