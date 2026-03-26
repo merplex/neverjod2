@@ -96,14 +96,15 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
 
 // --- Push local data to server ---
 
-export async function syncPush(token: string) {
+// force=true: stamp everything with now (manual sync — user asserts their data is truth)
+// force=false: use existing timestamp or epoch (auto sync — server data wins if newer)
+export async function syncPush(token: string, force = false) {
   const now = new Date().toISOString();
-  // Use epoch for items without updated_at so server data always wins over unmodified defaults
   const EPOCH = "1970-01-01T00:00:00.000Z";
   const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
-    .map((c) => ({ ...c, updated_at: c.updated_at || EPOCH }));
+    .map((c) => ({ ...c, updated_at: force ? now : (c.updated_at || EPOCH) }));
   const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
-    .map((a) => ({ ...a, updated_at: a.updated_at || EPOCH }));
+    .map((a) => ({ ...a, updated_at: force ? now : (a.updated_at || EPOCH) }));
   // Derive type from category if not stored on transaction
   const transactions = (JSON.parse(localStorage.getItem("app_transactions") || "[]") as any[])
     .map((tx) => {
@@ -161,7 +162,7 @@ export async function syncPull(token: string) {
 
 // --- Full sync (push then pull) ---
 
-export async function syncAll(token: string): Promise<void> {
-  await syncPush(token);
+export async function syncAll(token: string, force = false): Promise<void> {
+  await syncPush(token, force);
   await syncPull(token);
 }

@@ -72,6 +72,7 @@ export default function Settings() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "ok" | "error">("idle");
+  const [syncDirection, setSyncDirection] = useState<"server" | "user" | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
     const t = localStorage.getItem("last_sync_at");
     if (!t) return "";
@@ -112,7 +113,8 @@ export default function Settings() {
       setCloudEmail(result.email);
       // Auto sync after login
       setSyncStatus("syncing");
-      await syncAll(result.token);
+      await syncAll(result.token, false);
+      setSyncDirection("server");
       setSyncStatus("ok");
       refreshLastSyncTime();
     } catch (err: any) {
@@ -135,7 +137,8 @@ export default function Settings() {
     if (!cloudToken) return;
     setSyncStatus("syncing");
     try {
-      await syncAll(cloudToken);
+      await syncAll(cloudToken, true);
+      setSyncDirection("client");
       setSyncStatus("ok");
       refreshLastSyncTime();
     } catch {
@@ -395,7 +398,13 @@ export default function Settings() {
               >
                 <RefreshCw size={15} className={syncStatus === "syncing" ? "animate-spin" : ""} />
                 <span>
-                  {syncStatus === "syncing" ? "กำลังซิงค์อยู่..." : syncStatus === "error" ? "ซิงค์ล้มเหลว ✗" : syncStatus === "ok" && lastSyncTime ? `ซิงค์แล้ว · ${lastSyncTime}` : "ซิงค์ตอนนี้"}
+                  {syncStatus === "syncing"
+                    ? "กำลังซิงค์อยู่..."
+                    : syncStatus === "error"
+                    ? "ซิงค์ล้มเหลว ✗"
+                    : syncStatus === "ok" && lastSyncTime
+                    ? `ซิงค์แล้ว · ${lastSyncTime} · from ${syncDirection ?? "server"}`
+                    : "ซิงค์ตอนนี้"}
                 </span>
               </button>
             </div>
