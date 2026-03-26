@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight, RefreshCw, ArrowRightLeft } from "lucide-react";
+import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 import AddTransactionModal from "../components/AddTransactionModal";
 
@@ -437,8 +437,8 @@ export default function AllTransactions() {
                         <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
                         <span className="text-xs font-medium text-slate-600">{transaction.accountName}</span>
                         <span className="text-xs font-semibold text-theme-600">{transaction.category}</span>
-                        {transaction.isRepeat && <RefreshCw size={10} className="text-theme-400 flex-shrink-0" />}
-                        {transaction.isTransfer && <ArrowRightLeft size={10} className="text-blue-400 flex-shrink-0" />}
+                        {transaction.isRepeat && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-theme-100 text-theme-600 leading-none flex-shrink-0">repeat</span>}
+                        {transaction.isTransfer && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-500 leading-none flex-shrink-0">transfer</span>}
                       </div>
                       <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>
