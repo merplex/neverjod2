@@ -124,7 +124,7 @@ export default function Stats() {
           ) : (
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               {summaryData.map((acc: any, i: number) => {
-                const balance = (acc.balance || 0) + acc.income - acc.expense;
+                const balance = Number(acc.balance || 0) + acc.income - acc.expense;
                 return (
                   <div key={acc.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-slate-100" : ""}`}>
                     <p className="font-medium text-slate-800">{acc.name}</p>

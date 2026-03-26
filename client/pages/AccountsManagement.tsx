@@ -538,9 +538,6 @@ export default function AccountsManagement() {
                           {isOverLimitAcc(account.id) && <Lock size={11} className="text-amber-500" />}
                         </p>
                         <p className="text-xs text-slate-500">{account.type}</p>
-                        <p className="text-sm font-semibold text-theme-600 mt-1">
-                          ฿{account.balance?.toLocaleString()}
-                        </p>
                         {account.keywords && account.keywords.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1">
                             {account.keywords.map((keyword) => (

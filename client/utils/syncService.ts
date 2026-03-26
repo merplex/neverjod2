@@ -68,7 +68,8 @@ function normalizeServerItem(item: any): any {
   if ("icon_id" in out) { out.iconId = out.icon_id; delete out.icon_id; }
   if ("category_id" in out) { out.categoryId = out.category_id; delete out.category_id; }
   if ("account_id" in out) { out.accountId = out.account_id; delete out.account_id; }
-  if ("start_balance" in out) { out.balance = out.start_balance; delete out.start_balance; }
+  if ("start_balance" in out) { out.balance = parseFloat(out.start_balance) || 0; delete out.start_balance; }
+  if ("amount" in out && typeof out.amount === "string") { out.amount = parseFloat(out.amount) || 0; }
   // keywords comes as JSONB array from PG; ensure it's an array
   if (out.keywords && !Array.isArray(out.keywords)) {
     try { out.keywords = JSON.parse(out.keywords); } catch { out.keywords = []; }
