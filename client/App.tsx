@@ -53,9 +53,17 @@ function AppContent() {
   useEffect(() => {
     checkAndExecuteRepeats();
     navigate("/", { replace: true });
-    // Auto-sync on startup if logged in and premium
+    // Refresh app_premium from JWT payload (in case DB was updated since last login)
     const token = localStorage.getItem("cloud_token");
-    if (token) syncAll(token).catch(() => {});
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (typeof payload.isPremium === "boolean") {
+          localStorage.setItem("app_premium", payload.isPremium ? "true" : "false");
+        }
+      } catch {}
+      syncAll(token).catch(() => {});
+    }
   }, []);
 
   useEffect(() => {

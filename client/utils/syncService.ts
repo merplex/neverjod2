@@ -148,6 +148,10 @@ export async function syncPull(token: string) {
   if (data.categories?.length) mergeIntoLocal("app_categories", data.categories);
   if (data.accounts?.length) mergeIntoLocal("app_accounts", data.accounts);
   if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions);
+  // Always refresh premium status from server (handles DB changes without re-login)
+  if (typeof data.isPremium === "boolean") {
+    localStorage.setItem("app_premium", data.isPremium ? "true" : "false");
+  }
   localStorage.setItem("last_sync_at", data.server_time);
   return true;
 }
