@@ -294,7 +294,7 @@ export default function Categories() {
                 if (!token) { setShowCloudAuth(true); return; }
                 if (!isPremium) { showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`); return; }
               }
-              setNewName(""); setNewIconId("other"); setNewKeywords([]); setNewKeyword(""); setNewKeywordError(""); setShowAddForm(true);
+              setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true);
             }}
             className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
             title="Add category"
@@ -591,7 +591,7 @@ export default function Categories() {
           onSuccess={(premium) => {
             setShowCloudAuth(false);
             if (premium) {
-              setNewName(""); setNewIconId("other"); setNewKeywords([]); setNewKeyword(""); setNewKeywordError(""); setShowAddForm(true);
+              setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true);
             } else {
               showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
             }
