@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
 import CloudAuthModal from "../components/CloudAuthModal";
 import PremiumModal from "../components/PremiumModal";
+import { markDeleted } from "../utils/syncService";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import TimePicker from "../components/TimePicker";
@@ -256,6 +257,8 @@ export default function AccountsManagement() {
       localStorage.setItem("app_transactions", JSON.stringify(updated));
     } catch {}
     // Remove account from list
+    const deletedAcc = accounts.find((a) => a.id === accountId);
+    if (deletedAcc) markDeleted("account", deletedAcc);
     const updatedAccounts = accounts.filter((a) => a.id !== accountId);
     setAccounts(updatedAccounts);
     localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));

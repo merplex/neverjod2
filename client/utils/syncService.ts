@@ -24,6 +24,30 @@ export async function apiLogin(email: string, password: string) {
   return data as { token: string; email: string; isPremium: boolean };
 }
 
+// --- Soft-delete tombstone helpers ---
+
+export function markDeleted(type: "category" | "account" | "transaction", item: any) {
+  const key = "app_pending_deletes";
+  const pending: any[] = JSON.parse(localStorage.getItem(key) || "[]");
+  if (!pending.find((p) => p._type === type && p.id === item.id)) {
+    pending.push({ ...item, _type: type, deleted_at: new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(pending));
+  }
+}
+
+function flushPendingDeletes() {
+  localStorage.removeItem("app_pending_deletes");
+}
+
+function getPendingDeletes(): { categories: any[]; accounts: any[]; transactions: any[] } {
+  const pending: any[] = JSON.parse(localStorage.getItem("app_pending_deletes") || "[]");
+  return {
+    categories: pending.filter((p) => p._type === "category"),
+    accounts: pending.filter((p) => p._type === "account"),
+    transactions: pending.filter((p) => p._type === "transaction"),
+  };
+}
+
 // --- Fingerprint ---
 
 export function makeFingerprint(tx: any): string {
@@ -38,10 +62,25 @@ export function makeFingerprint(tx: any): string {
 
 // --- Merge helper (O(n) via Map) ---
 
+function normalizeServerItem(item: any): any {
+  const out = { ...item };
+  // Map snake_case DB columns → camelCase used by client
+  if ("icon_id" in out) { out.iconId = out.icon_id; delete out.icon_id; }
+  if ("category_id" in out) { out.categoryId = out.category_id; delete out.category_id; }
+  if ("account_id" in out) { out.accountId = out.account_id; delete out.account_id; }
+  if ("start_balance" in out) { out.balance = out.start_balance; delete out.start_balance; }
+  // keywords comes as JSONB array from PG; ensure it's an array
+  if (out.keywords && !Array.isArray(out.keywords)) {
+    try { out.keywords = JSON.parse(out.keywords); } catch { out.keywords = []; }
+  }
+  return out;
+}
+
 function mergeIntoLocal(storageKey: string, serverItems: any[]) {
   const local: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
   const localMap = new Map(local.map((item) => [item.id, item]));
-  for (const serverItem of serverItems) {
+  for (const raw of serverItems) {
+    const serverItem = normalizeServerItem(raw);
     if (serverItem.deleted_at) {
       localMap.delete(serverItem.id);
     } else {
@@ -70,13 +109,28 @@ export async function syncPush(token: string) {
       return { ...tx, type, fingerprint: tx.fingerprint || makeFingerprint(tx), updated_at: tx.updated_at || now };
     });
 
+  // Merge soft-delete tombstones
+  const pending = getPendingDeletes();
+  const allCategories = mergeWithTombstones(categories, pending.categories, now);
+  const allAccounts = mergeWithTombstones(accounts, pending.accounts, now);
+  const allTransactions = mergeWithTombstones(transactions, pending.transactions, now);
+
   const res = await fetch(`${API_BASE}/sync/push`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ categories, accounts, transactions }),
+    body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions }),
   });
   if (!res.ok) throw new Error("Push failed");
+  flushPendingDeletes();
   return true;
+}
+
+function mergeWithTombstones(live: any[], tombstones: any[], now: string): any[] {
+  const map = new Map(live.map((i) => [i.id, i]));
+  for (const t of tombstones) {
+    if (!map.has(t.id)) map.set(t.id, { ...t, updated_at: t.deleted_at || now });
+  }
+  return Array.from(map.values());
 }
 
 // --- Pull server data to local ---

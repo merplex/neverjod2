@@ -29,24 +29,28 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
     await Promise.all([
       ...categories.map((cat: any) =>
         pool.query(
-          `INSERT INTO sync_categories (id, user_id, name, type, icon, updated_at, deleted_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7)
+          `INSERT INTO sync_categories (id, user_id, name, type, icon, icon_id, keywords, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
            ON CONFLICT (id, user_id) DO UPDATE
              SET name = EXCLUDED.name, type = EXCLUDED.type, icon = EXCLUDED.icon,
+                 icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
              WHERE sync_categories.updated_at < EXCLUDED.updated_at`,
-          [cat.id, userId, cat.name, cat.type, cat.icon || null, cat.updated_at, cat.deleted_at || null]
+          [cat.id, userId, cat.name, cat.type, null, cat.iconId || null,
+           JSON.stringify(cat.keywords || []), cat.updated_at, cat.deleted_at || null]
         )
       ),
       ...accounts.map((acc: any) =>
         pool.query(
-          `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, updated_at, deleted_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+          `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, icon_id, keywords, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
            ON CONFLICT (id, user_id) DO UPDATE
              SET name = EXCLUDED.name, type = EXCLUDED.type, start_balance = EXCLUDED.start_balance,
-                 icon = EXCLUDED.icon, updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
+                 icon = EXCLUDED.icon, icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
+                 updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
              WHERE sync_accounts.updated_at < EXCLUDED.updated_at`,
-          [acc.id, userId, acc.name, acc.type || null, acc.startBalance || 0, acc.icon || null, acc.updated_at, acc.deleted_at || null]
+          [acc.id, userId, acc.name, acc.type || null, acc.startBalance || acc.balance || 0,
+           null, acc.iconId || null, JSON.stringify(acc.keywords || []), acc.updated_at, acc.deleted_at || null]
         )
       ),
     ]);

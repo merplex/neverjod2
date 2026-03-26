@@ -5,6 +5,7 @@ import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
+import { markDeleted } from "../utils/syncService";
 
 interface Category {
   id: string;
@@ -218,6 +219,8 @@ export default function Categories() {
       );
       localStorage.setItem("app_transactions", JSON.stringify(updated));
     } catch {}
+    const deletedCat = categories.find((c) => c.id === catId);
+    if (deletedCat) markDeleted("category", deletedCat);
     const updatedCats = categories.filter((c) => c.id !== catId);
     setCategories(updatedCats);
     localStorage.setItem("app_categories", JSON.stringify(updatedCats));

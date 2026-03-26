@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X } from
 import { useState } from "react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { getTransaction } from "../utils/transactionData";
+import { markDeleted } from "../utils/syncService";
 import DatePicker from "../components/DatePicker";
 import TimePicker from "../components/TimePicker";
 import {
@@ -36,6 +37,8 @@ function updateLocalTransaction(id: string, updates: any) {
 function deleteLocalTransaction(id: string) {
   try {
     const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+    const tx = txns.find((t: any) => t.id === id);
+    if (tx) markDeleted("transaction", tx);
     localStorage.setItem("app_transactions", JSON.stringify(txns.filter((t: any) => t.id !== id)));
   } catch {}
 }
