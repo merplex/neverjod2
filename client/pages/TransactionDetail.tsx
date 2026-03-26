@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X } from "lucide-react";
 import { useState } from "react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { getTransaction } from "../utils/transactionData";
@@ -91,7 +91,12 @@ export default function TransactionDetail() {
   const [currentAccountId, setCurrentAccountId] = useState<string>(transaction?.accountId || "");
   const [currentAccountName, setCurrentAccountName] = useState<string>(transaction?.accountName || "");
   const [amount, setAmount] = useState<string>(transaction?.amount.toString() || "0");
-  const [isEditingAmount, setIsEditingAmount] = useState(false);
+  const [showAmountPad, setShowAmountPad] = useState(false);
+  const [numpadDisplay, setNumpadDisplay] = useState(transaction?.amount.toString() || "0");
+  const [numpadSize, setNumpadSize] = useState(80);
+  const [isRightMode, setIsRightMode] = useState(false);
+  const [isNumpadLocked, setIsNumpadLocked] = useState(false);
+  const [isCalcMode, setIsCalcMode] = useState(false);
   const [description, setDescription] = useState<string>(transaction?.description || "");
   const [currentDate, setCurrentDate] = useState<Date>(transaction?.date || new Date());
   const [currentTime, setCurrentTime] = useState<Date>(() => {
@@ -146,13 +151,6 @@ export default function TransactionDetail() {
     setShowAccountPicker(false);
   };
 
-  const handleAmountBlur = () => {
-    const val = parseFloat(amount) || 0;
-    setAmount(val.toString());
-    updateLocalTransaction(transactionId!, { amount: val });
-    setIsEditingAmount(false);
-  };
-
   const handleDescriptionBlur = () => {
     updateLocalTransaction(transactionId!, { description });
   };
@@ -180,6 +178,64 @@ export default function TransactionDetail() {
 
   const formatTime = (d: Date) =>
     `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+
+  // ---- numpad handlers ----
+  const handleNumpadClick = (num: number) => {
+    if (isNumpadLocked) return;
+    if (isCalcMode) {
+      setNumpadDisplay(prev => prev === "0" ? num.toString() : prev + num.toString());
+    } else {
+      setNumpadDisplay(prev => prev === "0" ? num.toString() : prev + num.toString());
+    }
+  };
+  const handleNumpadDecimal = () => {
+    if (isNumpadLocked) return;
+    if (isCalcMode) {
+      const last = numpadDisplay.slice(-1);
+      if (/\d/.test(last) && !numpadDisplay.split(/[+\-*/]/).pop()!.includes(".")) {
+        setNumpadDisplay(numpadDisplay + ".");
+      }
+    } else {
+      if (!numpadDisplay.includes(".")) setNumpadDisplay(numpadDisplay + ".");
+    }
+  };
+  const handleNumpadDelete = () => {
+    if (isNumpadLocked) return;
+    setNumpadDisplay(prev => prev.slice(0, -1) || "0");
+  };
+  const handleNumpadOperator = (op: string) => {
+    if (isNumpadLocked) return;
+    const last = numpadDisplay.slice(-1);
+    if (['+', '-', '*', '/'].includes(last)) {
+      setNumpadDisplay(numpadDisplay.slice(0, -1) + op);
+    } else if (numpadDisplay !== "0") {
+      setNumpadDisplay(numpadDisplay + op);
+    }
+  };
+  const handleNumpadSave = () => {
+    if (isCalcMode) {
+      try {
+        const clean = numpadDisplay.replace(/\s+/g, "");
+        if (/^[\d+\-*/.]+$/.test(clean) && clean) {
+          // eslint-disable-next-line no-new-func
+          const result = new Function(`return ${clean}`)() as number;
+          if (typeof result === "number" && isFinite(result) && result > 0) {
+            const val = parseFloat(result.toFixed(4));
+            setNumpadDisplay(String(val));
+            setIsCalcMode(false);
+            return;
+          }
+        }
+      } catch {}
+      setIsCalcMode(false);
+      return;
+    }
+    const val = parseFloat(numpadDisplay) || 0;
+    setAmount(val.toString());
+    setNumpadDisplay(val.toString());
+    updateLocalTransaction(transactionId!, { amount: val });
+    setShowAmountPad(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -238,25 +294,14 @@ export default function TransactionDetail() {
           {/* Amount Row */}
           <div className="flex items-center px-4 py-3">
             <span className="text-xs text-slate-400 w-20">Amount</span>
-            {isEditingAmount ? (
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                onBlur={handleAmountBlur}
-                autoFocus
-                className="flex-1 text-sm font-semibold text-slate-800 outline-none border-b border-theme-400 bg-transparent"
-              />
-            ) : (
-              <button
-                onClick={() => setIsEditingAmount(true)}
-                className="flex-1 text-left"
-              >
-                <span className={`text-sm font-semibold ${signColor}`}>
-                  {sign}฿{parseFloat(amount).toLocaleString()}
-                </span>
-              </button>
-            )}
+            <button
+              onClick={() => { setNumpadDisplay(amount); setShowAmountPad(true); }}
+              className="flex-1 text-left"
+            >
+              <span className={`text-sm font-semibold ${signColor}`}>
+                {sign}฿{parseFloat(amount).toLocaleString()}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -346,6 +391,106 @@ export default function TransactionDetail() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Amount Numpad Bottom Sheet */}
+      {showAmountPad && (
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowAmountPad(false)} />
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "50vh" }}>
+            <div className="px-4 pt-3 pb-4 flex flex-col flex-1 min-h-0">
+              {/* Size Controls */}
+              <div className="flex gap-2 mb-2 flex-shrink-0">
+                {[70, 75, 80, 85].map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setNumpadSize(size)}
+                    className={`flex-1 py-1.5 rounded-lg font-semibold text-sm transition-all ${numpadSize === size ? "bg-theme-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                  >
+                    {size}%
+                  </button>
+                ))}
+                <button
+                  onClick={() => setIsRightMode(!isRightMode)}
+                  className={`flex-1 py-1.5 rounded-lg font-semibold text-sm transition-all ${isRightMode ? "bg-theme-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                >
+                  Right
+                </button>
+              </div>
+              {/* Display */}
+              <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2 flex-shrink-0">
+                <div className={`text-2xl font-bold font-mono tracking-tight ${signColor.replace("text-", "text-").replace("500", "300").replace("600", "300")}`}>
+                  {sign}฿{numpadDisplay}
+                </div>
+                <button onClick={() => setShowAmountPad(false)} className="p-1.5 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0">
+                  <X size={22} />
+                </button>
+              </div>
+              {/* Numpad C+D */}
+              <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
+                <div className="flex flex-col gap-1.5 min-h-0" style={{ width: `${numpadSize}%` }}>
+                  <div className="grid grid-cols-3 gap-1.5 flex-1 min-h-0" style={{ gridTemplateRows: "repeat(3, 1fr)" }}>
+                    {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
+                      <button key={num} onClick={() => handleNumpadClick(num)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 flex-shrink-0" style={{ height: 44 }}>
+                    {isRightMode ? (
+                      <>
+                        <button onClick={handleNumpadDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                        <button onClick={handleNumpadDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                        <button onClick={() => handleNumpadClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                        <button onClick={() => handleNumpadClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                        <button onClick={handleNumpadDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                        <button onClick={handleNumpadDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {/* Section D: Calc toggle + Lock */}
+                <div className="flex flex-col gap-1.5 flex-1 min-h-0">
+                  {isCalcMode ? (
+                    <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
+                      {(['+', '-', '*', '/'] as const).map((op) => (
+                        <button
+                          key={op}
+                          onClick={() => handleNumpadOperator(op)}
+                          disabled={isNumpadLocked}
+                          className="h-full bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm disabled:opacity-40"
+                        >
+                          {op === '*' ? '×' : op === '/' ? '÷' : op}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { if (!isNumpadLocked) setIsCalcMode(true); }}
+                      className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${isNumpadLocked ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold"}`}
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <Calculator size={24} />
+                        <span className="text-xs">Calc</span>
+                      </div>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsNumpadLocked(!isNumpadLocked)}
+                    className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${isNumpadLocked ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white" : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"}`}
+                  >
+                    {isNumpadLocked ? <Lock size={24} /> : <LockOpen size={24} />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

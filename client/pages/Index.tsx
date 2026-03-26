@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Mic, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
+import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
-import { calculateFromVoice } from "../utils/voiceCalculator";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
 import { matchCategory, matchAccount } from "../utils/keywordMatch";
 
@@ -184,12 +183,8 @@ export default function Index() {
   const [isRightMode, setIsRightMode] = useState(false);
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
 
-  // Voice calculator toggle state
-  const [isVoiceCalcActive, setIsVoiceCalcActive] = useState(false);
-  const [voiceCalcStartTrigger, setVoiceCalcStartTrigger] = useState(0);
-  const [voiceCalcStopTrigger, setVoiceCalcStopTrigger] = useState(0);
-  const voiceCalcTranscriptRef = useRef("");
-  const voiceCalcActiveRef = useRef(false);
+  // Calculator mode
+  const [isCalcMode, setIsCalcMode] = useState(false);
 
   // Auto-start voice when category page is shown (only if voiceAutoStart is on)
   const [voiceStartTrigger, setVoiceStartTrigger] = useState(0);
@@ -271,36 +266,14 @@ export default function Index() {
     localStorage.setItem("app_categories", JSON.stringify(categoriesList));
   };
 
-  // Voice calculator handlers
-  const handleVoiceCalcTranscript = (text: string) => {
-    if (!voiceCalcActiveRef.current) return; // ignore late transcripts after stop
-    const accumulated = (voiceCalcTranscriptRef.current + " " + text).trim();
-    voiceCalcTranscriptRef.current = accumulated;
-    const { expression } = calculateFromVoice(accumulated);
-    if (expression.trim()) setDisplay(expression);
-  };
-
-  const handleVoiceCalcToggle = () => {
+  // Calculator mode operator
+  const handleOperator = (op: string) => {
     if (isLocked) return;
-    if (isVoiceCalcActive) {
-      // Immediately block new transcripts, then stop recognition
-      voiceCalcActiveRef.current = false;
-      setVoiceCalcStopTrigger((n) => n + 1);
-      setIsVoiceCalcActive(false);
-      // Calculate from snapshot at this exact moment
-      const snapshot = voiceCalcTranscriptRef.current;
-      voiceCalcTranscriptRef.current = "";
-      const { result, error } = calculateFromVoice(snapshot);
-      if (!error && result !== 0) {
-        setDisplay(result.toString());
-        setValue(result);
-      }
-    } else {
-      // Start recording
-      voiceCalcActiveRef.current = true;
-      voiceCalcTranscriptRef.current = "";
-      setIsVoiceCalcActive(true);
-      setVoiceCalcStartTrigger((n) => n + 1);
+    const last = display.slice(-1);
+    if (['+', '-', '*', '/'].includes(last)) {
+      setDisplay(display.slice(0, -1) + op);
+    } else if (display !== "0") {
+      setDisplay(display + op);
     }
   };
 
@@ -463,29 +436,54 @@ export default function Index() {
   };
 
   const handleNumberClick = (num: number) => {
-    if (display === "0") {
-      setDisplay(num.toString());
-      setValue(num);
+    if (isCalcMode) {
+      setDisplay(prev => prev === "0" ? num.toString() : prev + num.toString());
     } else {
-      const newValue = display + num.toString();
-      setDisplay(newValue);
-      setValue(parseFloat(newValue));
+      if (display === "0") {
+        setDisplay(num.toString());
+        setValue(num);
+      } else {
+        const newValue = display + num.toString();
+        setDisplay(newValue);
+        setValue(parseFloat(newValue));
+      }
     }
   };
 
   const handleDecimal = () => {
-    if (!display.includes(".")) {
-      setDisplay(display + ".");
+    if (isCalcMode) {
+      const last = display.slice(-1);
+      if (/\d/.test(last) && !display.split(/[+\-*/]/).pop()!.includes(".")) {
+        setDisplay(display + ".");
+      }
+    } else {
+      if (!display.includes(".")) setDisplay(display + ".");
     }
   };
 
   const handleDelete = () => {
     const newDisplay = display.slice(0, -1) || "0";
     setDisplay(newDisplay);
-    setValue(parseFloat(newDisplay) || 0);
+    if (!isCalcMode) setValue(parseFloat(newDisplay) || 0);
   };
 
   const handleConfirm = () => {
+    if (isCalcMode) {
+      try {
+        const clean = display.replace(/\s+/g, "");
+        if (/^[\d+\-*/.]+$/.test(clean) && clean) {
+          // eslint-disable-next-line no-new-func
+          const result = new Function(`return ${clean}`)() as number;
+          if (typeof result === "number" && isFinite(result) && result > 0) {
+            const val = parseFloat(result.toFixed(4));
+            setDisplay(String(val));
+            setValue(val);
+          }
+        }
+      } catch {}
+      setIsCalcMode(false);
+      return;
+    }
     if (selectedCategory && selectedAccount && value > 0) {
       saveTransaction(selectedCategory, selectedAccount, value);
     }
@@ -865,36 +863,37 @@ export default function Index() {
                       </div>
                     </div>
 
-                    {/* Section D: Voice Calculator (long press) & Lock */}
+                    {/* Section D: Calc toggle & Lock */}
                     <div className="flex flex-col gap-2 flex-1 min-h-0">
-                      {/* Hidden Recording for voice calculator */}
-                      <div className="hidden">
-                        <Recording
-                          onTranscript={handleVoiceCalcTranscript}
-                          startTrigger={voiceCalcStartTrigger}
-                          stopTrigger={voiceCalcStopTrigger}
-                          autoRestart={false}
-                        />
-                      </div>
-                      <button
-                        onClick={handleVoiceCalcToggle}
-                        disabled={isLocked}
-                        className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
-                          isLocked
-                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                            : isVoiceCalcActive
-                            ? "bg-gradient-to-br from-green-400 to-green-500 text-white border-2 border-green-600"
-                            : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center gap-1">
-                            <Calculator size={24} />
-                            <Mic size={24} />
-                          </div>
-                          <span className="text-xs">{isVoiceCalcActive ? "Listening…" : "Calc"}</span>
+                      {isCalcMode ? (
+                        <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+                          {(['+', '-', '*', '/'] as const).map((op) => (
+                            <button
+                              key={op}
+                              onClick={() => handleOperator(op)}
+                              disabled={isLocked}
+                              className="h-full bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm disabled:opacity-40"
+                            >
+                              {op === '*' ? '×' : op === '/' ? '÷' : op}
+                            </button>
+                          ))}
                         </div>
-                      </button>
+                      ) : (
+                        <button
+                          onClick={() => { if (!isLocked) setIsCalcMode(true); }}
+                          disabled={isLocked}
+                          className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
+                            isLocked
+                              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                              : "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold"
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-1">
+                            <Calculator size={24} />
+                            <span className="text-xs">Calc</span>
+                          </div>
+                        </button>
+                      )}
                       <button
                         onClick={handleToggleLock}
                         className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${

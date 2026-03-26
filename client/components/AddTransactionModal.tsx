@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { X, Calculator, Lock, LockOpen, Mic, ChevronRight, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { X, Calculator, Lock, LockOpen, ChevronRight, ChevronDown } from "lucide-react";
 import {
   REPEAT_OPTIONS, RepeatOption,
   addRepeatTransaction, buildInitialNextDue,
@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import DatePicker from "./DatePicker";
 import TimePicker from "./TimePicker";
-import Recording from "./Recording";
-import { calculateFromVoice } from "../utils/voiceCalculator";
 
 // ---- icon maps ----
 const allIconsMap: Record<string, React.ComponentType<any>> = {
@@ -108,12 +106,8 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [repeatOption, setRepeatOption] = useState<RepeatOption>("monthly");
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
 
-  // voice calculator toggle state
-  const [isVoiceCalcActive, setIsVoiceCalcActive] = useState(false);
-  const [voiceCalcStartTrigger, setVoiceCalcStartTrigger] = useState(0);
-  const [voiceCalcStopTrigger, setVoiceCalcStopTrigger] = useState(0);
-  const voiceCalcTranscriptRef = useRef("");
-  const voiceCalcActiveRef = useRef(false);
+  // Calculator mode
+  const [isCalcMode, setIsCalcMode] = useState(false);
 
   // data from localStorage
   const [categoriesList] = useState<any[]>(() => {
@@ -149,61 +143,72 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   // ---- numpad handlers ----
   const handleNumberClick = (num: number) => {
     if (isLocked) return;
-    if (display === "0") {
-      setDisplay(num.toString());
-      setValue(num);
+    if (isCalcMode) {
+      setDisplay(prev => prev === "0" ? num.toString() : prev + num.toString());
     } else {
-      const newDisplay = display + num.toString();
-      setDisplay(newDisplay);
-      setValue(parseFloat(newDisplay));
+      if (display === "0") {
+        setDisplay(num.toString());
+        setValue(num);
+      } else {
+        const newDisplay = display + num.toString();
+        setDisplay(newDisplay);
+        setValue(parseFloat(newDisplay));
+      }
     }
   };
 
   const handleDecimal = () => {
-    if (isLocked || display.includes(".")) return;
-    setDisplay(display + ".");
+    if (isLocked) return;
+    if (isCalcMode) {
+      const last = display.slice(-1);
+      if (/\d/.test(last) && !display.split(/[+\-*/]/).pop()!.includes(".")) {
+        setDisplay(display + ".");
+      }
+    } else {
+      if (!display.includes(".")) setDisplay(display + ".");
+    }
   };
 
   const handleDelete = () => {
     if (isLocked) return;
     const newDisplay = display.slice(0, -1) || "0";
     setDisplay(newDisplay);
-    setValue(parseFloat(newDisplay) || 0);
+    if (!isCalcMode) setValue(parseFloat(newDisplay) || 0);
   };
 
   const handleAmountSave = () => {
+    if (isCalcMode) {
+      try {
+        const clean = display.replace(/\s+/g, "");
+        if (/^[\d+\-*/.]+$/.test(clean) && clean) {
+          // eslint-disable-next-line no-new-func
+          const result = new Function(`return ${clean}`)() as number;
+          if (typeof result === "number" && isFinite(result) && result > 0) {
+            const val = parseFloat(result.toFixed(4));
+            setDisplay(String(val));
+            setValue(val);
+            setIsCalcMode(false);
+            return; // show result, user can press Save again
+          }
+        }
+      } catch {}
+      setIsCalcMode(false);
+      return;
+    }
     setValue(parseFloat(display) || 0);
     setShowAmountPad(false);
     setShowDatePicker(true);
   };
 
   // ---- voice calc handlers ----
-  const handleVoiceCalcTranscript = (text: string) => {
-    if (!voiceCalcActiveRef.current) return; // ignore late transcripts after stop
-    const accumulated = (voiceCalcTranscriptRef.current + " " + text).trim();
-    voiceCalcTranscriptRef.current = accumulated;
-    const { expression } = calculateFromVoice(accumulated);
-    if (expression.trim()) setDisplay(expression);
-  };
-
-  const handleVoiceCalcToggle = () => {
+  // ---- calculator mode operator ----
+  const handleOperator = (op: string) => {
     if (isLocked) return;
-    if (isVoiceCalcActive) {
-      voiceCalcActiveRef.current = false;
-      setVoiceCalcStopTrigger((n) => n + 1);
-      setIsVoiceCalcActive(false);
-      const snapshot = voiceCalcTranscriptRef.current;
-      voiceCalcTranscriptRef.current = "";
-      const { result, error } = calculateFromVoice(snapshot);
-      if (!error && result !== 0) {
-        setDisplay(result.toString());
-        setValue(result);
-      }
-    } else {
-      voiceCalcActiveRef.current = true;
-      voiceCalcTranscriptRef.current = "";
-      setIsVoiceCalcActive(true);
-      setVoiceCalcStartTrigger((n) => n + 1);
+    const last = display.slice(-1);
+    if (['+', '-', '*', '/'].includes(last)) {
+      setDisplay(display.slice(0, -1) + op);
+    } else if (display !== "0") {
+      setDisplay(display + op);
     }
   };
 
@@ -490,16 +495,6 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
         <div className="fixed inset-0 z-[70] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowAmountPad(false)} />
           <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ height: "50vh" }}>
-          {/* hidden Recording for voice calculator */}
-          <div className="hidden">
-            <Recording
-              onTranscript={handleVoiceCalcTranscript}
-              startTrigger={voiceCalcStartTrigger}
-              stopTrigger={voiceCalcStopTrigger}
-              autoRestart={false}
-            />
-          </div>
-
           <div className="px-4 pt-3 pb-4 flex flex-col flex-1 min-h-0">
             {/* Section A: Size Controls */}
             <div className="flex gap-2 items-center mb-2 flex-shrink-0">
@@ -571,27 +566,37 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                 </div>
               </div>
 
-              {/* Section D: Voice Calc + Lock */}
+              {/* Section D: Calc toggle + Lock */}
               <div className="flex flex-col gap-1.5 flex-1 min-h-0">
-                <button
-                  onClick={handleVoiceCalcToggle}
-                  disabled={isLocked}
-                  className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
-                    isLocked
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : isVoiceCalcActive
-                      ? "bg-gradient-to-br from-green-400 to-green-500 text-white border-2 border-green-600"
-                      : "bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 text-green-700 font-bold"
-                  }`}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-1">
-                      <Calculator size={24} />
-                      <Mic size={24} />
-                    </div>
-                    <span className="text-xs">{isVoiceCalcActive ? "Listening…" : "Calc"}</span>
+                {isCalcMode ? (
+                  <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
+                    {(['+', '-', '*', '/'] as const).map((op) => (
+                      <button
+                        key={op}
+                        onClick={() => handleOperator(op)}
+                        disabled={isLocked}
+                        className="h-full bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm disabled:opacity-40"
+                      >
+                        {op === '*' ? '×' : op === '/' ? '÷' : op}
+                      </button>
+                    ))}
                   </div>
-                </button>
+                ) : (
+                  <button
+                    onClick={() => { if (!isLocked) setIsCalcMode(true); }}
+                    disabled={isLocked}
+                    className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none ${
+                      isLocked
+                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                        : "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold"
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <Calculator size={24} />
+                      <span className="text-xs">Calc</span>
+                    </div>
+                  </button>
+                )}
                 <button
                   onClick={() => setIsLocked(!isLocked)}
                   className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
