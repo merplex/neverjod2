@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import PremiumModal from "../components/PremiumModal";
+import CloudAuthModal from "../components/CloudAuthModal";
 
 interface Category {
   id: string;
@@ -91,6 +92,7 @@ export default function Categories() {
   const [newKeywordError, setNewKeywordError] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
+  const [showCloudAuth, setShowCloudAuth] = useState(false);
 
   const isPremium = localStorage.getItem("app_premium") === "true";
 
@@ -264,11 +266,14 @@ export default function Categories() {
           </div>
           <button
             onClick={() => {
-              if (!isPremium && categories.filter((c) => c.id !== "nocat").length >= FREE_CAT_LIMIT) {
-                showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
-                return;
+              const atLimit = categories.filter((c) => c.id !== "nocat").length >= FREE_CAT_LIMIT;
+              if (atLimit) {
+                // Over free limit — need premium
+                const token = localStorage.getItem("cloud_token");
+                if (!token) { setShowCloudAuth(true); return; }
+                if (!isPremium) { showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`); return; }
               }
-              setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true);
+              setNewName(""); setNewIconId("other"); setNewKeywords([]); setNewKeyword(""); setNewKeywordError(""); setShowAddForm(true);
             }}
             className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
             title="Add category"
@@ -651,9 +656,22 @@ export default function Categories() {
         </div>
       )}
 
-      {/* Delete Confirm Modal */}
       {showPremiumModal && (
         <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
+      )}
+
+      {showCloudAuth && (
+        <CloudAuthModal
+          onClose={() => setShowCloudAuth(false)}
+          onSuccess={(premium) => {
+            setShowCloudAuth(false);
+            if (premium) {
+              setNewName(""); setNewIconId("other"); setNewKeywords([]); setNewKeyword(""); setNewKeywordError(""); setShowAddForm(true);
+            } else {
+              showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
+            }
+          }}
+        />
       )}
 
       {deleteConfirmId && (() => {

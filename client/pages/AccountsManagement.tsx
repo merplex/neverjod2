@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
+import CloudAuthModal from "../components/CloudAuthModal";
 import PremiumModal from "../components/PremiumModal";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
@@ -92,6 +93,7 @@ export default function AccountsManagement() {
   const [newAccKeywordError, setNewAccKeywordError] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
+  const [showCloudAuth, setShowCloudAuth] = useState(false);
 
   const accIconOptions = [
     { id: "food", icon: Utensils }, { id: "transport", icon: Bus }, { id: "entertainment", icon: Music },
@@ -348,11 +350,13 @@ export default function AccountsManagement() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
-                if (!isPremium && accounts.filter((a) => a.id !== "account_deleted").length >= FREE_ACC_LIMIT) {
-                  showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
-                  return;
+                const atLimit = accounts.filter((a) => a.id !== "account_deleted").length >= FREE_ACC_LIMIT;
+                if (atLimit) {
+                  const token = localStorage.getItem("cloud_token");
+                  if (!token) { setShowCloudAuth(true); return; }
+                  if (!isPremium) { showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`); return; }
                 }
-                setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true);
+                setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords([]); setNewAccKeyword(""); setNewAccKeywordError(""); setShowAddForm(true);
               }}
               className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
               title="Add account"
@@ -752,6 +756,20 @@ export default function AccountsManagement() {
 
       {showPremiumModal && (
         <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
+      )}
+
+      {showCloudAuth && (
+        <CloudAuthModal
+          onClose={() => setShowCloudAuth(false)}
+          onSuccess={(premium) => {
+            setShowCloudAuth(false);
+            if (premium) {
+              setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords([]); setNewAccKeyword(""); setNewAccKeywordError(""); setShowAddForm(true);
+            } else {
+              showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
+            }
+          }}
+        />
       )}
 
       {/* Delete Confirm Modal */}
