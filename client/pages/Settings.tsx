@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
+import PremiumModal from "../components/PremiumModal";
 
 const SETTINGS_KEY = "app_settings";
 
@@ -58,6 +59,9 @@ export default function Settings() {
   const navigate = useNavigate();
   useSwipeBack();
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
+
+  const isPremium = localStorage.getItem("app_premium") === "true";
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Cloud Backup state
   const [cloudToken, setCloudToken] = useState<string>(() => localStorage.getItem("cloud_token") || "");
@@ -333,20 +337,29 @@ export default function Settings() {
         </div>
 
         {/* Cloud Backup */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+        <div className={`bg-white rounded-2xl shadow-sm border p-5 ${!isPremium ? "border-amber-200 bg-amber-50/20" : "border-slate-100"}`}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
-              <Cloud size={18} className="text-sky-600" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${!isPremium ? "bg-amber-100" : "bg-sky-100"}`}>
+              {isPremium ? <Cloud size={18} className="text-sky-600" /> : <Lock size={18} className="text-amber-500" />}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
+                {!isPremium && <span className="text-xs bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded font-medium">Premium</span>}
               </div>
               <p className="text-xs text-slate-500">รองรับการใช้หลายอุปกรณ์พร้อมกัน</p>
             </div>
           </div>
 
-          {cloudToken ? (
+          {!isPremium ? (
+            <button
+              onClick={() => setShowPremiumModal(true)}
+              className="w-full py-2.5 rounded-xl bg-amber-50 text-amber-600 text-sm font-semibold hover:bg-amber-100 transition-colors border border-amber-200 flex items-center justify-center gap-2"
+            >
+              <Lock size={14} />
+              อัปเกรด Premium เพื่อใช้งาน
+            </button>
+          ) : cloudToken ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -429,6 +442,10 @@ export default function Settings() {
         </div>
 
       </div>
+
+      {showPremiumModal && (
+        <PremiumModal message={"Cloud Sync ใช้ได้เฉพาะ Premium\nอัปเกรดเพื่อซิงค์ข้ามอุปกรณ์ได้ไม่จำกัด"} onClose={() => setShowPremiumModal(false)} />
+      )}
     </div>
   );
 }
