@@ -76,10 +76,8 @@ export default function Settings() {
   const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
     const t = localStorage.getItem("last_sync_at");
     if (!t) return "";
-    try {
-      const d = new Date(t);
-      return d.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-    } catch { return ""; }
+    try { return new Date(t).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
+    catch { return ""; }
   });
   const [showAuthForm, setShowAuthForm] = useState(false);
 
@@ -116,7 +114,7 @@ export default function Settings() {
       await syncAll(result.token, false);
       setSyncDirection("server");
       setSyncStatus("ok");
-      refreshLastSyncTime();
+      refreshLastSyncTime(false);
     } catch (err: any) {
       setAuthError(err.message || "เกิดข้อผิดพลาด");
     } finally {
@@ -124,13 +122,17 @@ export default function Settings() {
     }
   };
 
-  const refreshLastSyncTime = () => {
-    const t = localStorage.getItem("last_sync_at");
-    if (!t) return;
+  const formatTime = (iso: string) => {
     try {
-      const d = new Date(t);
-      setLastSyncTime(d.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
-    } catch {}
+      const d = new Date(iso);
+      return d.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    } catch { return ""; }
+  };
+
+  const refreshLastSyncTime = (useLocalTime = false) => {
+    const t = useLocalTime ? new Date().toISOString() : localStorage.getItem("last_sync_at");
+    if (!t) return;
+    setLastSyncTime(formatTime(t));
   };
 
   const handleSync = async () => {
@@ -140,7 +142,7 @@ export default function Settings() {
       await syncAll(cloudToken, true);
       setSyncDirection("client");
       setSyncStatus("ok");
-      refreshLastSyncTime();
+      refreshLastSyncTime(true);
     } catch {
       setSyncStatus("error");
     }
