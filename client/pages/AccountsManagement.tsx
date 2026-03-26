@@ -40,6 +40,14 @@ export default function AccountsManagement() {
             if (!acc || !acc.id) return null;
             const defaultAcc = defaultAccounts.find((d) => d.id === acc.id);
             if (!defaultAcc) {
+              // Legacy default IDs (before slim-down refactor) — preserve them
+              const legacyAccIconMap: Record<string, React.ComponentType<any>> = {
+                uob: CreditCard, banka: CreditCard, krungsri: Wallet, bangkok: CreditCard,
+                kasikorn: CreditCard, tmb: Wallet, acme: CreditCard, cash: Banknote,
+                crypto: TrendingUp, baht_pay: Smartphone, other_acc: MoreHorizontal,
+                revolut: CreditCard, wise: Wallet, stripe: CreditCard, paypal: Banknote,
+              };
+              if (legacyAccIconMap[acc.id]) return { ...acc, icon: legacyAccIconMap[acc.id] };
               // Custom account — resolve icon by type string or fall back to MoreHorizontal
               if (!acc.id.startsWith("custom_acc_")) return null;
               const iconMap: Record<string, React.ComponentType<any>> = {

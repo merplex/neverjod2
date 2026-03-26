@@ -54,6 +54,16 @@ export default function Categories() {
             if (!cat || !cat.id) return null;
             const defaultCat = defaultCategories.find((d) => d.id === cat.id);
             if (!defaultCat) {
+              // Legacy default IDs (before slim-down refactor) — preserve them
+              const legacyCatIconMap: Record<string, React.ComponentType<any>> = {
+                entertainment: Music, bills: FileText, health: Heart, education: BookOpen,
+                utilities: Zap, salary: TrendingUp, bonus: Gift, freelance: Banknote,
+                other: MoreHorizontal, gifts: Gift, sports: Dumbbell, clothing: ShoppingBag,
+                investment: TrendingUp, rental: CreditCard, food_delivery: Utensils,
+                subscription: Zap, insurance: FileText, car: Car, phone: Smartphone,
+                internet: Zap, hobby: Music, pets: Heart, childcare: Gift, loan: FileText,
+              };
+              if (legacyCatIconMap[cat.id]) return { ...cat, icon: legacyCatIconMap[cat.id] };
               if (!cat.id.startsWith("custom_")) return null;
               const iconEntry = iconOptions.find((o) => o.id === cat.iconId) || iconOptions[iconOptions.length - 1];
               return { ...cat, icon: iconEntry.icon };

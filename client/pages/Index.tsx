@@ -110,7 +110,12 @@ export default function Index() {
             const defaultCat = categories.find((d) => d.id === cat.id);
             if (!defaultCat) {
               // Custom category — resolve icon by iconId
-              if (!cat.id.startsWith("custom_")) return null;
+              if (!cat.id.startsWith("custom_")) {
+                // Still try catIconMap for legacy IDs (old hardcoded defaults no longer in list)
+                const fallback = catIconMap[cat.iconId] || catIconMap[cat.id];
+                if (!fallback) return null;
+                return { ...cat, icon: fallback };
+              }
               const icon = catIconMap[cat.iconId] || MoreHorizontal;
               return { ...cat, icon };
             }
