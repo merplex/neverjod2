@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
@@ -99,7 +99,9 @@ export default function Categories() {
   const [keywordError, setKeywordError] = useState("");
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [reorderSelectedId, setReorderSelectedId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIconId, setNewIconId] = useState("other");
@@ -219,26 +221,37 @@ export default function Categories() {
     setEditingId(null);
   };
 
-  const handleGripClick = (catId: string) => {
-    if (reorderSelectedId === null) {
-      setReorderSelectedId(catId);
-    } else if (reorderSelectedId === catId) {
-      setReorderSelectedId(null);
-    } else {
-      // Swap within the same type, keep nocat always last
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!draggingId) return;
+    const y = e.clientY;
+    for (const id of Object.keys(itemRefs.current)) {
+      const el = itemRefs.current[id];
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        setDragOverId(id);
+        break;
+      }
+    }
+  };
+
+  const handleDragEnd = (fromId: string) => {
+    if (fromId && dragOverId && fromId !== dragOverId) {
       const reorderable = categories.filter((c) => c.id !== "nocat");
       const nocatItem = categories.find((c) => c.id === "nocat");
-      const firstIdx = reorderable.findIndex((c) => c.id === reorderSelectedId);
-      const secondIdx = reorderable.findIndex((c) => c.id === catId);
-      if (firstIdx !== -1 && secondIdx !== -1) {
+      const fromIdx = reorderable.findIndex((c) => c.id === fromId);
+      const toIdx = reorderable.findIndex((c) => c.id === dragOverId);
+      if (fromIdx !== -1 && toIdx !== -1) {
         const newList = [...reorderable];
-        [newList[firstIdx], newList[secondIdx]] = [newList[secondIdx], newList[firstIdx]];
+        const [removed] = newList.splice(fromIdx, 1);
+        newList.splice(toIdx, 0, removed);
         const finalList = nocatItem ? [...newList, nocatItem] : newList;
         setCategories(finalList);
         localStorage.setItem("app_categories", JSON.stringify(finalList));
       }
-      setReorderSelectedId(null);
     }
+    setDraggingId(null);
+    setDragOverId(null);
   };
 
   return (
@@ -304,7 +317,14 @@ export default function Categories() {
             return (
               <div
                 key={category.id}
-                className="bg-white rounded-lg border border-slate-200 p-4"
+                ref={(el) => { itemRefs.current[category.id] = el; }}
+                className={`bg-white rounded-lg border p-4 transition-all ${
+                  draggingId === category.id
+                    ? "opacity-40 border-slate-200"
+                    : dragOverId === category.id && draggingId !== null
+                    ? "border-theme-400 ring-2 ring-theme-300"
+                    : "border-slate-200"
+                }`}
               >
                 {isEditing ? (
                   <div className="space-y-3">
@@ -392,17 +412,19 @@ export default function Categories() {
                     )}
                   </div>
                 ) : (
-                  <div className={`flex items-start gap-2 rounded-lg transition-colors ${reorderSelectedId === category.id ? "bg-theme-50 -mx-1 px-1" : ""}`}>
+                  <div className="flex items-start gap-2 rounded-lg transition-colors">
                     {category.id !== "nocat" ? (
                       <button
-                        onClick={() => handleGripClick(category.id)}
-                        className={`mt-1 p-1 rounded transition-colors flex-shrink-0 ${
-                          reorderSelectedId === category.id
-                            ? "text-theme-600 bg-theme-100"
-                            : reorderSelectedId !== null
-                            ? "text-theme-400 hover:text-theme-600"
-                            : "text-slate-300 hover:text-slate-500"
-                        }`}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                          setDraggingId(category.id);
+                          setDragOverId(category.id);
+                        }}
+                        onPointerMove={handleDragMove}
+                        onPointerUp={() => handleDragEnd(category.id)}
+                        onPointerCancel={() => { setDraggingId(null); setDragOverId(null); }}
+                        className="mt-1 p-1 rounded transition-colors flex-shrink-0 text-slate-300 hover:text-slate-500 touch-none cursor-grab active:cursor-grabbing"
                       >
                         <GripVertical size={18} />
                       </button>

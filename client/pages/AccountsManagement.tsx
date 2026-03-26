@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
@@ -77,7 +77,9 @@ export default function AccountsManagement() {
   const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [reorderSelectedId, setReorderSelectedId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
@@ -238,24 +240,37 @@ export default function AccountsManagement() {
     setEditingId(null);
   };
 
-  const handleGripClick = (accountId: string) => {
-    if (reorderSelectedId === null) {
-      setReorderSelectedId(accountId);
-    } else if (reorderSelectedId === accountId) {
-      setReorderSelectedId(null);
-    } else {
-      // Swap the two — keep account_deleted always last
-      const reorderableAccounts = accounts.filter((a) => a.id !== "account_deleted");
-      const deletedAccount = accounts.find((a) => a.id === "account_deleted");
-      const firstIdx = reorderableAccounts.findIndex((a) => a.id === reorderSelectedId);
-      const secondIdx = reorderableAccounts.findIndex((a) => a.id === accountId);
-      const newList = [...reorderableAccounts];
-      [newList[firstIdx], newList[secondIdx]] = [newList[secondIdx], newList[firstIdx]];
-      const finalList = deletedAccount ? [...newList, deletedAccount] : newList;
-      setAccounts(finalList);
-      localStorage.setItem("app_accounts", JSON.stringify(finalList));
-      setReorderSelectedId(null);
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!draggingId) return;
+    const y = e.clientY;
+    for (const id of Object.keys(itemRefs.current)) {
+      const el = itemRefs.current[id];
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        setDragOverId(id);
+        break;
+      }
     }
+  };
+
+  const handleDragEnd = (fromId: string) => {
+    if (fromId && dragOverId && fromId !== dragOverId) {
+      const reorderable = accounts.filter((a) => a.id !== "account_deleted");
+      const deletedAccount = accounts.find((a) => a.id === "account_deleted");
+      const fromIdx = reorderable.findIndex((a) => a.id === fromId);
+      const toIdx = reorderable.findIndex((a) => a.id === dragOverId);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const newList = [...reorderable];
+        const [removed] = newList.splice(fromIdx, 1);
+        newList.splice(toIdx, 0, removed);
+        const finalList = deletedAccount ? [...newList, deletedAccount] : newList;
+        setAccounts(finalList);
+        localStorage.setItem("app_accounts", JSON.stringify(finalList));
+      }
+    }
+    setDraggingId(null);
+    setDragOverId(null);
   };
 
   const openTransferModal = () => {
@@ -347,7 +362,14 @@ export default function AccountsManagement() {
             return (
               <div
                 key={account.id}
-                className="bg-white rounded-lg border border-slate-200 p-4"
+                ref={(el) => { itemRefs.current[account.id] = el; }}
+                className={`bg-white rounded-lg border p-4 transition-all ${
+                  draggingId === account.id
+                    ? "opacity-40 border-slate-200"
+                    : dragOverId === account.id && draggingId !== null
+                    ? "border-theme-400 ring-2 ring-theme-300"
+                    : "border-slate-200"
+                }`}
               >
                 {isEditing ? (
                   <div className="space-y-3">
@@ -446,17 +468,19 @@ export default function AccountsManagement() {
                     )}
                   </div>
                 ) : (
-                  <div className={`flex items-start gap-2 rounded-lg transition-colors ${reorderSelectedId === account.id ? "bg-theme-50 -mx-1 px-1" : ""}`}>
+                  <div className="flex items-start gap-2 rounded-lg transition-colors">
                     {account.id !== "account_deleted" ? (
                       <button
-                        onClick={() => handleGripClick(account.id)}
-                        className={`mt-1 p-1 rounded transition-colors flex-shrink-0 ${
-                          reorderSelectedId === account.id
-                            ? "text-theme-600 bg-theme-100"
-                            : reorderSelectedId !== null
-                            ? "text-theme-400 hover:text-theme-600"
-                            : "text-slate-300 hover:text-slate-500"
-                        }`}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                          setDraggingId(account.id);
+                          setDragOverId(account.id);
+                        }}
+                        onPointerMove={handleDragMove}
+                        onPointerUp={() => handleDragEnd(account.id)}
+                        onPointerCancel={() => { setDraggingId(null); setDragOverId(null); }}
+                        className="mt-1 p-1 rounded transition-colors flex-shrink-0 text-slate-300 hover:text-slate-500 touch-none cursor-grab active:cursor-grabbing"
                       >
                         <GripVertical size={18} />
                       </button>
