@@ -72,6 +72,14 @@ export default function Settings() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "ok" | "error">("idle");
+  const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
+    const t = localStorage.getItem("last_sync_at");
+    if (!t) return "";
+    try {
+      const d = new Date(t);
+      return d.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    } catch { return ""; }
+  });
   const [showAuthForm, setShowAuthForm] = useState(false);
 
   useEffect(() => {
@@ -103,13 +111,24 @@ export default function Settings() {
       setCloudToken(result.token);
       setCloudEmail(result.email);
       // Auto sync after login
+      setSyncStatus("syncing");
       await syncAll(result.token);
       setSyncStatus("ok");
+      refreshLastSyncTime();
     } catch (err: any) {
       setAuthError(err.message || "เกิดข้อผิดพลาด");
     } finally {
       setAuthLoading(false);
     }
+  };
+
+  const refreshLastSyncTime = () => {
+    const t = localStorage.getItem("last_sync_at");
+    if (!t) return;
+    try {
+      const d = new Date(t);
+      setLastSyncTime(d.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
+    } catch {}
   };
 
   const handleSync = async () => {
@@ -118,6 +137,7 @@ export default function Settings() {
     try {
       await syncAll(cloudToken);
       setSyncStatus("ok");
+      refreshLastSyncTime();
     } catch {
       setSyncStatus("error");
     }
@@ -374,7 +394,9 @@ export default function Settings() {
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200 disabled:opacity-50"
               >
                 <RefreshCw size={15} className={syncStatus === "syncing" ? "animate-spin" : ""} />
-                {syncStatus === "syncing" ? "กำลังซิงค์..." : syncStatus === "ok" ? "ซิงค์แล้ว ✓" : syncStatus === "error" ? "ซิงค์ล้มเหลว ✗" : "ซิงค์ตอนนี้"}
+                <span>
+                  {syncStatus === "syncing" ? "กำลังซิงค์อยู่..." : syncStatus === "error" ? "ซิงค์ล้มเหลว ✗" : syncStatus === "ok" && lastSyncTime ? `ซิงค์แล้ว · ${lastSyncTime}` : "ซิงค์ตอนนี้"}
+                </span>
               </button>
             </div>
           ) : showAuthForm ? (

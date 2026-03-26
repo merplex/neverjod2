@@ -268,7 +268,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   }
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className="relative z-10">
       <button
         onClick={handleToggleListening}
         disabled={!isSupported}

@@ -14,20 +14,28 @@ public class AudioPlugin extends Plugin {
 
     @PluginMethod
     public void muteBeep(PluginCall call) {
-        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
-        if (am != null) {
-            savedVolume = am.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
-            am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, 0, 0);
+        try {
+            AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            if (am != null) {
+                savedVolume = am.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+                am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, 0, 0);
+            }
+        } catch (Exception e) {
+            // Ignore — muting is best-effort
         }
         call.resolve();
     }
 
     @PluginMethod
     public void unmuteBeep(PluginCall call) {
-        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
-        if (am != null && savedVolume >= 0) {
-            am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, savedVolume, 0);
-            savedVolume = -1;
+        try {
+            AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            if (am != null && savedVolume >= 0) {
+                am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, savedVolume, 0);
+                savedVolume = -1;
+            }
+        } catch (Exception e) {
+            // Ignore
         }
         call.resolve();
     }

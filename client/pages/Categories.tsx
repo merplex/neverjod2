@@ -107,10 +107,12 @@ export default function Categories() {
 
   // Free-tier downgrade: strip keywords > 1 per category and push to server
   useEffect(() => {
-    if (isPremium) return;
+    const premium = localStorage.getItem("app_premium") === "true";
+    if (premium) return;
     const hasExtra = categories.some((c) => (c.keywords || []).length > 1);
     if (!hasExtra) return;
-    const stripped = categories.map((c) => ({ ...c, keywords: (c.keywords || []).slice(0, 1) }));
+    const now = new Date().toISOString();
+    const stripped = categories.map((c) => ({ ...c, keywords: (c.keywords || []).slice(0, 1), updated_at: now }));
     setCategories(stripped);
     localStorage.setItem("app_categories", JSON.stringify(stripped));
     const token = localStorage.getItem("cloud_token");
@@ -149,7 +151,7 @@ export default function Categories() {
 
     const iconEntry = iconOptions.find((o) => o.id === newIconId) || iconOptions[iconOptions.length - 1];
     const newId = `custom_${Date.now()}`;
-    const newCat: Category & { iconId?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords };
+    const newCat: Category & { iconId?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords, updated_at: new Date().toISOString() };
     const updated = [...categories.filter((c) => c.id !== "nocat"), newCat, ...categories.filter((c) => c.id === "nocat")];
     setCategories(updated);
     localStorage.setItem("app_categories", JSON.stringify(updated));
@@ -194,7 +196,7 @@ export default function Categories() {
     const iconEntry = iconOptions.find((o) => o.id === editIconId) || iconOptions[iconOptions.length - 1];
     const updatedCategories = categories.map((cat) =>
       cat.id === editingId
-        ? { ...cat, name: isProtected(editingId) ? cat.name : editName, keywords, icon: iconEntry.icon, iconId: editIconId }
+        ? { ...cat, name: isProtected(editingId) ? cat.name : editName, keywords, icon: iconEntry.icon, iconId: editIconId, updated_at: new Date().toISOString() }
         : cat
     );
 

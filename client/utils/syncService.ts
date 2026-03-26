@@ -98,10 +98,12 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
 
 export async function syncPush(token: string) {
   const now = new Date().toISOString();
+  // Use epoch for items without updated_at so server data always wins over unmodified defaults
+  const EPOCH = "1970-01-01T00:00:00.000Z";
   const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
-    .map((c) => ({ ...c, updated_at: c.updated_at || now }));
+    .map((c) => ({ ...c, updated_at: c.updated_at || EPOCH }));
   const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
-    .map((a) => ({ ...a, updated_at: a.updated_at || now }));
+    .map((a) => ({ ...a, updated_at: a.updated_at || EPOCH }));
   // Derive type from category if not stored on transaction
   const transactions = (JSON.parse(localStorage.getItem("app_transactions") || "[]") as any[])
     .map((tx) => {

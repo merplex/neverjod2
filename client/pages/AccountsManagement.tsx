@@ -121,10 +121,12 @@ export default function AccountsManagement() {
 
   // Free-tier downgrade: strip keywords > 1 per account and push to server
   useEffect(() => {
-    if (isPremium) return;
+    const premium = localStorage.getItem("app_premium") === "true";
+    if (premium) return;
     const hasExtra = accounts.some((a) => (a.keywords || []).length > 1);
     if (!hasExtra) return;
-    const stripped = accounts.map((a) => ({ ...a, keywords: (a.keywords || []).slice(0, 1) }));
+    const now = new Date().toISOString();
+    const stripped = accounts.map((a) => ({ ...a, keywords: (a.keywords || []).slice(0, 1), updated_at: now }));
     setAccounts(stripped);
     localStorage.setItem("app_accounts", JSON.stringify(stripped));
     const token = localStorage.getItem("cloud_token");
@@ -171,6 +173,7 @@ export default function AccountsManagement() {
       iconId: newAccIconId,
       balance: parseFloat(newAccBalance) || 0,
       keywords,
+      updated_at: new Date().toISOString(),
     };
     const deletedAcc = accounts.find((a) => a.id === "account_deleted");
     const rest = accounts.filter((a) => a.id !== "account_deleted");
@@ -230,7 +233,7 @@ export default function AccountsManagement() {
     const iconEntry = accIconOptions.find((o) => o.id === editIconId) || accIconOptions[accIconOptions.length - 1];
     const updatedAccounts = accounts.map((acc) =>
       acc.id === editingId
-        ? { ...acc, name: editName, type: editType, balance: parseFloat(editBalance) || 0, keywords, icon: iconEntry.icon, iconId: editIconId }
+        ? { ...acc, name: editName, type: editType, balance: parseFloat(editBalance) || 0, keywords, icon: iconEntry.icon, iconId: editIconId, updated_at: new Date().toISOString() }
         : acc
     );
 

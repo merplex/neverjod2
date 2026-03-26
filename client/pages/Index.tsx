@@ -614,7 +614,7 @@ export default function Index() {
                       Income
                     </button>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 relative z-10">
                     {!isCategoryReorderMode && (
                       <button
                         onClick={() => setIsCategoryReorderMode(true)}

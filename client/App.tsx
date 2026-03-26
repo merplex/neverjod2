@@ -62,7 +62,13 @@ function AppContent() {
           localStorage.setItem("app_premium", payload.isPremium ? "true" : "false");
         }
       } catch {}
-      syncAll(token).catch(() => {});
+      syncAll(token).then(() => {
+        // Reload once after first sync so all components re-read fresh localStorage
+        if (!sessionStorage.getItem("synced_once")) {
+          sessionStorage.setItem("synced_once", "1");
+          window.location.reload();
+        }
+      }).catch(() => {});
     }
   }, []);
 
