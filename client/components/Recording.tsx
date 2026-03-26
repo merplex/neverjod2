@@ -243,12 +243,28 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         setIsListening(true);
         isListeningRef.current = true;
 
-        // Start recognition — mute beep fire-and-forget (must not delay start for WebView gesture context)
-        muteBeep().catch(() => {});
-        try { recognitionRef.current.start(); }
-        catch (e) {
-          setIsListening(false);
-          isListeningRef.current = false;
+        const doStart = () => {
+          muteBeep().catch(() => {});
+          try { recognitionRef.current.start(); }
+          catch (e) {
+            console.error("recognition.start() threw:", (e as Error).message);
+            setIsListening(false);
+            isListeningRef.current = false;
+          }
+        };
+
+        // Request mic at browser level first (required by Capacitor WebView)
+        // Both getUserMedia and recognition.start() are called within the same user gesture
+        if (navigator.mediaDevices?.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => { stream.getTracks().forEach(t => t.stop()); doStart(); })
+            .catch(err => {
+              console.error("Mic permission denied:", err.name);
+              setIsListening(false);
+              isListeningRef.current = false;
+            });
+        } else {
+          doStart();
         }
       }
     } catch (error) {
@@ -283,9 +299,9 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       <button
         onClick={handleToggleListening}
         disabled={!isSupported}
-        className={`relative p-2 hover:bg-slate-200 rounded-lg transition-colors ${
-          isListening ? "text-red-500" : "text-slate-600"
-        } hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50`}
+        className={`relative p-2 rounded-lg transition-colors focus:outline-none focus:bg-transparent ${
+          isListening ? "text-red-500 bg-red-50" : "text-slate-600 active:bg-slate-200"
+        } disabled:cursor-not-allowed disabled:opacity-50`}
         title={
           isListening
             ? "Stop recording"
