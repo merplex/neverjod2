@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
 import CloudAuthModal from "../components/CloudAuthModal";
 import PremiumModal from "../components/PremiumModal";
-import { markDeleted } from "../utils/syncService";
+import { markDeleted, syncPush } from "../utils/syncService";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import TimePicker from "../components/TimePicker";
@@ -83,8 +83,7 @@ export default function AccountsManagement() {
   const [editName, setEditName] = useState("");
   const [editType, setEditType] = useState("");
   const [editBalance, setEditBalance] = useState("");
-  const [editKeywords, setEditKeywords] = useState<string[]>([]);
-  const [editNewKeyword, setEditNewKeyword] = useState("");
+  const [editKeywords, setEditKeywords] = useState("");
   const [editIconId, setEditIconId] = useState("other");
   const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
@@ -97,8 +96,7 @@ export default function AccountsManagement() {
   const [newAccType, setNewAccType] = useState("savings account");
   const [newAccBalance, setNewAccBalance] = useState("0");
   const [newAccIconId, setNewAccIconId] = useState("other");
-  const [newAccKeywords, setNewAccKeywords] = useState<string[]>([]);
-  const [newAccKeyword, setNewAccKeyword] = useState("");
+  const [newAccKeywords, setNewAccKeywords] = useState("");
   const [newAccKeywordError, setNewAccKeywordError] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
@@ -121,6 +119,18 @@ export default function AccountsManagement() {
 
   const isPremium = localStorage.getItem("app_premium") === "true";
 
+  // Free-tier downgrade: strip keywords > 1 per account and push to server
+  useEffect(() => {
+    if (isPremium) return;
+    const hasExtra = accounts.some((a) => (a.keywords || []).length > 1);
+    if (!hasExtra) return;
+    const stripped = accounts.map((a) => ({ ...a, keywords: (a.keywords || []).slice(0, 1) }));
+    setAccounts(stripped);
+    localStorage.setItem("app_accounts", JSON.stringify(stripped));
+    const token = localStorage.getItem("cloud_token");
+    if (token) syncPush(token).catch(() => {});
+  }, []);
+
   // Accounts over free limit (by position in list, excluding account_deleted) — locked when not premium
   const reorderableAccs = accounts.filter((a) => a.id !== "account_deleted");
   const isOverLimitAcc = (accId: string) =>
@@ -134,7 +144,7 @@ export default function AccountsManagement() {
   const handleAddAccount = () => {
     if (!newAccName.trim()) return;
 
-    const keywords = newAccKeywords;
+    const keywords = newAccKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Validate: keywords must not already exist in other accounts or categories
     const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
@@ -168,7 +178,7 @@ export default function AccountsManagement() {
     setAccounts(updated);
     localStorage.setItem("app_accounts", JSON.stringify(updated));
     setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other");
-    setNewAccKeywords([]); setNewAccKeyword(""); setNewAccKeywordError("");
+    setNewAccKeywords(""); setNewAccKeywordError("");
     setShowAddForm(false);
   };
 
@@ -185,8 +195,7 @@ export default function AccountsManagement() {
     setEditName(account.name);
     setEditType(account.type);
     setEditBalance(account.balance?.toString() || "0");
-    setEditKeywords(account.keywords || []);
-    setEditNewKeyword("");
+    setEditKeywords((account.keywords || []).join(", "));
     const matchedOpt = accIconOptions.find((o) => o.icon === account.icon);
     setEditIconId(account.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
@@ -196,7 +205,7 @@ export default function AccountsManagement() {
   const saveEdit = () => {
     if (!editingId || !editName.trim()) return;
 
-    const keywords = editKeywords;
+    const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Validate: keywords must not already exist in other accounts or any category
     const otherAccs = accounts.filter((a) => a.id !== editingId);
@@ -233,8 +242,7 @@ export default function AccountsManagement() {
     setEditName("");
     setEditType("");
     setEditBalance("");
-    setEditKeywords([]);
-    setEditNewKeyword("");
+    setEditKeywords("");
     setEditIconId("other");
     setShowEditIconPicker(false);
     setKeywordError("");
@@ -367,7 +375,7 @@ export default function AccountsManagement() {
                   if (!token) { setShowCloudAuth(true); return; }
                   if (!isPremium) { showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`); return; }
                 }
-                setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords([]); setNewAccKeyword(""); setNewAccKeywordError(""); setShowAddForm(true);
+                setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true);
               }}
               className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
               title="Add account"
@@ -467,62 +475,14 @@ export default function AccountsManagement() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Keywords</label>
-                      <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${keywordError ? "border-red-400" : "border-slate-300"}`}>
-                        {editKeywords.map((kw) => (
-                          <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
-                            {kw}
-                            <button
-                              type="button"
-                              onClick={() => { setEditKeywords((prev) => prev.filter((k) => k !== kw)); setKeywordError(""); }}
-                              className="text-slate-400 hover:text-red-500 leading-none"
-                            >
-                              <X size={10} />
-                            </button>
-                          </span>
-                        ))}
-                        {(isPremium || editKeywords.length < 1) && (
-                          <input
-                            type="text"
-                            value={editNewKeyword}
-                            onChange={(e) => {
-                              setKeywordError("");
-                              const val = e.target.value;
-                              if (val.includes(",")) {
-                                const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
-                                const remaining = val.endsWith(",") ? "" : parts.pop() || "";
-                                setEditKeywords((prev) => {
-                                  const next = [...prev];
-                                  for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
-                                  return next;
-                                });
-                                setEditNewKeyword(remaining);
-                              } else {
-                                setEditNewKeyword(val);
-                              }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && editNewKeyword.trim()) {
-                                e.preventDefault();
-                                const kw = editNewKeyword.trim().toLowerCase();
-                                const el = e.currentTarget;
-                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
-                                setEditNewKeyword("");
-                                requestAnimationFrame(() => el.focus());
-                              }
-                            }}
-                            onBlur={() => {
-                              if (editNewKeyword.trim()) {
-                                const kw = editNewKeyword.trim().toLowerCase();
-                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
-                                setEditNewKeyword("");
-                              }
-                            }}
-                            className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
-                            placeholder={editKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
-                          />
-                        )}
-                      </div>
+                      <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                      <input
+                        type="text"
+                        value={editKeywords}
+                        onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
+                        className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
+                        placeholder="กสิกร, kbank, เขียว"
+                      />
                       {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
                     </div>
                     <div className="flex gap-2">
@@ -665,62 +625,14 @@ export default function AccountsManagement() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Keywords</label>
-                <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}>
-                  {newAccKeywords.map((kw) => (
-                    <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
-                      {kw}
-                      <button
-                        type="button"
-                        onClick={() => { setNewAccKeywords((prev) => prev.filter((k) => k !== kw)); setNewAccKeywordError(""); }}
-                        className="text-slate-400 hover:text-red-500 leading-none"
-                      >
-                        <X size={10} />
-                      </button>
-                    </span>
-                  ))}
-                  {(isPremium || newAccKeywords.length < 1) && (
-                    <input
-                      type="text"
-                      value={newAccKeyword}
-                      onChange={(e) => {
-                        setNewAccKeywordError("");
-                        const val = e.target.value;
-                        if (val.includes(",")) {
-                          const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
-                          const remaining = val.endsWith(",") ? "" : parts.pop() || "";
-                          setNewAccKeywords((prev) => {
-                            const next = [...prev];
-                            for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
-                            return next;
-                          });
-                          setNewAccKeyword(remaining);
-                        } else {
-                          setNewAccKeyword(val);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && newAccKeyword.trim()) {
-                          e.preventDefault();
-                          const kw = newAccKeyword.trim().toLowerCase();
-                          const el = e.currentTarget;
-                          if (!newAccKeywords.includes(kw)) setNewAccKeywords((prev) => [...prev, kw]);
-                          setNewAccKeyword("");
-                          requestAnimationFrame(() => el.focus());
-                        }
-                      }}
-                      onBlur={() => {
-                        if (newAccKeyword.trim()) {
-                          const kw = newAccKeyword.trim().toLowerCase();
-                          if (!newAccKeywords.includes(kw)) setNewAccKeywords((prev) => [...prev, kw]);
-                          setNewAccKeyword("");
-                        }
-                      }}
-                      className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
-                      placeholder={newAccKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
-                    />
-                  )}
-                </div>
+                <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                <input
+                  type="text"
+                  value={newAccKeywords}
+                  onChange={(e) => { setNewAccKeywords(e.target.value); setNewAccKeywordError(""); }}
+                  className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}
+                  placeholder="กสิกร, kbank, เขียว"
+                />
                 {newAccKeywordError && <p className="text-xs text-red-500 mt-1">{newAccKeywordError}</p>}
               </div>
               <div>
@@ -775,7 +687,7 @@ export default function AccountsManagement() {
           onSuccess={(premium) => {
             setShowCloudAuth(false);
             if (premium) {
-              setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords([]); setNewAccKeyword(""); setNewAccKeywordError(""); setShowAddForm(true);
+              setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true);
             } else {
               showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
             }

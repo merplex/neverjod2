@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
-import { markDeleted } from "../utils/syncService";
+import { markDeleted, syncPush } from "../utils/syncService";
 
 interface Category {
   id: string;
@@ -85,8 +85,7 @@ export default function Categories() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editKeywords, setEditKeywords] = useState<string[]>([]);
-  const [editNewKeyword, setEditNewKeyword] = useState("");
+  const [editKeywords, setEditKeywords] = useState("");
   const [editIconId, setEditIconId] = useState("other");
   const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
@@ -98,14 +97,25 @@ export default function Categories() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIconId, setNewIconId] = useState("other");
-  const [newKeywords, setNewKeywords] = useState<string[]>([]);
-  const [newKeyword, setNewKeyword] = useState("");
+  const [newKeywords, setNewKeywords] = useState("");
   const [newKeywordError, setNewKeywordError] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
   const [showCloudAuth, setShowCloudAuth] = useState(false);
 
   const isPremium = localStorage.getItem("app_premium") === "true";
+
+  // Free-tier downgrade: strip keywords > 1 per category and push to server
+  useEffect(() => {
+    if (isPremium) return;
+    const hasExtra = categories.some((c) => (c.keywords || []).length > 1);
+    if (!hasExtra) return;
+    const stripped = categories.map((c) => ({ ...c, keywords: (c.keywords || []).slice(0, 1) }));
+    setCategories(stripped);
+    localStorage.setItem("app_categories", JSON.stringify(stripped));
+    const token = localStorage.getItem("cloud_token");
+    if (token) syncPush(token).catch(() => {});
+  }, []);
 
   // Categories over free limit (by position in list, excluding nocat) — locked when not premium
   const reorderableCats = categories.filter((c) => c.id !== "nocat");
@@ -120,7 +130,7 @@ export default function Categories() {
   const handleAddCategory = () => {
     if (!newName.trim()) return;
 
-    const keywords = newKeywords;
+    const keywords = newKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Validate: keywords must not already exist in other categories or accounts
     const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
@@ -143,7 +153,7 @@ export default function Categories() {
     const updated = [...categories.filter((c) => c.id !== "nocat"), newCat, ...categories.filter((c) => c.id === "nocat")];
     setCategories(updated);
     localStorage.setItem("app_categories", JSON.stringify(updated));
-    setNewName(""); setNewIconId("other"); setNewKeywords([]); setNewKeyword(""); setNewKeywordError(""); setShowAddForm(false);
+    setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(false);
   };
 
   const isProtected = (id: string) => id === "nocat";
@@ -151,8 +161,7 @@ export default function Categories() {
   const startEditing = (category: Category & { iconId?: string }) => {
     setEditingId(category.id);
     setEditName(category.name);
-    setEditKeywords(category.keywords || []);
-    setEditNewKeyword("");
+    setEditKeywords((category.keywords || []).join(", "));
     const matchedOpt = iconOptions.find((o) => o.icon === category.icon);
     setEditIconId(category.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
@@ -162,7 +171,7 @@ export default function Categories() {
   const saveEdit = () => {
     if (!editingId || !editName.trim()) return;
 
-    const keywords = editKeywords;
+    const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Validate: keywords must not already exist in other categories or any account
     const otherCats = categories.filter((c) => c.id !== editingId);
@@ -197,8 +206,7 @@ export default function Categories() {
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
-    setEditKeywords([]);
-    setEditNewKeyword("");
+    setEditKeywords("");
     setEditIconId("other");
     setShowEditIconPicker(false);
     setKeywordError("");
@@ -391,62 +399,14 @@ export default function Categories() {
                       )}
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Keywords</label>
-                      <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${keywordError ? "border-red-400" : "border-slate-300"}`}>
-                        {editKeywords.map((kw) => (
-                          <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
-                            {kw}
-                            <button
-                              type="button"
-                              onClick={() => { setEditKeywords((prev) => prev.filter((k) => k !== kw)); setKeywordError(""); }}
-                              className="text-slate-400 hover:text-red-500 leading-none"
-                            >
-                              <X size={10} />
-                            </button>
-                          </span>
-                        ))}
-                        {(isPremium || editKeywords.length < 1) && (
-                          <input
-                            type="text"
-                            value={editNewKeyword}
-                            onChange={(e) => {
-                              setKeywordError("");
-                              const val = e.target.value;
-                              if (val.includes(",")) {
-                                const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
-                                const remaining = val.endsWith(",") ? "" : parts.pop() || "";
-                                setEditKeywords((prev) => {
-                                  const next = [...prev];
-                                  for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
-                                  return next;
-                                });
-                                setEditNewKeyword(remaining);
-                              } else {
-                                setEditNewKeyword(val);
-                              }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && editNewKeyword.trim()) {
-                                e.preventDefault();
-                                const kw = editNewKeyword.trim().toLowerCase();
-                                const el = e.currentTarget;
-                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
-                                setEditNewKeyword("");
-                                requestAnimationFrame(() => el.focus());
-                              }
-                            }}
-                            onBlur={() => {
-                              if (editNewKeyword.trim()) {
-                                const kw = editNewKeyword.trim().toLowerCase();
-                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
-                                setEditNewKeyword("");
-                              }
-                            }}
-                            className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
-                            placeholder={editKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
-                          />
-                        )}
-                      </div>
+                      <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                      <input
+                        type="text"
+                        value={editKeywords}
+                        onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
+                        className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
+                        placeholder="ค่าเดินทาง, ค่ารถ, รถไฟฟ้า"
+                      />
                       {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
                     </div>
                     <div className="flex gap-2">
@@ -569,62 +529,14 @@ export default function Categories() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Keywords</label>
-                <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${newKeywordError ? "border-red-400" : "border-slate-300"}`}>
-                  {newKeywords.map((kw) => (
-                    <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
-                      {kw}
-                      <button
-                        type="button"
-                        onClick={() => { setNewKeywords((prev) => prev.filter((k) => k !== kw)); setNewKeywordError(""); }}
-                        className="text-slate-400 hover:text-red-500 leading-none"
-                      >
-                        <X size={10} />
-                      </button>
-                    </span>
-                  ))}
-                  {(isPremium || newKeywords.length < 1) && (
-                    <input
-                      type="text"
-                      value={newKeyword}
-                      onChange={(e) => {
-                        setNewKeywordError("");
-                        const val = e.target.value;
-                        if (val.includes(",")) {
-                          const parts = val.split(",").map((p) => p.trim().toLowerCase()).filter((p) => p);
-                          const remaining = val.endsWith(",") ? "" : parts.pop() || "";
-                          setNewKeywords((prev) => {
-                            const next = [...prev];
-                            for (const kw of parts) { if (!next.includes(kw)) next.push(kw); }
-                            return next;
-                          });
-                          setNewKeyword(remaining);
-                        } else {
-                          setNewKeyword(val);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && newKeyword.trim()) {
-                          e.preventDefault();
-                          const kw = newKeyword.trim().toLowerCase();
-                          const el = e.currentTarget;
-                          if (!newKeywords.includes(kw)) setNewKeywords((prev) => [...prev, kw]);
-                          setNewKeyword("");
-                          requestAnimationFrame(() => el.focus());
-                        }
-                      }}
-                      onBlur={() => {
-                        if (newKeyword.trim()) {
-                          const kw = newKeyword.trim().toLowerCase();
-                          if (!newKeywords.includes(kw)) setNewKeywords((prev) => [...prev, kw]);
-                          setNewKeyword("");
-                        }
-                      }}
-                      className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
-                      placeholder={newKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
-                    />
-                  )}
-                </div>
+                <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                <input
+                  type="text"
+                  value={newKeywords}
+                  onChange={(e) => { setNewKeywords(e.target.value); setNewKeywordError(""); }}
+                  className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newKeywordError ? "border-red-400" : "border-slate-300"}`}
+                  placeholder="ค่าเดินทาง, ค่ารถ, รถไฟฟ้า"
+                />
                 {newKeywordError && <p className="text-xs text-red-500 mt-1">{newKeywordError}</p>}
               </div>
               <div>
