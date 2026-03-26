@@ -455,7 +455,9 @@ export default function Categories() {
                     )}
                     <div className="flex items-start justify-between flex-1">
                     <div className="flex items-start gap-3 flex-1">
-                      <IconComponent size={24} className="text-theme-600 mt-1" />
+                      <div className="w-9 h-9 rounded-xl bg-theme-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <IconComponent size={20} className="text-theme-600" />
+                      </div>
                       <div>
                         <p className="font-semibold text-slate-900 flex items-center gap-1">
                           {category.name}
