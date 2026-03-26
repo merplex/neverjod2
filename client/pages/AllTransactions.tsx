@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight } from "lucide-react";
+import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight, RefreshCw, ArrowRightLeft } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 import AddTransactionModal from "../components/AddTransactionModal";
 
@@ -177,6 +177,12 @@ export default function AllTransactions() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setRefreshKey((k) => k + 1);
+    window.addEventListener("repeats-updated", handler);
+    return () => window.removeEventListener("repeats-updated", handler);
+  }, []);
 
   const storedAccounts = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
@@ -431,6 +437,8 @@ export default function AllTransactions() {
                         <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
                         <span className="text-xs font-medium text-slate-600">{transaction.accountName}</span>
                         <span className="text-xs font-semibold text-theme-600">{transaction.category}</span>
+                        {transaction.isRepeat && <RefreshCw size={10} className="text-theme-400 flex-shrink-0" />}
+                        {transaction.isTransfer && <ArrowRightLeft size={10} className="text-blue-400 flex-shrink-0" />}
                       </div>
                       <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>

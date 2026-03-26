@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Plus, Trash2, RefreshCw } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, RefreshCw, Pencil, X } from "lucide-react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import {
-  getRepeatTransactions, deleteRepeatTransaction,
-  REPEAT_OPTIONS, RepeatTransaction,
+  getRepeatTransactions, deleteRepeatTransaction, updateRepeatTransaction,
+  REPEAT_OPTIONS, RepeatTransaction, RepeatOption,
 } from "../utils/repeatTransactionService";
 import AddTransactionModal from "../components/AddTransactionModal";
 
@@ -25,6 +25,28 @@ export default function RepeatTransactions() {
   const [list, setList] = useState<RepeatTransaction[]>(() => getRepeatTransactions());
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editRepeatOption, setEditRepeatOption] = useState<RepeatOption>("monthly");
+  const [showEditRepeatPicker, setShowEditRepeatPicker] = useState(false);
+
+  const openEdit = (rt: RepeatTransaction) => {
+    setEditId(rt.id);
+    setEditAmount(rt.amount.toString());
+    setEditDesc(rt.description || "");
+    setEditRepeatOption(rt.repeatOption);
+    setShowEditRepeatPicker(false);
+  };
+
+  const handleEditSave = () => {
+    if (!editId) return;
+    const amount = parseFloat(editAmount);
+    if (!amount || amount <= 0) return;
+    updateRepeatTransaction(editId, { amount, description: editDesc, repeatOption: editRepeatOption });
+    setEditId(null);
+    refresh();
+  };
 
   const refresh = () => setList(getRepeatTransactions());
 
@@ -97,19 +119,96 @@ export default function RepeatTransactions() {
                     ) : null}
                   </div>
 
-                  {/* Delete */}
-                  <button
-                    onClick={() => setDeleteConfirmId(rt.id)}
-                    className="p-2 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {/* Edit + Delete */}
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => openEdit(rt)}
+                      className="p-2 text-slate-300 hover:text-theme-500 transition-colors flex-shrink-0"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirmId(rt.id)}
+                      className="p-2 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {/* Edit Bottom Sheet */}
+      {editId && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setEditId(null)} />
+          <div className="relative bg-white rounded-t-2xl p-5 pb-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-800">แก้ไข Repeat Transaction</p>
+              <button onClick={() => setEditId(null)}><X size={18} className="text-slate-400" /></button>
+            </div>
+            {/* Amount */}
+            <div>
+              <label className="text-xs font-semibold text-slate-500 mb-1 block">จำนวนเงิน</label>
+              <input
+                type="number"
+                value={editAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm"
+              />
+            </div>
+            {/* Description */}
+            <div>
+              <label className="text-xs font-semibold text-slate-500 mb-1 block">หมายเหตุ</label>
+              <input
+                type="text"
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm"
+              />
+            </div>
+            {/* Repeat Option */}
+            <div>
+              <label className="text-xs font-semibold text-slate-500 mb-1 block">ความถี่</label>
+              <button
+                onClick={() => setShowEditRepeatPicker((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2 border border-slate-200 rounded-xl text-sm"
+              >
+                <span className="font-semibold text-slate-800">
+                  {REPEAT_OPTIONS.find((o) => o.value === editRepeatOption)?.label}
+                </span>
+                <span className="text-xs text-slate-400">
+                  {REPEAT_OPTIONS.find((o) => o.value === editRepeatOption)?.desc}
+                </span>
+              </button>
+              {showEditRepeatPicker && (
+                <div className="mt-1 border border-slate-200 rounded-xl overflow-hidden">
+                  {REPEAT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setEditRepeatOption(opt.value); setShowEditRepeatPicker(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${opt.value === editRepeatOption ? "bg-theme-50" : ""}`}
+                    >
+                      <span className={`text-sm font-semibold w-28 text-left ${opt.value === editRepeatOption ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
+                      <span className="text-xs text-slate-400 flex-1 text-left">{opt.desc}</span>
+                      {opt.value === editRepeatOption && <span className="text-theme-600">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleEditSave}
+              className="w-full py-3 bg-theme-600 hover:bg-theme-700 text-white rounded-xl font-semibold text-sm transition-colors"
+            >
+              บันทึก
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirm Bottom Sheet */}
       {deleteConfirmId && (

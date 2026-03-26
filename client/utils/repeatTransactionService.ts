@@ -56,6 +56,16 @@ export function addRepeatTransaction(rt: RepeatTransaction) {
 export function deleteRepeatTransaction(id: string) {
   saveRepeatTransactions(getRepeatTransactions().filter((r) => r.id !== id));
 }
+export function updateRepeatTransaction(id: string, updates: Partial<Pick<RepeatTransaction, "amount" | "description" | "repeatOption">>) {
+  const list = getRepeatTransactions();
+  const idx = list.findIndex((r) => r.id === id);
+  if (idx === -1) return;
+  list[idx] = { ...list[idx], ...updates };
+  if (updates.repeatOption) {
+    list[idx].nextDue = buildInitialNextDue(list[idx]);
+  }
+  saveRepeatTransactions(list);
+}
 
 /** Last valid day of a given month (handles Feb 28/29, 30-day months). */
 function lastDayOfMonth(year: number, month: number) {
@@ -138,8 +148,8 @@ export function buildInitialNextDue(rt: Omit<RepeatTransaction, "nextDue">): str
   return next.toISOString();
 }
 
-/** Check all repeat transactions; create any that are due; update nextDue. */
-export function checkAndExecuteRepeats() {
+/** Check all repeat transactions; create any that are due; update nextDue. Returns true if any were created. */
+export function checkAndExecuteRepeats(): boolean {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -165,6 +175,8 @@ export function checkAndExecuteRepeats() {
         description: rt.description || "",
         date: nextDue.toISOString(),
         time: rt.time,
+        repeatId: rt.id,
+        isRepeat: true,
       });
       localStorage.setItem("app_transactions", JSON.stringify(txns));
 
@@ -177,4 +189,5 @@ export function checkAndExecuteRepeats() {
   }
 
   if (changed) saveRepeatTransactions(repeats);
+  return changed;
 }
