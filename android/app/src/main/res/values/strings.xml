@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Neverjod</string>
-    <string name="title_activity_main">Neverjod</string>
-    <string name="package_name">app.railway.up.iction</string>
-    <string name="custom_url_scheme">app.railway.up.iction</string>
+    <string name="app_name">NeverJod</string>
+    <string name="title_activity_main">NeverJod</string>
+    <string name="package_name">com.neverjod.app</string>
+    <string name="custom_url_scheme">com.neverjod.app</string>
 </resources>

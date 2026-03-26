@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(cat server/*.ts)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(pnpm rebuild:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(node:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(pnpm build:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(psql \"postgresql://postgres:lAxBcTgtXCOBuPZWDbMtgzQNBriEnonA@autorack.proxy.rlwy.net:44743/railway\" -c \"SELECT sc.id, sc.name, sc.icon_id, sc.updated_at FROM sync_categories sc JOIN users u ON sc.user_id = u.id WHERE u.email = ''premsak.c@gmail.com'' ORDER BY sc.updated_at DESC;\")",
+      "Bash(npm run:*)",
+      "Bash(ls *.env*)",
+      "Bash(npm install:*)",
+      "Bash(npm --version)",
+      "Bash(npx:*)",
+      "Bash(echo \"done $?\")"
+    ]
+  }
+}
