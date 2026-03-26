@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X } from "lucide-react";
+import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
+import PremiumModal from "../components/PremiumModal";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import TimePicker from "../components/TimePicker";
@@ -14,12 +15,12 @@ interface Account {
   keywords?: string[];
 }
 
+const FREE_ACC_LIMIT = 3;
+
 const defaultAccounts: Account[] = [
-  { id: "kbank", name: "KBank", type: "savings account", icon: Smartphone, balance: 0, keywords: ["กสิกรไทย", "กสิกร", "promptpay"] },
+  { id: "kbank", name: "K-Bank", type: "savings account", icon: Smartphone, balance: 0, keywords: ["กสิกร"] },
   { id: "scb", name: "SCB", type: "savings account", icon: CreditCard, balance: 0, keywords: ["ไทยพาณิชย์"] },
-  { id: "uob", name: "UOB", type: "credit card", icon: CreditCard, balance: 0, keywords: ["ยูโอบี"] },
-  { id: "travel_card", name: "Travel Card", type: "debit card", icon: CreditCard, balance: 0, keywords: ["ทราเวลการ์ด"] },
-  { id: "cash", name: "Cash", type: "cash", icon: Banknote, balance: 0, keywords: ["เงินสด"] },
+  { id: "bbl", name: "Bangkok Bank", type: "savings account", icon: Building2, balance: 0, keywords: ["แบงค์กรุงเทพ"] },
   { id: "account_deleted", name: "Account Deleted", type: "deleted", icon: Trash2, balance: 0, keywords: [] },
 ];
 
@@ -72,7 +73,8 @@ export default function AccountsManagement() {
   const [editName, setEditName] = useState("");
   const [editType, setEditType] = useState("");
   const [editBalance, setEditBalance] = useState("");
-  const [editKeywords, setEditKeywords] = useState("");
+  const [editKeywords, setEditKeywords] = useState<string[]>([]);
+  const [editNewKeyword, setEditNewKeyword] = useState("");
   const [editIconId, setEditIconId] = useState("other");
   const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
@@ -85,8 +87,11 @@ export default function AccountsManagement() {
   const [newAccType, setNewAccType] = useState("savings account");
   const [newAccBalance, setNewAccBalance] = useState("0");
   const [newAccIconId, setNewAccIconId] = useState("other");
-  const [newAccKeywords, setNewAccKeywords] = useState("");
+  const [newAccKeywords, setNewAccKeywords] = useState<string[]>([]);
+  const [newAccKeyword, setNewAccKeyword] = useState("");
   const [newAccKeywordError, setNewAccKeywordError] = useState("");
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumMessage, setPremiumMessage] = useState("");
 
   const accIconOptions = [
     { id: "food", icon: Utensils }, { id: "transport", icon: Bus }, { id: "entertainment", icon: Music },
@@ -103,13 +108,22 @@ export default function AccountsManagement() {
     { id: "train", icon: Train }, { id: "bike", icon: Bike }, { id: "building", icon: Building2 },
   ];
 
+  const isPremium = localStorage.getItem("app_premium") === "true";
+
+  // Accounts over free limit (by position in list, excluding account_deleted) — locked when not premium
+  const reorderableAccs = accounts.filter((a) => a.id !== "account_deleted");
+  const isOverLimitAcc = (accId: string) =>
+    !isPremium && reorderableAccs.findIndex((a) => a.id === accId) >= FREE_ACC_LIMIT;
+
+  const showPremium = (msg: string) => {
+    setPremiumMessage(msg);
+    setShowPremiumModal(true);
+  };
+
   const handleAddAccount = () => {
     if (!newAccName.trim()) return;
 
-    const keywords = newAccKeywords
-      .split(",")
-      .map((k) => k.trim().toLowerCase())
-      .filter((k) => k);
+    const keywords = newAccKeywords;
 
     // Validate: keywords must not already exist in other accounts or categories
     const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
@@ -143,7 +157,7 @@ export default function AccountsManagement() {
     setAccounts(updated);
     localStorage.setItem("app_accounts", JSON.stringify(updated));
     setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other");
-    setNewAccKeywords(""); setNewAccKeywordError("");
+    setNewAccKeywords([]); setNewAccKeyword(""); setNewAccKeywordError("");
     setShowAddForm(false);
   };
 
@@ -160,7 +174,8 @@ export default function AccountsManagement() {
     setEditName(account.name);
     setEditType(account.type);
     setEditBalance(account.balance?.toString() || "0");
-    setEditKeywords((account.keywords || []).join(", "));
+    setEditKeywords(account.keywords || []);
+    setEditNewKeyword("");
     const matchedOpt = accIconOptions.find((o) => o.icon === account.icon);
     setEditIconId(account.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
@@ -170,10 +185,7 @@ export default function AccountsManagement() {
   const saveEdit = () => {
     if (!editingId || !editName.trim()) return;
 
-    const keywords = editKeywords
-      .split(",")
-      .map((k) => k.trim().toLowerCase())
-      .filter((k) => k);
+    const keywords = editKeywords;
 
     // Validate: keywords must not already exist in other accounts or any category
     const otherAccs = accounts.filter((a) => a.id !== editingId);
@@ -210,7 +222,8 @@ export default function AccountsManagement() {
     setEditName("");
     setEditType("");
     setEditBalance("");
-    setEditKeywords("");
+    setEditKeywords([]);
+    setEditNewKeyword("");
     setEditIconId("other");
     setShowEditIconPicker(false);
     setKeywordError("");
@@ -334,7 +347,13 @@ export default function AccountsManagement() {
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => { setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true); }}
+              onClick={() => {
+                if (!isPremium && accounts.filter((a) => a.id !== "account_deleted").length >= FREE_ACC_LIMIT) {
+                  showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
+                  return;
+                }
+                setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true);
+              }}
               className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
               title="Add account"
             >
@@ -364,7 +383,9 @@ export default function AccountsManagement() {
                 key={account.id}
                 ref={(el) => { itemRefs.current[account.id] = el; }}
                 className={`bg-white rounded-lg border p-4 transition-all ${
-                  draggingId === account.id
+                  isOverLimitAcc(account.id)
+                    ? "border-amber-200 bg-amber-50/30"
+                    : draggingId === account.id
                     ? "opacity-40 border-slate-200"
                     : dragOverId === account.id && draggingId !== null
                     ? "border-theme-400 ring-2 ring-theme-300"
@@ -431,17 +452,46 @@ export default function AccountsManagement() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Keywords (คั่นด้วยจุลภาค)</label>
-                      <input
-                        type="text"
-                        value={editKeywords}
-                        onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
-                        className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
-                        placeholder="เช่น กรุงศรี, อยุธยา"
-                      />
-                      {keywordError && (
-                        <p className="text-xs text-red-500 mt-1">{keywordError}</p>
-                      )}
+                      <label className="text-xs font-semibold text-slate-600">Keywords</label>
+                      <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${keywordError ? "border-red-400" : "border-slate-300"}`}>
+                        {editKeywords.map((kw) => (
+                          <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
+                            {kw}
+                            <button
+                              type="button"
+                              onClick={() => { setEditKeywords((prev) => prev.filter((k) => k !== kw)); setKeywordError(""); }}
+                              className="text-slate-400 hover:text-red-500 leading-none"
+                            >
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))}
+                        {(isPremium || editKeywords.length < 1) && (
+                          <input
+                            type="text"
+                            value={editNewKeyword}
+                            onChange={(e) => { setEditNewKeyword(e.target.value); setKeywordError(""); }}
+                            onKeyDown={(e) => {
+                              if ((e.key === "Enter" || e.key === ",") && editNewKeyword.trim()) {
+                                e.preventDefault();
+                                const kw = editNewKeyword.trim().toLowerCase();
+                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
+                                setEditNewKeyword("");
+                              }
+                            }}
+                            onBlur={() => {
+                              if (editNewKeyword.trim()) {
+                                const kw = editNewKeyword.trim().toLowerCase();
+                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
+                                setEditNewKeyword("");
+                              }
+                            }}
+                            className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
+                            placeholder={editKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
+                          />
+                        )}
+                      </div>
+                      {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -469,7 +519,7 @@ export default function AccountsManagement() {
                   </div>
                 ) : (
                   <div className="flex items-start gap-2 rounded-lg transition-colors">
-                    {account.id !== "account_deleted" ? (
+                    {account.id !== "account_deleted" && !isOverLimitAcc(account.id) ? (
                       <button
                         onPointerDown={(e) => {
                           e.preventDefault();
@@ -491,7 +541,10 @@ export default function AccountsManagement() {
                     <div className="flex items-start gap-3 flex-1">
                       <IconComponent size={24} className="text-theme-600 mt-1" />
                       <div>
-                        <p className="font-semibold text-slate-900">{account.name}</p>
+                        <p className="font-semibold text-slate-900 flex items-center gap-1">
+                          {account.name}
+                          {isOverLimitAcc(account.id) && <Lock size={11} className="text-amber-500" />}
+                        </p>
                         <p className="text-xs text-slate-500">{account.type}</p>
                         <p className="text-sm font-semibold text-theme-600 mt-1">
                           ฿{account.balance?.toLocaleString()}
@@ -511,12 +564,21 @@ export default function AccountsManagement() {
                       </div>
                     </div>
                     {account.id !== "account_deleted" && (
-                      <button
-                        onClick={() => startEditing(account)}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-theme-600"
-                      >
-                        <Edit2 size={18} />
-                      </button>
+                      isOverLimitAcc(account.id) ? (
+                        <button
+                          onClick={() => showPremium(`แพลนฟรีใช้งานได้ ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อปลดล็อคทุก account`)}
+                          className="p-2 rounded-lg text-amber-400 hover:bg-amber-50 transition-colors"
+                        >
+                          <Lock size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => startEditing(account)}
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-theme-600"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )
                     )}
                     </div>
                   </div>
@@ -571,17 +633,46 @@ export default function AccountsManagement() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Keywords (คั่นด้วยจุลภาค)</label>
-                <input
-                  type="text"
-                  value={newAccKeywords}
-                  onChange={(e) => { setNewAccKeywords(e.target.value); setNewAccKeywordError(""); }}
-                  className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}
-                  placeholder="เช่น กรุงศรี, อยุธยา"
-                />
-                {newAccKeywordError && (
-                  <p className="text-xs text-red-500 mt-1">{newAccKeywordError}</p>
-                )}
+                <label className="text-xs font-semibold text-slate-600">Keywords</label>
+                <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}>
+                  {newAccKeywords.map((kw) => (
+                    <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
+                      {kw}
+                      <button
+                        type="button"
+                        onClick={() => { setNewAccKeywords((prev) => prev.filter((k) => k !== kw)); setNewAccKeywordError(""); }}
+                        className="text-slate-400 hover:text-red-500 leading-none"
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                  {(isPremium || newAccKeywords.length < 1) && (
+                    <input
+                      type="text"
+                      value={newAccKeyword}
+                      onChange={(e) => { setNewAccKeyword(e.target.value); setNewAccKeywordError(""); }}
+                      onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === ",") && newAccKeyword.trim()) {
+                          e.preventDefault();
+                          const kw = newAccKeyword.trim().toLowerCase();
+                          if (!newAccKeywords.includes(kw)) setNewAccKeywords((prev) => [...prev, kw]);
+                          setNewAccKeyword("");
+                        }
+                      }}
+                      onBlur={() => {
+                        if (newAccKeyword.trim()) {
+                          const kw = newAccKeyword.trim().toLowerCase();
+                          if (!newAccKeywords.includes(kw)) setNewAccKeywords((prev) => [...prev, kw]);
+                          setNewAccKeyword("");
+                        }
+                      }}
+                      className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
+                      placeholder={newAccKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
+                    />
+                  )}
+                </div>
+                {newAccKeywordError && <p className="text-xs text-red-500 mt-1">{newAccKeywordError}</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>
@@ -623,6 +714,10 @@ export default function AccountsManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {showPremiumModal && (
+        <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
       )}
 
       {/* Delete Confirm Modal */}

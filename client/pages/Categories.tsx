@@ -3,6 +3,7 @@ import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
+import PremiumModal from "../components/PremiumModal";
 
 interface Category {
   id: string;
@@ -12,35 +13,14 @@ interface Category {
   keywords?: string[];
 }
 
+const FREE_CAT_LIMIT = 5;
+
 const defaultCategories: Category[] = [
-  { id: "food", name: "Food", type: "expense", icon: Utensils, keywords: [] },
-  { id: "transport", name: "Transport", type: "expense", icon: Bus, keywords: [] },
-  { id: "entertainment", name: "Entertainment", type: "expense", icon: Music, keywords: [] },
-  { id: "shopping", name: "Shopping", type: "expense", icon: ShoppingCart, keywords: [] },
-  { id: "bills", name: "Bills", type: "expense", icon: FileText, keywords: [] },
-  { id: "health", name: "Health", type: "expense", icon: Heart, keywords: [] },
-  { id: "education", name: "Education", type: "expense", icon: BookOpen, keywords: [] },
-  { id: "utilities", name: "Utilities", type: "expense", icon: Zap, keywords: [] },
-  { id: "salary", name: "Salary", type: "income", icon: TrendingUp, keywords: [] },
-  { id: "bonus", name: "Bonus", type: "income", icon: Gift, keywords: [] },
-  { id: "freelance", name: "Freelance", type: "income", icon: Banknote, keywords: [] },
-  { id: "other", name: "Other", type: "expense", icon: MoreHorizontal, keywords: [] },
-  { id: "travel", name: "Travel", type: "expense", icon: Plane, keywords: [] },
-  { id: "gifts", name: "Gifts", type: "expense", icon: Gift, keywords: [] },
-  { id: "sports", name: "Sports", type: "expense", icon: Dumbbell, keywords: [] },
-  { id: "clothing", name: "Clothing", type: "expense", icon: ShoppingBag, keywords: [] },
-  { id: "investment", name: "Investment", type: "income", icon: TrendingUp, keywords: [] },
-  { id: "rental", name: "Rental", type: "income", icon: CreditCard, keywords: [] },
-  { id: "food_delivery", name: "Food Delivery", type: "expense", icon: Utensils, keywords: [] },
-  { id: "subscription", name: "Subscription", type: "expense", icon: Zap, keywords: [] },
-  { id: "insurance", name: "Insurance", type: "expense", icon: FileText, keywords: [] },
-  { id: "car", name: "Car", type: "expense", icon: Bus, keywords: [] },
-  { id: "phone", name: "Phone", type: "expense", icon: Smartphone, keywords: [] },
-  { id: "internet", name: "Internet", type: "expense", icon: Zap, keywords: [] },
-  { id: "hobby", name: "Hobby", type: "expense", icon: Music, keywords: [] },
-  { id: "pets", name: "Pets", type: "expense", icon: Heart, keywords: [] },
-  { id: "childcare", name: "Childcare", type: "expense", icon: Gift, keywords: [] },
-  { id: "loan", name: "Loan", type: "expense", icon: FileText, keywords: [] },
+  { id: "food", name: "Food", type: "expense", icon: Utensils, keywords: ["อาหาร"] },
+  { id: "transport", name: "Transport", type: "expense", icon: Bus, keywords: ["ค่ารถ"] },
+  { id: "shopping", name: "Shopping", type: "expense", icon: ShoppingCart, keywords: ["ผลาญเงิน"] },
+  { id: "house", name: "House", type: "expense", icon: Home, keywords: ["ของใช้ในบ้าน"] },
+  { id: "travel", name: "Travel", type: "expense", icon: Plane, keywords: ["เที่ยว"] },
   { id: "nocat", name: "No Category", type: "expense", icon: MoreHorizontal, keywords: [] },
 ];
 
@@ -93,7 +73,8 @@ export default function Categories() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editKeywords, setEditKeywords] = useState("");
+  const [editKeywords, setEditKeywords] = useState<string[]>([]);
+  const [editNewKeyword, setEditNewKeyword] = useState("");
   const [editIconId, setEditIconId] = useState("other");
   const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
@@ -105,16 +86,28 @@ export default function Categories() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIconId, setNewIconId] = useState("other");
-  const [newKeywords, setNewKeywords] = useState("");
+  const [newKeywords, setNewKeywords] = useState<string[]>([]);
+  const [newKeyword, setNewKeyword] = useState("");
   const [newKeywordError, setNewKeywordError] = useState("");
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumMessage, setPremiumMessage] = useState("");
+
+  const isPremium = localStorage.getItem("app_premium") === "true";
+
+  // Categories over free limit (by position in list, excluding nocat) — locked when not premium
+  const reorderableCats = categories.filter((c) => c.id !== "nocat");
+  const isOverLimitCat = (catId: string) =>
+    !isPremium && reorderableCats.findIndex((c) => c.id === catId) >= FREE_CAT_LIMIT;
+
+  const showPremium = (msg: string) => {
+    setPremiumMessage(msg);
+    setShowPremiumModal(true);
+  };
 
   const handleAddCategory = () => {
     if (!newName.trim()) return;
 
-    const keywords = newKeywords
-      .split(",")
-      .map((k) => k.trim().toLowerCase())
-      .filter((k) => k);
+    const keywords = newKeywords;
 
     // Validate: keywords must not already exist in other categories or accounts
     const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
@@ -137,15 +130,16 @@ export default function Categories() {
     const updated = [...categories.filter((c) => c.id !== "nocat"), newCat, ...categories.filter((c) => c.id === "nocat")];
     setCategories(updated);
     localStorage.setItem("app_categories", JSON.stringify(updated));
-    setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(false);
+    setNewName(""); setNewIconId("other"); setNewKeywords([]); setNewKeyword(""); setNewKeywordError(""); setShowAddForm(false);
   };
 
-  const isProtected = (id: string) => id === "other" || id === "nocat";
+  const isProtected = (id: string) => id === "nocat";
 
   const startEditing = (category: Category & { iconId?: string }) => {
     setEditingId(category.id);
     setEditName(category.name);
-    setEditKeywords((category.keywords || []).join(", "));
+    setEditKeywords(category.keywords || []);
+    setEditNewKeyword("");
     const matchedOpt = iconOptions.find((o) => o.icon === category.icon);
     setEditIconId(category.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
@@ -155,10 +149,7 @@ export default function Categories() {
   const saveEdit = () => {
     if (!editingId || !editName.trim()) return;
 
-    const keywords = editKeywords
-      .split(",")
-      .map((k) => k.trim().toLowerCase())
-      .filter((k) => k);
+    const keywords = editKeywords;
 
     // Validate: keywords must not already exist in other categories or any account
     const otherCats = categories.filter((c) => c.id !== editingId);
@@ -193,7 +184,8 @@ export default function Categories() {
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
-    setEditKeywords("");
+    setEditKeywords([]);
+    setEditNewKeyword("");
     setEditIconId("other");
     setShowEditIconPicker(false);
     setKeywordError("");
@@ -271,7 +263,13 @@ export default function Categories() {
             <h1 className="text-xl font-bold">Categories</h1>
           </div>
           <button
-            onClick={() => { setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true); }}
+            onClick={() => {
+              if (!isPremium && categories.filter((c) => c.id !== "nocat").length >= FREE_CAT_LIMIT) {
+                showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
+                return;
+              }
+              setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true);
+            }}
             className="p-2 hover:bg-theme-500 rounded-lg transition-colors"
             title="Add category"
           >
@@ -319,7 +317,9 @@ export default function Categories() {
                 key={category.id}
                 ref={(el) => { itemRefs.current[category.id] = el; }}
                 className={`bg-white rounded-lg border p-4 transition-all ${
-                  draggingId === category.id
+                  isOverLimitCat(category.id)
+                    ? "border-amber-200 bg-amber-50/30"
+                    : draggingId === category.id
                     ? "opacity-40 border-slate-200"
                     : dragOverId === category.id && draggingId !== null
                     ? "border-theme-400 ring-2 ring-theme-300"
@@ -373,19 +373,46 @@ export default function Categories() {
                       )}
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">
-                        Keywords (คั่นด้วยจุลภาค)
-                      </label>
-                      <input
-                        type="text"
-                        value={editKeywords}
-                        onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
-                        className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
-                        placeholder="เช่น กิน, ข้าว, ร้านอาหาร"
-                      />
-                      {keywordError && (
-                        <p className="text-xs text-red-500 mt-1">{keywordError}</p>
-                      )}
+                      <label className="text-xs font-semibold text-slate-600">Keywords</label>
+                      <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${keywordError ? "border-red-400" : "border-slate-300"}`}>
+                        {editKeywords.map((kw) => (
+                          <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
+                            {kw}
+                            <button
+                              type="button"
+                              onClick={() => { setEditKeywords((prev) => prev.filter((k) => k !== kw)); setKeywordError(""); }}
+                              className="text-slate-400 hover:text-red-500 leading-none"
+                            >
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))}
+                        {(isPremium || editKeywords.length < 1) && (
+                          <input
+                            type="text"
+                            value={editNewKeyword}
+                            onChange={(e) => { setEditNewKeyword(e.target.value); setKeywordError(""); }}
+                            onKeyDown={(e) => {
+                              if ((e.key === "Enter" || e.key === ",") && editNewKeyword.trim()) {
+                                e.preventDefault();
+                                const kw = editNewKeyword.trim().toLowerCase();
+                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
+                                setEditNewKeyword("");
+                              }
+                            }}
+                            onBlur={() => {
+                              if (editNewKeyword.trim()) {
+                                const kw = editNewKeyword.trim().toLowerCase();
+                                if (!editKeywords.includes(kw)) setEditKeywords((prev) => [...prev, kw]);
+                                setEditNewKeyword("");
+                              }
+                            }}
+                            className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
+                            placeholder={editKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
+                          />
+                        )}
+                      </div>
+                      {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -413,7 +440,7 @@ export default function Categories() {
                   </div>
                 ) : (
                   <div className="flex items-start gap-2 rounded-lg transition-colors">
-                    {category.id !== "nocat" ? (
+                    {category.id !== "nocat" && !isOverLimitCat(category.id) ? (
                       <button
                         onPointerDown={(e) => {
                           e.preventDefault();
@@ -435,7 +462,10 @@ export default function Categories() {
                     <div className="flex items-start gap-3 flex-1">
                       <IconComponent size={24} className="text-theme-600 mt-1" />
                       <div>
-                        <p className="font-semibold text-slate-900">{category.name}</p>
+                        <p className="font-semibold text-slate-900 flex items-center gap-1">
+                          {category.name}
+                          {isOverLimitCat(category.id) && <Lock size={11} className="text-amber-500" />}
+                        </p>
                         <p className="text-xs text-slate-500">
                           {category.type === "income" ? "Income" : "Expense"}
                         </p>
@@ -454,12 +484,21 @@ export default function Categories() {
                       </div>
                     </div>
                     {category.id !== "nocat" && (
-                      <button
-                        onClick={() => startEditing(category)}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-theme-600"
-                      >
-                        <Edit2 size={18} />
-                      </button>
+                      isOverLimitCat(category.id) ? (
+                        <button
+                          onClick={() => showPremium(`แพลนฟรีใช้งานได้ ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อปลดล็อคทุก category`)}
+                          className="p-2 rounded-lg text-amber-400 hover:bg-amber-50 transition-colors"
+                        >
+                          <Lock size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => startEditing(category)}
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-theme-600"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )
                     )}
                     </div>
                   </div>
@@ -495,17 +534,46 @@ export default function Categories() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Keywords (คั่นด้วยจุลภาค)</label>
-                <input
-                  type="text"
-                  value={newKeywords}
-                  onChange={(e) => { setNewKeywords(e.target.value); setNewKeywordError(""); }}
-                  className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newKeywordError ? "border-red-400" : "border-slate-300"}`}
-                  placeholder="เช่น กิน, ข้าว, ร้านอาหาร"
-                />
-                {newKeywordError && (
-                  <p className="text-xs text-red-500 mt-1">{newKeywordError}</p>
-                )}
+                <label className="text-xs font-semibold text-slate-600">Keywords</label>
+                <div className={`mt-1 min-h-[42px] px-2 py-1.5 border rounded-lg flex flex-wrap gap-1 items-center ${newKeywordError ? "border-red-400" : "border-slate-300"}`}>
+                  {newKeywords.map((kw) => (
+                    <span key={kw} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
+                      {kw}
+                      <button
+                        type="button"
+                        onClick={() => { setNewKeywords((prev) => prev.filter((k) => k !== kw)); setNewKeywordError(""); }}
+                        className="text-slate-400 hover:text-red-500 leading-none"
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                  {(isPremium || newKeywords.length < 1) && (
+                    <input
+                      type="text"
+                      value={newKeyword}
+                      onChange={(e) => { setNewKeyword(e.target.value); setNewKeywordError(""); }}
+                      onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === ",") && newKeyword.trim()) {
+                          e.preventDefault();
+                          const kw = newKeyword.trim().toLowerCase();
+                          if (!newKeywords.includes(kw)) setNewKeywords((prev) => [...prev, kw]);
+                          setNewKeyword("");
+                        }
+                      }}
+                      onBlur={() => {
+                        if (newKeyword.trim()) {
+                          const kw = newKeyword.trim().toLowerCase();
+                          if (!newKeywords.includes(kw)) setNewKeywords((prev) => [...prev, kw]);
+                          setNewKeyword("");
+                        }
+                      }}
+                      className="flex-1 min-w-[80px] text-sm outline-none bg-transparent py-1"
+                      placeholder={newKeywords.length === 0 ? "พิมพ์แล้ว Enter" : "+ เพิ่ม keyword"}
+                    />
+                  )}
+                </div>
+                {newKeywordError && <p className="text-xs text-red-500 mt-1">{newKeywordError}</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>
@@ -550,6 +618,10 @@ export default function Categories() {
       )}
 
       {/* Delete Confirm Modal */}
+      {showPremiumModal && (
+        <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
+      )}
+
       {deleteConfirmId && (() => {
         const cat = categories.find((c) => c.id === deleteConfirmId);
         const count = deleteTransactionCount(deleteConfirmId);

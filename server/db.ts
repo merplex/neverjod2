@@ -15,6 +15,7 @@ export async function initDB() {
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      is_premium BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
     `CREATE TABLE IF NOT EXISTS sync_categories (
@@ -59,4 +60,8 @@ export async function initDB() {
   }
   // Migration: make type nullable (safe to run multiple times)
   await pool.query(`ALTER TABLE sync_transactions ALTER COLUMN type DROP NOT NULL`).catch(() => {});
+  // Migration: add is_premium column if not exists
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE`).catch(() => {});
+  // Dev premium: premsak.c@gmail.com is always premium
+  await pool.query(`UPDATE users SET is_premium = TRUE WHERE email = 'premsak.c@gmail.com'`).catch(() => {});
 }

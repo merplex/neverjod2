@@ -87,6 +87,7 @@ export default function Settings() {
       const result = await fn(authEmail, authPassword);
       localStorage.setItem("cloud_token", result.token);
       localStorage.setItem("cloud_email", result.email);
+      localStorage.setItem("app_premium", result.isPremium ? "true" : "false");
       setCloudToken(result.token);
       setCloudEmail(result.email);
       setShowAuthForm(false);

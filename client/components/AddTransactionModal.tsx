@@ -123,6 +123,14 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
     } catch { return []; }
   });
 
+  const isPremium = localStorage.getItem("app_premium") === "true";
+  const overLimitCatIds = new Set<string>(
+    !isPremium ? categoriesList.filter((c: any) => c.id !== "nocat").slice(5).map((c: any) => c.id) : []
+  );
+  const overLimitAccIds = new Set<string>(
+    !isPremium ? accountsList.slice(3).map((a: any) => a.id) : []
+  );
+
   // ---- category handlers ----
   const handleCategorySelect = (catId: string, catName: string, catType: string) => {
     setCategoryId(catId);
@@ -400,7 +408,18 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
                 {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
                   const Icon = resolveIcon(cat, MoreHorizontal);
-                  return (
+                  const locked = overLimitCatIds.has(cat.id);
+                  return locked ? (
+                    <button
+                      key={cat.id}
+                      disabled
+                      className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
+                    >
+                      <Icon size={18} className="text-slate-400" />
+                      <span className="text-xs text-center leading-tight text-slate-400">{cat.name}</span>
+                      <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
+                    </button>
+                  ) : (
                     <button
                       key={cat.id}
                       onClick={() => handleCategorySelect(cat.id, cat.name, cat.type)}
@@ -434,7 +453,18 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
                 {accountsList.map((acc: any) => {
                   const Icon = resolveIcon(acc, CreditCard);
-                  return (
+                  const locked = overLimitAccIds.has(acc.id);
+                  return locked ? (
+                    <button
+                      key={acc.id}
+                      disabled
+                      className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
+                    >
+                      <Icon size={18} className="text-slate-400" />
+                      <span className="text-xs text-center leading-tight text-slate-400">{acc.name}</span>
+                      <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
+                    </button>
+                  ) : (
                     <button
                       key={acc.id}
                       onClick={() => handleAccountSelect(acc.id, acc.name)}

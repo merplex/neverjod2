@@ -10,7 +10,7 @@ export async function apiRegister(email: string, password: string) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Register failed");
-  return data as { token: string; email: string };
+  return data as { token: string; email: string; isPremium: boolean };
 }
 
 export async function apiLogin(email: string, password: string) {
@@ -21,7 +21,7 @@ export async function apiLogin(email: string, password: string) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Login failed");
-  return data as { token: string; email: string };
+  return data as { token: string; email: string; isPremium: boolean };
 }
 
 // --- Fingerprint ---

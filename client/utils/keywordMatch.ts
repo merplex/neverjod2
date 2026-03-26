@@ -71,14 +71,20 @@ function buildKeywordMap(
   return result;
 }
 
-// Get categories from localStorage or use defaults
+const FREE_CAT_LIMIT = 5;
+const FREE_ACC_LIMIT = 3;
+
+// Get categories from localStorage or use defaults, filtering over-limit items for free tier
 function getCategoriesWithKeywords(): Record<string, { name: string; keywords: string[] }> {
   try {
     const stored = localStorage.getItem("app_categories");
     if (stored) {
+      const isPremium = localStorage.getItem("app_premium") === "true";
       const categories = JSON.parse(stored);
+      const reorderable = categories.filter((c: any) => c.id !== "nocat");
+      const active = isPremium ? reorderable : reorderable.slice(0, FREE_CAT_LIMIT);
       const raw: Record<string, { name: string; keywords: string[] }> = {};
-      for (const cat of categories) {
+      for (const cat of active) {
         raw[cat.id] = { name: cat.name, keywords: cat.keywords || [] };
       }
       return buildKeywordMap(raw);
@@ -89,14 +95,17 @@ function getCategoriesWithKeywords(): Record<string, { name: string; keywords: s
   return buildKeywordMap(defaultCategoriesWithKeywords);
 }
 
-// Get accounts from localStorage or use defaults
+// Get accounts from localStorage or use defaults, filtering over-limit items for free tier
 function getAccountsWithKeywords(): Record<string, { name: string; keywords: string[] }> {
   try {
     const stored = localStorage.getItem("app_accounts");
     if (stored) {
+      const isPremium = localStorage.getItem("app_premium") === "true";
       const accounts = JSON.parse(stored);
+      const reorderable = accounts.filter((a: any) => a.id !== "account_deleted");
+      const active = isPremium ? reorderable : reorderable.slice(0, FREE_ACC_LIMIT);
       const raw: Record<string, { name: string; keywords: string[] }> = {};
-      for (const acc of accounts) {
+      for (const acc of active) {
         raw[acc.id] = { name: acc.name, keywords: acc.keywords || [] };
       }
       return buildKeywordMap(raw);
