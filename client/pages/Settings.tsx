@@ -89,14 +89,19 @@ export default function Settings() {
     try {
       const fn = authMode === "login" ? apiLogin : apiRegister;
       const result = await fn(authEmail, authPassword);
-      localStorage.setItem("cloud_token", result.token);
-      localStorage.setItem("cloud_email", result.email);
       localStorage.setItem("app_premium", result.isPremium ? "true" : "false");
-      setCloudToken(result.token);
-      setCloudEmail(result.email);
       setShowAuthForm(false);
       setAuthEmail("");
       setAuthPassword("");
+      if (!result.isPremium) {
+        // Free tier — don't allow cloud sync, show upgrade prompt
+        setShowPremiumModal(true);
+        return;
+      }
+      localStorage.setItem("cloud_token", result.token);
+      localStorage.setItem("cloud_email", result.email);
+      setCloudToken(result.token);
+      setCloudEmail(result.email);
       // Auto sync after login
       await syncAll(result.token);
       setSyncStatus("ok");
@@ -337,29 +342,18 @@ export default function Settings() {
         </div>
 
         {/* Cloud Backup */}
-        <div className={`bg-white rounded-2xl shadow-sm border p-5 ${!isPremium ? "border-amber-200 bg-amber-50/20" : "border-slate-100"}`}>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${!isPremium ? "bg-amber-100" : "bg-sky-100"}`}>
-              {isPremium ? <Cloud size={18} className="text-sky-600" /> : <Lock size={18} className="text-amber-500" />}
+            <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
+              <Cloud size={18} className="text-sky-600" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
-                {!isPremium && <span className="text-xs bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded font-medium">Premium</span>}
-              </div>
+              <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
               <p className="text-xs text-slate-500">รองรับการใช้หลายอุปกรณ์พร้อมกัน</p>
             </div>
           </div>
 
-          {!isPremium ? (
-            <button
-              onClick={() => setShowPremiumModal(true)}
-              className="w-full py-2.5 rounded-xl bg-amber-50 text-amber-600 text-sm font-semibold hover:bg-amber-100 transition-colors border border-amber-200 flex items-center justify-center gap-2"
-            >
-              <Lock size={14} />
-              อัปเกรด Premium เพื่อใช้งาน
-            </button>
-          ) : cloudToken ? (
+          {cloudToken ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -436,7 +430,7 @@ export default function Settings() {
               onClick={() => setShowAuthForm(true)}
               className="w-full py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200"
             >
-              เชื่อมต่อ Cloud Backup
+              เข้าสู่ระบบ / สมัครสมาชิก
             </button>
           )}
         </div>
@@ -444,7 +438,7 @@ export default function Settings() {
       </div>
 
       {showPremiumModal && (
-        <PremiumModal message={"Cloud Sync ใช้ได้เฉพาะ Premium\nอัปเกรดเพื่อซิงค์ข้ามอุปกรณ์ได้ไม่จำกัด"} onClose={() => setShowPremiumModal(false)} />
+        <PremiumModal message={"บัญชีของคุณเป็นแพลนฟรี\nอัปเกรด Premium เพื่อใช้งาน Cloud Sync ข้ามอุปกรณ์"} onClose={() => setShowPremiumModal(false)} />
       )}
     </div>
   );
