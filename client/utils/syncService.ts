@@ -157,6 +157,7 @@ export async function syncPull(token: string) {
     localStorage.setItem("app_premium", data.isPremium ? "true" : "false");
   }
   localStorage.setItem("last_sync_at", data.server_time);
+  if (data.last_push_at) localStorage.setItem("last_push_at", data.last_push_at);
   return true;
 }
 

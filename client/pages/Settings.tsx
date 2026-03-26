@@ -130,7 +130,9 @@ export default function Settings() {
   };
 
   const refreshLastSyncTime = (useLocalTime = false) => {
-    const t = useLocalTime ? new Date().toISOString() : localStorage.getItem("last_sync_at");
+    const t = useLocalTime
+      ? new Date().toISOString()
+      : (localStorage.getItem("last_push_at") || localStorage.getItem("last_sync_at"));
     if (!t) return;
     setLastSyncTime(formatTime(t));
   };

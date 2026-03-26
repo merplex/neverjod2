@@ -104,7 +104,7 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
   const since = last_sync_at ? new Date(last_sync_at) : new Date(0);
 
   try {
-    const [cats, accs, txns, userRow] = await Promise.all([
+    const [cats, accs, txns, userRow, lastPushRow] = await Promise.all([
       pool.query(
         "SELECT * FROM sync_categories WHERE user_id = $1 AND updated_at > $2",
         [userId, since]
@@ -118,6 +118,16 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
         [userId, since]
       ),
       pool.query("SELECT is_premium FROM users WHERE id = $1", [userId]),
+      pool.query(
+        `SELECT MAX(updated_at) as last_push_at FROM (
+          SELECT updated_at FROM sync_categories WHERE user_id = $1
+          UNION ALL
+          SELECT updated_at FROM sync_accounts WHERE user_id = $1
+          UNION ALL
+          SELECT updated_at FROM sync_transactions WHERE user_id = $1
+        ) t`,
+        [userId]
+      ),
     ]);
 
     res.json({
@@ -126,6 +136,7 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
       transactions: txns.rows,
       isPremium: userRow.rows[0]?.is_premium ?? false,
       server_time: new Date().toISOString(),
+      last_push_at: lastPushRow.rows[0]?.last_push_at ?? null,
     });
   } catch (err) {
     console.error("sync/pull error:", err);
