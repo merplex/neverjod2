@@ -85,10 +85,9 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
     if (serverItem.deleted_at) {
       localMap.delete(serverItem.id);
     } else {
+      // Server is source of truth on pull — always overwrite local
       const existing = localMap.get(serverItem.id);
-      if (!existing || !existing.updated_at || existing.updated_at < serverItem.updated_at) {
-        localMap.set(serverItem.id, { ...(existing || {}), ...serverItem });
-      }
+      localMap.set(serverItem.id, { ...(existing || {}), ...serverItem });
     }
   }
   localStorage.setItem(storageKey, JSON.stringify(Array.from(localMap.values())));
