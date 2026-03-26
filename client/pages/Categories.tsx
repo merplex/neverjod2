@@ -18,11 +18,11 @@ interface Category {
 const FREE_CAT_LIMIT = 5;
 
 const defaultCategories: Category[] = [
-  { id: "food", name: "Food", type: "expense", icon: Utensils, keywords: ["อาหาร"] },
-  { id: "transport", name: "Transport", type: "expense", icon: Bus, keywords: ["ค่ารถ"] },
-  { id: "shopping", name: "Shopping", type: "expense", icon: ShoppingCart, keywords: ["ผลาญเงิน"] },
-  { id: "house", name: "House", type: "expense", icon: Home, keywords: ["ของใช้ในบ้าน"] },
-  { id: "travel", name: "Travel", type: "expense", icon: Plane, keywords: ["เที่ยว"] },
+  { id: "food", name: "Food-sample", type: "expense", icon: Utensils, keywords: ["อาหาร"] },
+  { id: "transport", name: "Transport-sample", type: "expense", icon: Bus, keywords: ["ค่ารถ"] },
+  { id: "shopping", name: "Shopping-sample", type: "expense", icon: ShoppingCart, keywords: ["ผลาญเงิน"] },
+  { id: "house", name: "House-sample", type: "expense", icon: Home, keywords: ["ของใช้ในบ้าน"] },
+  { id: "travel", name: "Travel-sample", type: "expense", icon: Plane, keywords: ["เที่ยว"] },
   { id: "nocat", name: "No Category", type: "expense", icon: MoreHorizontal, keywords: [] },
 ];
 

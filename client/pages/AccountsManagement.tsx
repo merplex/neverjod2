@@ -20,9 +20,9 @@ interface Account {
 const FREE_ACC_LIMIT = 3;
 
 const defaultAccounts: Account[] = [
-  { id: "kbank", name: "K-Bank", type: "savings account", icon: Smartphone, balance: 0, keywords: ["กสิกร"] },
-  { id: "scb", name: "SCB", type: "savings account", icon: CreditCard, balance: 0, keywords: ["ไทยพาณิชย์"] },
-  { id: "bbl", name: "Bangkok Bank", type: "savings account", icon: Building2, balance: 0, keywords: ["แบงค์กรุงเทพ"] },
+  { id: "kbank", name: "K-Bank-sample", type: "savings account", icon: Smartphone, balance: 0, keywords: ["กสิกร"] },
+  { id: "scb", name: "SCB-sample", type: "savings account", icon: CreditCard, balance: 0, keywords: ["ไทยพาณิชย์"] },
+  { id: "bbl", name: "Bangkok Bank-sample", type: "savings account", icon: Building2, balance: 0, keywords: ["แบงค์กรุงเทพ"] },
   { id: "account_deleted", name: "Account Deleted", type: "deleted", icon: Trash2, balance: 0, keywords: [] },
 ];
 
