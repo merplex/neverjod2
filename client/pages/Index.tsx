@@ -547,22 +547,22 @@ export default function Index() {
           <div className="flex justify-between items-center mb-2">
             <span className="text-white text-[11px] font-semibold opacity-80">{monthlyData.periodLabel}</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             {/* Expense ranking */}
-            <div className="flex-1 bg-white/15 rounded-xl p-2">
+            <div className="bg-white/15 rounded-xl px-3 py-2">
               <p className="text-white font-bold text-sm mb-2">อันดับรายจ่าย</p>
               {monthlyData.topExpenses.length === 0 ? (
                 <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
               ) : (
-                <div className="flex gap-2 overflow-x-auto">
+                <div className="flex">
                   {monthlyData.topExpenses.map(({ id, amount, cat }) => {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
-                      <div key={id} className="flex flex-col items-center gap-0.5 min-w-[44px] max-w-[44px]">
-                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div key={id} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
+                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                           <Icon size={14} className="text-white" />
                         </div>
-                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate px-0.5">{cat?.name || id}</span>
                         <span className="text-[10px] font-bold text-white">
                           {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
                         </span>
@@ -573,20 +573,20 @@ export default function Index() {
               )}
             </div>
             {/* Income ranking */}
-            <div className="flex-1 bg-white/15 rounded-xl p-2">
+            <div className="bg-white/15 rounded-xl px-3 py-2">
               <p className="text-white font-bold text-sm mb-2">อันดับรายรับ</p>
               {monthlyData.topIncomes.length === 0 ? (
                 <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
               ) : (
-                <div className="flex gap-2 overflow-x-auto">
+                <div className="flex">
                   {monthlyData.topIncomes.map(({ id, amount, cat }) => {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
-                      <div key={id} className="flex flex-col items-center gap-0.5 min-w-[44px] max-w-[44px]">
-                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div key={id} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
+                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                           <Icon size={14} className="text-white" />
                         </div>
-                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate px-0.5">{cat?.name || id}</span>
                         <span className="text-[10px] font-bold text-white">
                           {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
                         </span>
