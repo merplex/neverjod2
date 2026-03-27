@@ -25,55 +25,18 @@ function saveTransaction(categoryId: string, accountId: string, amount: number, 
 }
 
 const categories = [
-  { id: "food", name: "Food", type: "expense", icon: Utensils },
-  { id: "transport", name: "Transport", type: "expense", icon: Bus },
-  { id: "entertainment", name: "Entertainment", type: "expense", icon: Music },
-  { id: "shopping", name: "Shopping", type: "expense", icon: ShoppingCart },
-  { id: "bills", name: "Bills", type: "expense", icon: FileText },
-  { id: "health", name: "Health", type: "expense", icon: Heart },
-  { id: "education", name: "Education", type: "expense", icon: BookOpen },
-  { id: "utilities", name: "Utilities", type: "expense", icon: Zap },
-  { id: "salary", name: "Salary", type: "income", icon: TrendingUp },
-  { id: "bonus", name: "Bonus", type: "income", icon: Gift },
-  { id: "freelance", name: "Freelance", type: "income", icon: Banknote },
-  { id: "other", name: "Other", type: "expense", icon: MoreHorizontal },
-  { id: "travel", name: "Travel", type: "expense", icon: Plane },
-  { id: "gifts", name: "Gifts", type: "expense", icon: Gift },
-  { id: "sports", name: "Sports", type: "expense", icon: Dumbbell },
-  { id: "clothing", name: "Clothing", type: "expense", icon: ShoppingBag },
-  { id: "investment", name: "Investment", type: "income", icon: TrendingUp },
-  { id: "rental", name: "Rental", type: "income", icon: CreditCard },
-  { id: "food_delivery", name: "Food Delivery", type: "expense", icon: Utensils },
-  { id: "subscription", name: "Subscription", type: "expense", icon: Zap },
-  { id: "insurance", name: "Insurance", type: "expense", icon: FileText },
-  { id: "car", name: "Car", type: "expense", icon: Bus },
-  { id: "phone", name: "Phone", type: "expense", icon: Smartphone },
-  { id: "internet", name: "Internet", type: "expense", icon: Zap },
-  { id: "hobby", name: "Hobby", type: "expense", icon: Music },
-  { id: "pets", name: "Pets", type: "expense", icon: Heart },
-  { id: "childcare", name: "Childcare", type: "expense", icon: Gift },
-  { id: "loan", name: "Loan", type: "expense", icon: FileText },
+  { id: "food",      name: "Food-sample",         type: "expense", icon: Utensils,     keywords: ["อาหาร"] },
+  { id: "transport", name: "Transport-sample",     type: "expense", icon: Bus,          keywords: ["ค่ารถ"] },
+  { id: "shopping",  name: "Shopping-sample",      type: "expense", icon: ShoppingCart, keywords: ["ผลาญเงิน"] },
+  { id: "house",     name: "House-sample",         type: "expense", icon: Home,         keywords: ["ของใช้ในบ้าน"] },
+  { id: "travel",    name: "Travel-sample",        type: "expense", icon: Plane,        keywords: ["เที่ยว"] },
+  { id: "salary",    name: "Salary-sample",        type: "income",  icon: TrendingUp,   keywords: ["เงินเดือน"] },
 ];
 
 const accounts = [
-  { id: "uob", name: "UOB", type: "credit card", icon: CreditCard },
-  { id: "banka", name: "BankA", type: "debit card", icon: CreditCard },
-  { id: "krungsri", name: "Krungsri", type: "savings account", icon: Wallet },
-  { id: "bangkok", name: "Bangkok Bank", type: "credit card", icon: CreditCard },
-  { id: "kasikorn", name: "Kasikornbank", type: "debit card", icon: CreditCard },
-  { id: "tmb", name: "TMB", type: "savings account", icon: Wallet },
-  { id: "scb", name: "SCB", type: "credit card", icon: CreditCard },
-  { id: "acme", name: "ACME", type: "debit card", icon: CreditCard },
-  { id: "cash", name: "Cash", type: "cash", icon: Banknote },
-  { id: "crypto", name: "Crypto", type: "cryptocurrency", icon: TrendingUp },
-  { id: "baht_pay", name: "Baht Pay", type: "digital wallet", icon: Smartphone },
-  { id: "other_acc", name: "Other", type: "other", icon: MoreHorizontal },
-  { id: "kbank", name: "K-Bank", type: "digital bank", icon: Smartphone },
-  { id: "bbl", name: "Bangkok Bank", type: "savings account", icon: Building2 },
-  { id: "revolut", name: "Revolut", type: "digital wallet", icon: CreditCard },
-  { id: "wise", name: "Wise", type: "digital bank", icon: Wallet },
-  { id: "stripe", name: "Stripe", type: "payment gateway", icon: CreditCard },
-  { id: "paypal", name: "PayPal", type: "digital wallet", icon: Banknote },
+  { id: "kbank", name: "K-Bank-sample",        type: "savings account", icon: Smartphone, balance: 0, keywords: ["กสิกร"] },
+  { id: "scb",   name: "SCB-sample",           type: "savings account", icon: CreditCard, balance: 0, keywords: ["ไทยพาณิชย์"] },
+  { id: "bbl",   name: "Bangkok Bank-sample",  type: "savings account", icon: Building2,  balance: 0, keywords: ["แบงค์กรุงเทพ"] },
 ];
 
 function readVoiceAutoStart(): boolean {
@@ -152,13 +115,19 @@ export default function Index() {
           scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
           truck: Truck, train: Train, bike: Bike, building: Building2,
         };
+        const legacyAccIconMap: Record<string, React.ComponentType<any>> = {
+          uob: CreditCard, banka: CreditCard, krungsri: Wallet, bangkok: CreditCard,
+          kasikorn: CreditCard, tmb: Wallet, acme: CreditCard, cash: Banknote,
+          crypto: TrendingUp, baht_pay: Smartphone, other_acc: MoreHorizontal,
+          revolut: CreditCard, wise: Wallet, stripe: CreditCard, paypal: Banknote,
+        };
         // Restore icons from default accounts since they can't be serialized
         return storedAccounts
           .map((acc: any) => {
             if (!acc || !acc.id) return null;
             const defaultAcc = accounts.find((d) => d.id === acc.id);
             if (!defaultAcc) {
-              // Custom account — resolve icon by iconId
+              if (legacyAccIconMap[acc.id]) return { ...acc, icon: legacyAccIconMap[acc.id] };
               if (!acc.id.startsWith("custom_acc_")) return null;
               const icon = iconMap[acc.iconId] || MoreHorizontal;
               return { ...acc, icon };
