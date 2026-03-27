@@ -574,15 +574,15 @@ export default function Index() {
               {monthlyData.topExpenses.length === 0 ? (
                 <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
               ) : (
-                <div className="flex">
+                <div className="flex gap-2 justify-start">
                   {monthlyData.topExpenses.map(({ id, amount, cat }) => {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
-                      <div key={id} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
+                      <div key={id} className="w-12 flex flex-col items-center gap-0.5">
                         <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                           <Icon size={17} className="text-white" />
                         </div>
-                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate px-0.5">{cat?.name || id}</span>
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
                         <span className="text-[10px] font-bold text-white">
                           {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
                         </span>
@@ -805,7 +805,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={24} />
-                        <span className="font-bold text-xs text-center truncate leading-tight">{account.name}</span>
+                        <span className="font-bold text-xs text-center truncate leading-tight w-full">{account.name}</span>
                       </button>
                     );
                   }}
