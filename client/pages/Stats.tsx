@@ -31,7 +31,7 @@ export default function Stats() {
   // --- Tab 1: Summary (all-time per account) ---
   const summaryData = useMemo(() =>
     storedAccounts.map((acc: any) => {
-      const txns = allTransactions.filter((t) => t.accountId === acc.id && !t.isTransfer);
+      const txns = allTransactions.filter((t) => t.accountId === acc.id);
       const income = txns.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
       const expense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
       return { ...acc, income, expense };
