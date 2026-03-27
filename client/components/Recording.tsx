@@ -191,6 +191,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     const handleBlur = () => {
       if (isListeningRef.current && recognition) {
         console.log("App lost focus, stopping recording");
+        unmuteBeep(); // restore volume before stopping (in case muteBeep was called but onstart not yet fired)
         recognition.stop();
       }
     };
@@ -253,9 +254,12 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
           }
         };
 
-        // Request mic at browser level first (required by Capacitor WebView)
-        // Both getUserMedia and recognition.start() are called within the same user gesture
-        if (navigator.mediaDevices?.getUserMedia) {
+        // On iOS native, SpeechRecognition handles mic permission itself.
+        // getUserMedia async breaks the gesture context on iOS WKWebView.
+        // On Android Capacitor, getUserMedia is needed to pre-grant mic before recognition.start().
+        const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+          !(window as any).MSStream;
+        if (!isIOSNative && navigator.mediaDevices?.getUserMedia) {
           navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => { stream.getTracks().forEach(t => t.stop()); doStart(); })
             .catch(err => {

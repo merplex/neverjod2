@@ -287,7 +287,7 @@ export default function Categories() {
       {/* Sticky header + tab controls wrapper */}
       <div className="sticky top-0 z-10">
       {/* Header */}
-      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 py-4">
+      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button

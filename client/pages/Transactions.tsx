@@ -142,7 +142,7 @@ export default function Transactions() {
   const groupedTransactions = groupTransactionsByDay();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col p-4 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex flex-col px-4 pb-24 pt-safe-header">
       <div className="w-full max-w-md mx-auto">
         {/* Card Container */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-screen">

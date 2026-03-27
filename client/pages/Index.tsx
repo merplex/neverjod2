@@ -514,7 +514,7 @@ export default function Index() {
     <div className="h-[100dvh] flex flex-col pb-[72px] bg-white overflow-hidden">
       <div className="w-full flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Persistent Account Section - Top */}
-        <div className="px-4 pt-3 pb-2 bg-white border-b border-slate-100">
+        <div className="px-4 pb-2 bg-white border-b border-slate-100 pt-safe-header">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Accounts</h3>
             {!isReorderMode && (
@@ -587,7 +587,7 @@ export default function Index() {
         {/* Main Input Area - Full Screen */}
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Dynamic Main Input Area */}
-          <div className="px-4 pt-2 pb-5 bg-white flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="px-4 pt-3 pb-5 bg-white flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Category Input Page (4 rows × 4 columns) - Bottom Aligned */}
             {currentPage === "category" && (
               <div className="flex flex-col flex-1 min-h-0">

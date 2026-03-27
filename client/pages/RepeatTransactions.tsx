@@ -59,7 +59,7 @@ export default function RepeatTransactions() {
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 py-4">
+      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header">
         <div className="max-w-md mx-auto flex items-center gap-2">
           <button
             onClick={() => navigate("/settings")}

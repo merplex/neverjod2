@@ -21,8 +21,8 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
       
       {/* Bottom Navigation - Fixed within mobile frame */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-center z-40">
-        <div className="w-full max-w-md bg-white border-t-2 border-slate-300 shadow-2xl">
-          <div className="px-4 py-3 flex justify-around items-center">
+        <div className="w-full max-w-md bg-white border-t-2 border-slate-300 shadow-2xl pb-safe-nav">
+          <div className="px-2 py-2 flex justify-around items-center">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               const active = isActive(item.path);
@@ -31,14 +31,14 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors ${
+                  className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors ${
                     active
                       ? "text-theme-600"
                       : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <IconComponent size={20} />
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <IconComponent size={18} />
+                  <span className="text-[10px] font-medium whitespace-nowrap">{item.label}</span>
                 </button>
               );
             })}

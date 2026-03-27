@@ -28,6 +28,11 @@ public class AudioPlugin extends Plugin {
 
     @PluginMethod
     public void unmuteBeep(PluginCall call) {
+        restoreVolume();
+        call.resolve();
+    }
+
+    private void restoreVolume() {
         try {
             AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
             if (am != null && savedVolume >= 0) {
@@ -37,6 +42,11 @@ public class AudioPlugin extends Plugin {
         } catch (Exception e) {
             // Ignore
         }
-        call.resolve();
+    }
+
+    /** Restore volume automatically when app goes to background */
+    @Override
+    protected void handleOnStop() {
+        restoreVolume();
     }
 }

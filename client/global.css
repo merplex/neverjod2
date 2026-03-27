@@ -75,6 +75,14 @@
   --t-900: 202  80% 24%;
 }
 
+/* Safe-area utilities for iOS notch / Dynamic Island */
+.pt-safe-header {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+.pb-safe-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @layer base {
   /**
    * Tailwind CSS theme

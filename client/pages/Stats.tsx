@@ -31,7 +31,7 @@ export default function Stats() {
   // --- Tab 1: Summary (all-time per account) ---
   const summaryData = useMemo(() =>
     storedAccounts.map((acc: any) => {
-      const txns = allTransactions.filter((t) => t.accountId === acc.id);
+      const txns = allTransactions.filter((t) => t.accountId === acc.id && !t.isTransfer);
       const income = txns.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
       const expense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
       return { ...acc, income, expense };
@@ -47,7 +47,7 @@ export default function Stats() {
 
   const expenseByCat = useMemo(() => {
     const map: Record<string, number> = {};
-    monthFiltered.filter((t) => t.type === "expense").forEach((t) => {
+    monthFiltered.filter((t) => t.type === "expense" && !t.isTransfer).forEach((t) => {
       map[t.category] = (map[t.category] || 0) + t.amount;
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
@@ -55,7 +55,7 @@ export default function Stats() {
 
   const incomeByCat = useMemo(() => {
     const map: Record<string, number> = {};
-    monthFiltered.filter((t) => t.type === "income").forEach((t) => {
+    monthFiltered.filter((t) => t.type === "income" && !t.isTransfer).forEach((t) => {
       map[t.category] = (map[t.category] || 0) + t.amount;
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
@@ -64,7 +64,7 @@ export default function Stats() {
   const accountMonthData = useMemo(() =>
     storedAccounts
       .map((acc: any) => {
-        const txns = monthFiltered.filter((t) => t.accountId === acc.id);
+        const txns = monthFiltered.filter((t) => t.accountId === acc.id && !t.isTransfer);
         const income = txns.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
         const expense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
         return { ...acc, income, expense };
@@ -78,7 +78,7 @@ export default function Stats() {
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Sticky header + tabs */}
       <div className="sticky top-0 z-10">
-        <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 py-4">
+        <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header">
           <div className="max-w-md mx-auto flex items-center gap-3">
             <button
               onClick={() => navigate("/")}
