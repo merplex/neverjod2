@@ -180,12 +180,15 @@ function wordMatchesKeyword(word: string, keyword: string, threshold = 0.7): boo
 }
 
 export function matchKeyword(text: string, keywords: string[]): boolean {
-  return matchKeywordBestLength(text, keywords) > 0;
+  return matchKeywordBestScore(text, keywords) > 0;
 }
 
-// Returns the length of the longest keyword that matched (0 = no match).
-// Used to pick the most specific match when multiple accounts/categories match.
-function matchKeywordBestLength(text: string, keywords: string[]): number {
+// Returns a score for the best-matching keyword (0 = no match).
+// Exact substring match scores length * 1000 so it ALWAYS beats any fuzzy match,
+// regardless of keyword length. Fuzzy match scores length only.
+// Example: say "scb" → exact hits keyword "scb" (score 3000),
+//          fuzzy might hit "jscb" (score 4) → exact wins correctly.
+function matchKeywordBestScore(text: string, keywords: string[]): number {
   const lowerText = norm(text).trim();
   const condensedText = lowerText.replace(/\s+/g, "");
   const words = lowerText.split(/\s+/);
@@ -195,13 +198,13 @@ function matchKeywordBestLength(text: string, keywords: string[]): number {
     const lowerKeyword = norm(keyword);
     const condensedKeyword = lowerKeyword.replace(/\s+/g, "");
 
-    // 1. Exact substring match (NFC-normalized on both sides)
+    // 1. Exact substring match — high-priority score
     if (lowerText.includes(lowerKeyword) || condensedText.includes(condensedKeyword)) {
-      best = Math.max(best, lowerKeyword.length);
+      best = Math.max(best, lowerKeyword.length * 1000);
       continue;
     }
 
-    // 2. Per-word fuzzy match (~70% similarity)
+    // 2. Per-word fuzzy match (~70% similarity) — low-priority score
     for (const word of words) {
       if (word.length < 2) continue;
       if (wordMatchesKeyword(word, lowerKeyword)) {
@@ -217,10 +220,10 @@ function matchKeywordBestLength(text: string, keywords: string[]): number {
 export function matchCategory(text: string): string | undefined {
   const categoriesWithKeywords = getCategoriesWithKeywords();
   let bestId: string | undefined;
-  let bestLen = 0;
+  let bestScore = 0;
   for (const [categoryId, { keywords }] of Object.entries(categoriesWithKeywords)) {
-    const len = matchKeywordBestLength(text, keywords);
-    if (len > bestLen) { bestLen = len; bestId = categoryId; }
+    const score = matchKeywordBestScore(text, keywords);
+    if (score > bestScore) { bestScore = score; bestId = categoryId; }
   }
   return bestId;
 }
@@ -228,10 +231,10 @@ export function matchCategory(text: string): string | undefined {
 export function matchAccount(text: string): string | undefined {
   const accountsWithKeywords = getAccountsWithKeywords();
   let bestId: string | undefined;
-  let bestLen = 0;
+  let bestScore = 0;
   for (const [accountId, { keywords }] of Object.entries(accountsWithKeywords)) {
-    const len = matchKeywordBestLength(text, keywords);
-    if (len > bestLen) { bestLen = len; bestId = accountId; }
+    const score = matchKeywordBestScore(text, keywords);
+    if (score > bestScore) { bestScore = score; bestId = accountId; }
   }
   return bestId;
 }

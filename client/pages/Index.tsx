@@ -501,77 +501,102 @@ export default function Index() {
     setIsLocked(!isLocked);
   };
 
-  // ── Top expense categories for current month ─────────────────────────────
-  const topExpenses = useMemo(() => {
+  // ── Monthly period helpers ────────────────────────────────────────────────
+  const monthlyData = useMemo(() => {
     try {
       const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
       const resetDay: number = typeof s.monthResetDay === "number" ? s.monthResetDay : 1;
-
       const today = new Date();
       const d = today.getDate();
       const periodStart = d >= resetDay
         ? new Date(today.getFullYear(), today.getMonth(), resetDay)
         : new Date(today.getFullYear(), today.getMonth() - 1, resetDay);
 
+      const startStr = periodStart.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+      const endStr = today.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+      const periodLabel = `${startStr} – ${endStr}`;
+
       const raw: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
-      const totals: Record<string, number> = {};
+      const expTotals: Record<string, number> = {};
+      const incTotals: Record<string, number> = {};
+
       for (const t of raw) {
         if (t.isTransfer || t.categoryId === "transfer_out" || t.categoryId === "transfer_in") continue;
-        const cat = categoriesList.find((c: any) => c.id === t.categoryId);
-        if (!cat || cat.type !== "expense") continue;
         if (new Date(t.date) < periodStart) continue;
+        const cat = categoriesList.find((c: any) => c.id === t.categoryId);
+        if (!cat) continue;
+        const totals = cat.type === "income" ? incTotals : expTotals;
         totals[t.categoryId] = (totals[t.categoryId] || 0) + (Number(t.amount) || 0);
       }
 
-      return Object.entries(totals)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([id, amount]) => ({ id, amount, cat: categoriesList.find((c: any) => c.id === id) }));
-    } catch { return []; }
-  }, [categoriesList]);
+      const rank = (totals: Record<string, number>) =>
+        Object.entries(totals)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([id, amount]) => ({ id, amount, cat: categoriesList.find((c: any) => c.id === id) }));
 
-  const periodLabel = useMemo(() => {
-    try {
-      const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
-      const resetDay: number = typeof s.monthResetDay === "number" ? s.monthResetDay : 1;
-      const today = new Date();
-      const d = today.getDate();
-      const start = d >= resetDay
-        ? new Date(today.getFullYear(), today.getMonth(), resetDay)
-        : new Date(today.getFullYear(), today.getMonth() - 1, resetDay);
-      const startStr = start.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
-      const endStr = today.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
-      return `${startStr} – ${endStr}`;
-    } catch { return ""; }
-  }, []);
+      return { periodLabel, topExpenses: rank(expTotals), topIncomes: rank(incTotals) };
+    } catch { return { periodLabel: "", topExpenses: [], topIncomes: [] }; }
+  }, [categoriesList]);
 
   return (
     <div className="h-[100dvh] flex flex-col pb-safe-content bg-white overflow-hidden">
       <div className="w-full flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Top Expense Summary Header */}
-        <div className="px-4 pt-safe-header pb-2 bg-white border-b border-slate-100">
+        {/* Monthly Ranking Header */}
+        <div className="pt-safe-header bg-theme-600 px-4 pb-3">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">รายจ่ายเดือนนี้</span>
-            <span className="text-xs text-slate-400">{periodLabel}</span>
+            <span className="text-white text-[11px] font-semibold opacity-80">{monthlyData.periodLabel}</span>
           </div>
-          {topExpenses.length === 0 ? (
-            <p className="text-xs text-slate-400 py-1">ยังไม่มีรายจ่ายในรอบนี้</p>
-          ) : (
-            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-              {topExpenses.map(({ id, amount, cat }) => {
-                const Icon = cat?.icon || MoreHorizontal;
-                return (
-                  <div key={id} className="flex flex-col items-center gap-0.5 min-w-[52px]">
-                    <div className="w-9 h-9 bg-theme-50 rounded-xl flex items-center justify-center">
-                      <Icon size={16} className="text-theme-600" />
-                    </div>
-                    <span className="text-[10px] text-slate-500 truncate w-full text-center leading-tight">{cat?.name || id}</span>
-                    <span className="text-[10px] font-bold text-slate-800">฿{amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}</span>
-                  </div>
-                );
-              })}
+          <div className="flex gap-2">
+            {/* Expense ranking */}
+            <div className="flex-1 bg-white/15 rounded-xl p-2">
+              <p className="text-white font-bold text-sm mb-2">อันดับรายจ่าย</p>
+              {monthlyData.topExpenses.length === 0 ? (
+                <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto">
+                  {monthlyData.topExpenses.map(({ id, amount, cat }) => {
+                    const Icon = cat?.icon || MoreHorizontal;
+                    return (
+                      <div key={id} className="flex flex-col items-center gap-0.5 min-w-[44px] max-w-[44px]">
+                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Icon size={14} className="text-white" />
+                        </div>
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
+                        <span className="text-[10px] font-bold text-white">
+                          {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+            {/* Income ranking */}
+            <div className="flex-1 bg-white/15 rounded-xl p-2">
+              <p className="text-white font-bold text-sm mb-2">อันดับรายรับ</p>
+              {monthlyData.topIncomes.length === 0 ? (
+                <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto">
+                  {monthlyData.topIncomes.map(({ id, amount, cat }) => {
+                    const Icon = cat?.icon || MoreHorizontal;
+                    return (
+                      <div key={id} className="flex flex-col items-center gap-0.5 min-w-[44px] max-w-[44px]">
+                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Icon size={14} className="text-white" />
+                        </div>
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
+                        <span className="text-[10px] font-bold text-white">
+                          {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Main Input Area - Full Screen */}
