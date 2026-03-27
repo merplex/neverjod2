@@ -545,7 +545,7 @@ export default function Index() {
         {/* Monthly Ranking Header */}
         <div className="pt-safe-header bg-theme-600 px-4 pb-3">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-white text-[11px] font-semibold opacity-80">{monthlyData.periodLabel}</span>
+            <span className="text-white text-sm font-semibold opacity-80">{monthlyData.periodLabel}</span>
           </div>
           <div className="flex flex-col gap-2">
             {/* Expense ranking */}
@@ -559,8 +559,8 @@ export default function Index() {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
                       <div key={id} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
-                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                          <Icon size={14} className="text-white" />
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                          <Icon size={17} className="text-white" />
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate px-0.5">{cat?.name || id}</span>
                         <span className="text-[10px] font-bold text-white">
@@ -583,8 +583,8 @@ export default function Index() {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
                       <div key={id} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
-                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                          <Icon size={14} className="text-white" />
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                          <Icon size={17} className="text-white" />
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate px-0.5">{cat?.name || id}</span>
                         <span className="text-[10px] font-bold text-white">
