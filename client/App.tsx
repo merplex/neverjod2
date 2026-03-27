@@ -52,7 +52,15 @@ function AppContent() {
 
   useEffect(() => {
     if (checkAndExecuteRepeats()) window.dispatchEvent(new CustomEvent("repeats-updated"));
-    navigate("/", { replace: true });
+    // Restore last page if app was briefly hidden (< 1 min), else go home
+    const lastPath = sessionStorage.getItem("last_path");
+    const lastHideAt = sessionStorage.getItem("last_hide_at");
+    const elapsed = lastHideAt ? Date.now() - parseInt(lastHideAt) : Infinity;
+    if (lastPath && elapsed < 60_000) {
+      navigate(lastPath, { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
     // Refresh app_premium from JWT payload (in case DB was updated since last login)
     const token = localStorage.getItem("cloud_token");
     if (token) {
@@ -74,7 +82,17 @@ function AppContent() {
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "hidden") {
+        // Save current page and hide timestamp for restore logic
+        sessionStorage.setItem("last_path", window.location.pathname);
+        sessionStorage.setItem("last_hide_at", Date.now().toString());
+      } else if (document.visibilityState === "visible") {
+        const lastHideAt = sessionStorage.getItem("last_hide_at");
+        const elapsed = lastHideAt ? Date.now() - parseInt(lastHideAt) : 0;
+        // Away > 1 minute → go home
+        if (elapsed >= 60_000) {
+          navigate("/", { replace: true });
+        }
         const token = localStorage.getItem("cloud_token");
         if (token) syncAll(token).catch(() => {});
       }

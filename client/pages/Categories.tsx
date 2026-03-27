@@ -15,7 +15,7 @@ interface Category {
   keywords?: string[];
 }
 
-const FREE_CAT_LIMIT = 5;
+const FREE_CAT_LIMIT = 6;
 
 const defaultCategories: Category[] = [
   { id: "food", name: "Food-sample", type: "expense", icon: Utensils, keywords: ["อาหาร"] },
@@ -23,6 +23,7 @@ const defaultCategories: Category[] = [
   { id: "shopping", name: "Shopping-sample", type: "expense", icon: ShoppingCart, keywords: ["ผลาญเงิน"] },
   { id: "house", name: "House-sample", type: "expense", icon: Home, keywords: ["ของใช้ในบ้าน"] },
   { id: "travel", name: "Travel-sample", type: "expense", icon: Plane, keywords: ["เที่ยว"] },
+  { id: "salary", name: "Salary-sample", type: "income", icon: TrendingUp, keywords: ["เงินเดือน"] },
   { id: "nocat", name: "No Category", type: "expense", icon: MoreHorizontal, keywords: [] },
 ];
 
@@ -72,6 +73,16 @@ export default function Categories() {
             return { ...cat, icon: defaultCat.icon };
           })
           .filter((cat: any) => cat !== null);
+      }
+      // Ensure salary (default income) always exists
+      if (!list.find((c) => c.id === "salary")) {
+        const salaryDefault = defaultCategories.find((c) => c.id === "salary")!;
+        const nocatIdx = list.findIndex((c) => c.id === "nocat");
+        if (nocatIdx >= 0) {
+          list = [...list.slice(0, nocatIdx), salaryDefault, ...list.slice(nocatIdx)];
+        } else {
+          list = [...list, salaryDefault];
+        }
       }
       // Ensure nocat always exists
       if (!list.find((c) => c.id === "nocat")) {

@@ -14,6 +14,7 @@ const defaultCategoriesWithKeywords: Record<string, { name: string; keywords: st
   shopping: { name: "Shopping-sample", keywords: [] },
   house: { name: "House-sample", keywords: [] },
   travel: { name: "Travel-sample", keywords: [] },
+  salary: { name: "Salary-sample", keywords: [] },
 };
 
 // Default accounts — keywords are managed by the user via the Accounts management page
@@ -34,7 +35,7 @@ function buildKeywordMap(
   return result;
 }
 
-const FREE_CAT_LIMIT = 5;
+const FREE_CAT_LIMIT = 6;
 const FREE_ACC_LIMIT = 3;
 
 // Get categories from localStorage or use defaults, filtering over-limit items for free tier
@@ -153,48 +154,60 @@ function wordMatchesKeyword(word: string, keyword: string, threshold = 0.7): boo
 }
 
 export function matchKeyword(text: string, keywords: string[]): boolean {
+  return matchKeywordBestLength(text, keywords) > 0;
+}
+
+// Returns the length of the longest keyword that matched (0 = no match).
+// Used to pick the most specific match when multiple accounts/categories match.
+function matchKeywordBestLength(text: string, keywords: string[]): number {
   const lowerText = text.toLowerCase().trim();
+  const condensedText = lowerText.replace(/\s+/g, "");
+  const words = lowerText.split(/\s+/);
+  let best = 0;
 
   for (const keyword of keywords) {
     const lowerKeyword = keyword.toLowerCase();
+    const condensedKeyword = lowerKeyword.replace(/\s+/g, "");
 
     // 1. Exact substring match
-    if (lowerText.includes(lowerKeyword)) return true;
+    if (lowerText.includes(lowerKeyword) || condensedText.includes(condensedKeyword)) {
+      best = Math.max(best, lowerKeyword.length);
+      continue;
+    }
 
-    // 2. Remove spaces (handles "U O B" → "uob", "baht pay" → "bahtpay")
-    const condensedText = lowerText.replace(/\s+/g, "");
-    const condensedKeyword = lowerKeyword.replace(/\s+/g, "");
-    if (condensedText.includes(condensedKeyword)) return true;
-
-    // 3. Per-word fuzzy match (~70% similarity)
-    const words = lowerText.split(/\s+/);
+    // 2. Per-word fuzzy match (~70% similarity)
     for (const word of words) {
       if (word.length < 2) continue;
-      if (wordMatchesKeyword(word, lowerKeyword)) return true;
+      if (wordMatchesKeyword(word, lowerKeyword)) {
+        best = Math.max(best, lowerKeyword.length);
+        break;
+      }
     }
   }
 
-  return false;
+  return best;
 }
 
 export function matchCategory(text: string): string | undefined {
   const categoriesWithKeywords = getCategoriesWithKeywords();
+  let bestId: string | undefined;
+  let bestLen = 0;
   for (const [categoryId, { keywords }] of Object.entries(categoriesWithKeywords)) {
-    if (matchKeyword(text, keywords)) {
-      return categoryId;
-    }
+    const len = matchKeywordBestLength(text, keywords);
+    if (len > bestLen) { bestLen = len; bestId = categoryId; }
   }
-  return undefined;
+  return bestId;
 }
 
 export function matchAccount(text: string): string | undefined {
   const accountsWithKeywords = getAccountsWithKeywords();
+  let bestId: string | undefined;
+  let bestLen = 0;
   for (const [accountId, { keywords }] of Object.entries(accountsWithKeywords)) {
-    if (matchKeyword(text, keywords)) {
-      return accountId;
-    }
+    const len = matchKeywordBestLength(text, keywords);
+    if (len > bestLen) { bestLen = len; bestId = accountId; }
   }
-  return undefined;
+  return bestId;
 }
 
 export function parseVoiceInput(transcript: string): MatchResult {
