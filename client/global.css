@@ -75,9 +75,11 @@
   --t-900: 202  80% 24%;
 }
 
-/* Prevent iOS rubber-band scroll on the outer document */
+/* Prevent iOS rubber-band scroll and document-level scroll in WKWebView */
 html, body {
   overscroll-behavior: none;
+  overflow: hidden;
+  height: 100%;
 }
 
 /* Prevent iOS auto-zoom on input focus (font-size < 16px triggers zoom) */
