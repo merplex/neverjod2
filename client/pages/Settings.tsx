@@ -17,6 +17,7 @@ interface AppSettings {
   language: "en" | "th";
   colorTheme: ColorTheme;
   swipeBackDirection: "right" | "left";
+  monthResetDay: number;
 }
 
 const defaultSettings: AppSettings = {
@@ -27,6 +28,7 @@ const defaultSettings: AppSettings = {
   language: "en",
   colorTheme: "teal",
   swipeBackDirection: "right",
+  monthResetDay: 1,
 };
 
 const colorThemes: { id: ColorTheme; name: string; swatches: string[] }[] = [
@@ -335,6 +337,42 @@ export default function Settings() {
               <p className="text-xs text-slate-400 mt-1.5">
                 Auto = ใช้ภาษาของเครื่อง · iOS แนะนำเลือกตรงๆ
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly Reset Day */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-theme-100 rounded-xl flex items-center justify-center">
+              <RefreshCw size={18} className="text-theme-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">รีเซ็ตรายเดือน</h2>
+              <p className="text-xs text-slate-500">วันที่เริ่มนับรอบรายจ่ายใหม่ทุกเดือน</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">รีเซ็ตวันที่</span>
+              <span className="text-sm font-semibold text-theme-600">
+                {settings.monthResetDay} ของทุกเดือน
+              </span>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={28}
+              step={1}
+              value={settings.monthResetDay}
+              onChange={(e) => update("monthResetDay", Number(e.target.value))}
+              className="w-full accent-theme-600"
+            />
+            <div className="flex justify-between text-xs text-slate-400">
+              <span>1</span>
+              <span>10</span>
+              <span>20</span>
+              <span>28</span>
             </div>
           </div>
         </div>

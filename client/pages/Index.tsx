@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import Carousel from "../components/Carousel";
@@ -174,10 +174,8 @@ export default function Index() {
     }
   });
   const [isCategoryReorderMode, setIsCategoryReorderMode] = useState(false);
-  const [isReorderMode, setIsReorderMode] = useState(false);
   const [isAccountPageReorderMode, setIsAccountPageReorderMode] = useState(false);
   const [selectedCategoryForSwap, setSelectedCategoryForSwap] = useState<string | null>(null);
-  const [selectedForSwap, setSelectedForSwap] = useState<string | null>(null);
   const [selectedAccountForSwap, setSelectedAccountForSwap] = useState<string | null>(null);
 
   // Amount input state
@@ -503,84 +501,76 @@ export default function Index() {
     setIsLocked(!isLocked);
   };
 
-  const exitReorderMode = () => {
-    setIsReorderMode(false);
-    setSelectedForSwap(null);
-    // Persist reordered accounts to localStorage so AccountsManagement reflects it
-    localStorage.setItem("app_accounts", JSON.stringify(accountsList));
-  };
+  // ── Top expense categories for current month ─────────────────────────────
+  const topExpenses = useMemo(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+      const resetDay: number = typeof s.monthResetDay === "number" ? s.monthResetDay : 1;
+
+      const today = new Date();
+      const d = today.getDate();
+      const periodStart = d >= resetDay
+        ? new Date(today.getFullYear(), today.getMonth(), resetDay)
+        : new Date(today.getFullYear(), today.getMonth() - 1, resetDay);
+
+      const raw: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const totals: Record<string, number> = {};
+      for (const t of raw) {
+        if (t.isTransfer || t.categoryId === "transfer_out" || t.categoryId === "transfer_in") continue;
+        const cat = categoriesList.find((c: any) => c.id === t.categoryId);
+        if (!cat || cat.type !== "expense") continue;
+        if (new Date(t.date) < periodStart) continue;
+        totals[t.categoryId] = (totals[t.categoryId] || 0) + (Number(t.amount) || 0);
+      }
+
+      return Object.entries(totals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([id, amount]) => ({ id, amount, cat: categoriesList.find((c: any) => c.id === id) }));
+    } catch { return []; }
+  }, [categoriesList]);
+
+  const periodLabel = useMemo(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+      const resetDay: number = typeof s.monthResetDay === "number" ? s.monthResetDay : 1;
+      const today = new Date();
+      const d = today.getDate();
+      const start = d >= resetDay
+        ? new Date(today.getFullYear(), today.getMonth(), resetDay)
+        : new Date(today.getFullYear(), today.getMonth() - 1, resetDay);
+      const startStr = start.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+      const endStr = today.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+      return `${startStr} – ${endStr}`;
+    } catch { return ""; }
+  }, []);
 
   return (
     <div className="h-[100dvh] flex flex-col pb-safe-content bg-white overflow-hidden">
       <div className="w-full flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Persistent Account Section - Top */}
-        <div className="px-4 pb-2 bg-white border-b border-slate-100 pt-safe-header">
+        {/* Top Expense Summary Header */}
+        <div className="px-4 pt-safe-header pb-2 bg-white border-b border-slate-100">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Accounts</h3>
-            {!isReorderMode && (
-              <button
-                onClick={() => setIsReorderMode(true)}
-                className="px-3 py-1 text-xs bg-slate-100 text-slate-500 rounded font-semibold hover:bg-slate-200 transition-colors"
-              >
-                Reorder
-              </button>
-            )}
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">รายจ่ายเดือนนี้</span>
+            <span className="text-xs text-slate-400">{periodLabel}</span>
           </div>
-          <Carousel
-            items={accountsList}
-            itemsPerPage={4}
-            cols={2}
-            renderItem={(account) => {
-              const IconComponent = account.icon;
-              const accountIndex = accountsList.findIndex((a) => a.id === account.id);
-              const isSelected = selectedForSwap === account.id;
-
-              return (
-                <button
-                  key={account.id}
-                  onClick={() => {
-                    if (isReorderMode) {
-                      if (selectedForSwap === null) {
-                        // First selection - select this account
-                        setSelectedForSwap(account.id);
-                      } else if (selectedForSwap === account.id) {
-                        // Deselect if clicking the same account
-                        setSelectedForSwap(null);
-                      } else {
-                        // Second selection - swap the two accounts
-                        const firstIndex = accountsList.findIndex((a) => a.id === selectedForSwap);
-                        const newList = [...accountsList];
-                        [newList[firstIndex], newList[accountIndex]] = [newList[accountIndex], newList[firstIndex]];
-                        setAccountsList(newList);
-                        setSelectedForSwap(null);
-                      }
-                    } else {
-                      // Normal mode - navigate to transactions filtered by account
-                      navigate(`/transactions?accountId=${account.id}`);
-                    }
-                  }}
-                  className={`w-full py-2 px-3 rounded-lg transition-all flex flex-col items-center gap-1 cursor-pointer text-xs font-semibold overflow-hidden ${
-                    isReorderMode
-                      ? isSelected
-                        ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
-                        : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  <IconComponent size={20} />
-                  <span className="font-bold text-xs truncate w-full text-center block">{account.name}</span>
-                  <span className="text-xs font-normal opacity-75 truncate w-full text-center block">{account.type}</span>
-                </button>
-              );
-            }}
-          />
-          {isReorderMode && (
-            <button
-              onClick={exitReorderMode}
-              className="mt-3 w-full py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors text-sm"
-            >
-              Done Reordering
-            </button>
+          {topExpenses.length === 0 ? (
+            <p className="text-xs text-slate-400 py-1">ยังไม่มีรายจ่ายในรอบนี้</p>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+              {topExpenses.map(({ id, amount, cat }) => {
+                const Icon = cat?.icon || MoreHorizontal;
+                return (
+                  <div key={id} className="flex flex-col items-center gap-0.5 min-w-[52px]">
+                    <div className="w-9 h-9 bg-theme-50 rounded-xl flex items-center justify-center">
+                      <Icon size={16} className="text-theme-600" />
+                    </div>
+                    <span className="text-[10px] text-slate-500 truncate w-full text-center leading-tight">{cat?.name || id}</span>
+                    <span className="text-[10px] font-bold text-slate-800">฿{amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
