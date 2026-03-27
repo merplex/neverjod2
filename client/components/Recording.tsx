@@ -191,6 +191,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     const handleBlur = () => {
       if (isListeningRef.current && recognition) {
         console.log("App lost focus, stopping recording");
+        manualStopRef.current = true; // prevent onend from auto-restarting + re-muting
         unmuteBeep();
         recognition.stop();
       }
@@ -201,6 +202,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       if (document.visibilityState === "hidden") {
         unmuteBeep();
         if (isListeningRef.current && recognition) {
+          manualStopRef.current = true; // prevent onend from calling muteBeep() + auto-restart
           recognition.stop();
         }
       }
