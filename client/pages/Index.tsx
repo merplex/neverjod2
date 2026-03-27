@@ -321,7 +321,16 @@ export default function Index() {
     if (acc.categoryId && acc.accountId && acc.amount && !allDetectedRef.current) {
       allDetectedRef.current = true;
       setVoiceStopTrigger((n) => n + 1);
-      setTimeout(() => handleVoiceEnd(), 200);
+      // Wait for React to flush state → browser to paint chips → then show popup.
+      // Double rAF ensures at least one full frame is painted before popup appears.
+      // iOS WKWebView batches paints aggressively so setTimeout alone is not enough.
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            handleVoiceEnd();
+          });
+        });
+      }, 100);
     }
     // Smart transcript accumulation — avoids duplicates from Chrome Android's
     // progressive refinements and session restarts
