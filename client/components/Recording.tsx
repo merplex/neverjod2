@@ -202,6 +202,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     return () => {
       manualStopRef.current = true;
       window.removeEventListener("blur", handleBlur);
+      unmuteBeep(); // always restore volume when component unmounts (e.g. navigate away)
       if (recognition) {
         recognition.stop();
       }

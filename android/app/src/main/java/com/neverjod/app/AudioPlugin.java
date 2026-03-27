@@ -44,9 +44,9 @@ public class AudioPlugin extends Plugin {
         }
     }
 
-    /** Restore volume automatically when app goes to background */
+    /** Restore volume automatically when app goes to background (onPause fires before onStop) */
     @Override
-    protected void handleOnStop() {
+    protected void handleOnPause() {
         restoreVolume();
     }
 }

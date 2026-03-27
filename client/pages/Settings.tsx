@@ -92,6 +92,18 @@ export default function Settings() {
     document.documentElement.setAttribute("data-theme", settings.colorTheme);
   }, [settings]);
 
+  // Re-read sync direction when auto-sync completes in the background
+  useEffect(() => {
+    const onSyncUpdated = () => {
+      const d = localStorage.getItem("sync_direction");
+      setSyncDirection(d === "server" || d === "client" ? d : null);
+      const t = localStorage.getItem("last_client_sync_at") || localStorage.getItem("last_push_at");
+      if (t) setLastSyncTime(formatTime(t));
+    };
+    window.addEventListener("sync-updated", onSyncUpdated);
+    return () => window.removeEventListener("sync-updated", onSyncUpdated);
+  }, []);
+
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };

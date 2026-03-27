@@ -99,17 +99,18 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
 // force=false: use existing timestamp or epoch (auto sync — server data wins if newer)
 export async function syncPush(token: string, force = false) {
   const now = new Date().toISOString();
-  const EPOCH = "1970-01-01T00:00:00.000Z";
+  // Always stamp updated_at = now so local edits always win over server's old timestamp.
+  // Server upsert rule: "WHERE updated_at < EXCLUDED.updated_at" — if we send the same
+  // old timestamp the server already has, it silently rejects the update.
   const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
-    .map((c) => ({ ...c, updated_at: force ? now : (c.updated_at || EPOCH) }));
+    .map((c) => ({ ...c, updated_at: now }));
   const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
-    .map((a) => ({ ...a, updated_at: force ? now : (a.updated_at || EPOCH) }));
-  // Derive type from category if not stored on transaction
+    .map((a) => ({ ...a, updated_at: now }));
   const transactions = (JSON.parse(localStorage.getItem("app_transactions") || "[]") as any[])
     .map((tx) => {
       const cat = categories.find((c) => c.id === tx.categoryId);
       const type = tx.type || cat?.type || "expense";
-      return { ...tx, type, fingerprint: tx.fingerprint || makeFingerprint(tx), updated_at: tx.updated_at || now };
+      return { ...tx, type, fingerprint: tx.fingerprint || makeFingerprint(tx), updated_at: now };
     });
 
   // Merge soft-delete tombstones

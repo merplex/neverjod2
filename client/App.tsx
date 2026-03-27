@@ -75,6 +75,12 @@ function AppContent() {
         if (!sessionStorage.getItem("synced_once")) {
           sessionStorage.setItem("synced_once", "1");
           window.location.reload();
+        } else {
+          // After reload, mark direction as "client" (we pushed our data)
+          const now = new Date().toISOString();
+          localStorage.setItem("sync_direction", "client");
+          localStorage.setItem("last_client_sync_at", now);
+          window.dispatchEvent(new CustomEvent("sync-updated"));
         }
       }).catch(() => {});
     }
@@ -94,7 +100,14 @@ function AppContent() {
           navigate("/", { replace: true });
         }
         const token = localStorage.getItem("cloud_token");
-        if (token) syncAll(token).catch(() => {});
+        if (token) {
+          syncAll(token).then(() => {
+            const now = new Date().toISOString();
+            localStorage.setItem("sync_direction", "client");
+            localStorage.setItem("last_client_sync_at", now);
+            window.dispatchEvent(new CustomEvent("sync-updated"));
+          }).catch(() => {});
+        }
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
