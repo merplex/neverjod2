@@ -283,7 +283,7 @@ export default function Categories() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-safe-content">
       {/* Sticky header + tab controls wrapper */}
       <div className="sticky top-0 z-10">
       {/* Header */}
@@ -355,7 +355,7 @@ export default function Categories() {
               <div
                 key={category.id}
                 ref={(el) => { itemRefs.current[category.id] = el; }}
-                className={`bg-white rounded-lg border p-4 transition-all ${
+                className={`bg-white rounded-lg border p-4 transition-all select-none ${
                   isOverLimitCat(category.id)
                     ? "border-amber-200 bg-amber-50/30"
                     : draggingId === category.id

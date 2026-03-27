@@ -75,6 +75,16 @@
   --t-900: 202  80% 24%;
 }
 
+/* Prevent iOS rubber-band scroll on the outer document */
+html, body {
+  overscroll-behavior: none;
+}
+
+/* Prevent iOS auto-zoom on input focus (font-size < 16px triggers zoom) */
+input, textarea, select {
+  font-size: max(16px, 1em);
+}
+
 /* Safe-area utilities for iOS notch / Dynamic Island */
 .pt-safe-header {
   padding-top: calc(1rem + env(safe-area-inset-top, 0px));
@@ -82,9 +92,9 @@
 .pb-safe-nav {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-/* Content padding-bottom = nav height (~3.5rem) + iOS safe area */
+/* Content padding-bottom = nav height (~4.5rem/72px) + iOS safe area */
 .pb-safe-content {
-  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @layer base {

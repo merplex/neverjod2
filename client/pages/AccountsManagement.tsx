@@ -450,7 +450,7 @@ export default function AccountsManagement() {
               <div
                 key={account.id}
                 ref={(el) => { itemRefs.current[account.id] = el; }}
-                className={`bg-white rounded-lg border p-4 transition-all ${
+                className={`bg-white rounded-lg border p-4 transition-all select-none ${
                   isOverLimitAcc(account.id)
                     ? "border-amber-200 bg-amber-50/30"
                     : draggingId === account.id

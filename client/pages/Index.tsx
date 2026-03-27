@@ -511,7 +511,7 @@ export default function Index() {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col pb-[72px] bg-white overflow-hidden">
+    <div className="h-[100dvh] flex flex-col pb-safe-content bg-white overflow-hidden">
       <div className="w-full flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Persistent Account Section - Top */}
         <div className="px-4 pb-2 bg-white border-b border-slate-100 pt-safe-header">

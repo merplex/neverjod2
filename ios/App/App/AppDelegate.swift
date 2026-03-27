@@ -7,7 +7,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Disable WKWebView rubber-band / bounce scroll so the app doesn't drift up/down
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let vc = self.window?.rootViewController as? CAPBridgeViewController {
+                vc.webView?.scrollView.bounces = false
+                vc.webView?.scrollView.alwaysBounceVertical = false
+            }
+        }
         return true
     }
 
