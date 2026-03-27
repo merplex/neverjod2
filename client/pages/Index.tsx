@@ -538,7 +538,7 @@ export default function Index() {
           </div>
           <div className="flex flex-col gap-2">
             {/* Expense ranking */}
-            <div className="bg-white/15 rounded-xl px-3 py-2">
+            <div className="bg-white/15 rounded-xl px-3 py-2 overflow-hidden">
               <p className="text-white font-bold text-sm mb-2">อันดับรายจ่าย</p>
               {monthlyData.topExpenses.length === 0 ? (
                 <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
@@ -562,7 +562,7 @@ export default function Index() {
               )}
             </div>
             {/* Income ranking */}
-            <div className="bg-white/15 rounded-xl px-3 py-2">
+            <div className="bg-white/15 rounded-xl px-3 py-2 overflow-hidden">
               <p className="text-white font-bold text-sm mb-2">อันดับรายรับ</p>
               {monthlyData.topIncomes.length === 0 ? (
                 <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
