@@ -82,6 +82,10 @@
 .pb-safe-nav {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+/* Content padding-bottom = nav height (~3.5rem) + iOS safe area */
+.pb-safe-content {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
 
 @layer base {
   /**

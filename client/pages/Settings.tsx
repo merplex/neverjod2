@@ -12,6 +12,7 @@ type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky";
 interface AppSettings {
   voiceInputDelay: number;
   voiceAutoStart: boolean;
+  voiceLang: "th-TH" | "en-US" | "auto";
   cloudBackupEnabled: boolean;
   language: "en" | "th";
   colorTheme: ColorTheme;
@@ -21,6 +22,7 @@ interface AppSettings {
 const defaultSettings: AppSettings = {
   voiceInputDelay: 3,
   voiceAutoStart: true,
+  voiceLang: "th-TH",
   cloudBackupEnabled: false,
   language: "en",
   colorTheme: "teal",
@@ -306,6 +308,33 @@ export default function Settings() {
                 <span>5 วิ</span>
                 <span>10 วิ</span>
               </div>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-600">ภาษารับเสียง</span>
+                <span className="text-xs text-slate-400">
+                  {settings.voiceLang === "th-TH" ? "ไทย" : settings.voiceLang === "en-US" ? "English" : "Auto"}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {(["th-TH", "en-US", "auto"] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => update("voiceLang", lang)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      settings.voiceLang === lang
+                        ? "bg-theme-600 text-white border-theme-600"
+                        : "bg-white text-slate-600 border-slate-200"
+                    }`}
+                  >
+                    {lang === "th-TH" ? "ไทย" : lang === "en-US" ? "English" : "Auto"}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5">
+                Auto = ใช้ภาษาของเครื่อง · iOS แนะนำเลือกตรงๆ
+              </p>
             </div>
           </div>
         </div>

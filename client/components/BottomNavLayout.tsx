@@ -17,8 +17,8 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className="flex-1">{children}</div>
-      
+      <div className="flex-1 pb-safe-content">{children}</div>
+
       {/* Bottom Navigation - Fixed within mobile frame */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-center z-40">
         <div className="w-full max-w-md bg-white border-t-2 border-slate-300 shadow-2xl pb-safe-nav">

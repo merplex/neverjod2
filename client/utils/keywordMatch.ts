@@ -9,20 +9,42 @@ export interface MatchResult {
 
 // Default categories — keywords are managed by the user via the Categories management page
 const defaultCategoriesWithKeywords: Record<string, { name: string; keywords: string[] }> = {
-  food: { name: "Food-sample", keywords: [] },
-  transport: { name: "Transport-sample", keywords: [] },
-  shopping: { name: "Shopping-sample", keywords: [] },
-  house: { name: "House-sample", keywords: [] },
-  travel: { name: "Travel-sample", keywords: [] },
-  salary: { name: "Salary-sample", keywords: [] },
+  food:      { name: "Food-sample",      keywords: ["อาหาร"] },
+  transport: { name: "Transport-sample", keywords: ["ค่ารถ"] },
+  shopping:  { name: "Shopping-sample",  keywords: ["ผลาญเงิน"] },
+  house:     { name: "House-sample",     keywords: ["ของใช้ในบ้าน"] },
+  travel:    { name: "Travel-sample",    keywords: ["เที่ยว"] },
+  salary:    { name: "Salary-sample",    keywords: ["เงินเดือน"] },
+};
+
+// Fallback keywords for known built-in category IDs when localStorage has empty keywords
+const builtinCategoryKeywords: Record<string, string[]> = {
+  food:      ["อาหาร"],
+  transport: ["ค่ารถ"],
+  shopping:  ["ผลาญเงิน"],
+  house:     ["ของใช้ในบ้าน"],
+  travel:    ["เที่ยว"],
+  salary:    ["เงินเดือน"],
 };
 
 // Default accounts — keywords are managed by the user via the Accounts management page
 const defaultAccountsWithKeywords: Record<string, { name: string; keywords: string[] }> = {
-  kbank: { name: "K-Bank-sample", keywords: [] },
-  scb: { name: "SCB-sample", keywords: [] },
-  bbl: { name: "Bangkok Bank-sample", keywords: [] },
+  kbank: { name: "K-Bank-sample", keywords: ["กสิกร", "kbank"] },
+  scb: { name: "SCB-sample", keywords: ["ไทยพาณิชย์", "scb"] },
+  bbl: { name: "Bangkok Bank-sample", keywords: ["แบงค์กรุงเทพ", "กรุงเทพ", "bbl"] },
 };
+
+// Fallback keywords for known built-in account IDs when localStorage has empty keywords
+const builtinAccountKeywords: Record<string, string[]> = {
+  kbank: ["กสิกร", "kbank"],
+  scb: ["ไทยพาณิชย์", "scb"],
+  bbl: ["แบงค์กรุงเทพ", "กรุงเทพ", "bbl"],
+};
+
+// Normalize a string to NFC and lowercase — handles iOS vs Android speech recognition differences
+function norm(s: string): string {
+  return s.normalize("NFC").toLowerCase();
+}
 
 // Always include the entity's name as a keyword alongside user-defined keywords
 function buildKeywordMap(
@@ -30,7 +52,7 @@ function buildKeywordMap(
 ): Record<string, { name: string; keywords: string[] }> {
   const result: Record<string, { name: string; keywords: string[] }> = {};
   for (const [id, { name, keywords }] of Object.entries(source)) {
-    result[id] = { name, keywords: [...keywords, name.toLowerCase()] };
+    result[id] = { name, keywords: [...keywords, norm(name)] };
   }
   return result;
 }
@@ -49,7 +71,9 @@ function getCategoriesWithKeywords(): Record<string, { name: string; keywords: s
       const active = isPremium ? reorderable : reorderable.slice(0, FREE_CAT_LIMIT);
       const raw: Record<string, { name: string; keywords: string[] }> = {};
       for (const cat of active) {
-        raw[cat.id] = { name: cat.name, keywords: cat.keywords || [] };
+        const stored = cat.keywords && cat.keywords.length > 0 ? cat.keywords : [];
+        const fallback = stored.length === 0 ? (builtinCategoryKeywords[cat.id] || []) : [];
+        raw[cat.id] = { name: cat.name, keywords: [...stored, ...fallback] };
       }
       return buildKeywordMap(raw);
     }
@@ -70,7 +94,9 @@ function getAccountsWithKeywords(): Record<string, { name: string; keywords: str
       const active = isPremium ? reorderable : reorderable.slice(0, FREE_ACC_LIMIT);
       const raw: Record<string, { name: string; keywords: string[] }> = {};
       for (const acc of active) {
-        raw[acc.id] = { name: acc.name, keywords: acc.keywords || [] };
+        const stored = acc.keywords && acc.keywords.length > 0 ? acc.keywords : [];
+        const fallback = stored.length === 0 ? (builtinAccountKeywords[acc.id] || []) : [];
+        raw[acc.id] = { name: acc.name, keywords: [...stored, ...fallback] };
       }
       return buildKeywordMap(raw);
     }
@@ -160,16 +186,16 @@ export function matchKeyword(text: string, keywords: string[]): boolean {
 // Returns the length of the longest keyword that matched (0 = no match).
 // Used to pick the most specific match when multiple accounts/categories match.
 function matchKeywordBestLength(text: string, keywords: string[]): number {
-  const lowerText = text.toLowerCase().trim();
+  const lowerText = norm(text).trim();
   const condensedText = lowerText.replace(/\s+/g, "");
   const words = lowerText.split(/\s+/);
   let best = 0;
 
   for (const keyword of keywords) {
-    const lowerKeyword = keyword.toLowerCase();
+    const lowerKeyword = norm(keyword);
     const condensedKeyword = lowerKeyword.replace(/\s+/g, "");
 
-    // 1. Exact substring match
+    // 1. Exact substring match (NFC-normalized on both sides)
     if (lowerText.includes(lowerKeyword) || condensedText.includes(condensedKeyword)) {
       best = Math.max(best, lowerKeyword.length);
       continue;

@@ -18,12 +18,24 @@ function readSilenceDelay(): number {
   } catch { return 3500; }
 }
 
+function readVoiceLang(): string {
+  try {
+    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const lang = s.voiceLang;
+    if (lang === "en-US") return "en-US";
+    if (lang === "auto") return navigator.language || "th-TH";
+    return "th-TH";
+  } catch { return "th-TH"; }
+}
+
+type MergedVoiceData = { categoryId?: string; accountId?: string; amount?: number; description: string };
 
 export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, startTrigger, stopTrigger, autoRestart }: RecordingProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
   const recognitionRef = useRef<any>(null);
+  const recognition2Ref = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isListeningRef = useRef(false);
   const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
@@ -35,33 +47,36 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const autoRestartRef = useRef(autoRestart);
   const manualStopRef = useRef(false);
   const processedResultIndicesRef = useRef<Set<number>>(new Set());
+  // Accumulates best-matched fields from BOTH recognitions for the current phrase
+  const mergedVoiceDataRef = useRef<MergedVoiceData>({ description: "" });
 
-  // Keep refs up-to-date without re-initializing recognition
   useEffect(() => { onVoiceInputRef.current = onVoiceInput; }, [onVoiceInput]);
   useEffect(() => { onVoiceEndRef.current = onVoiceEnd; }, [onVoiceEnd]);
   useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
   useEffect(() => { autoRestartRef.current = autoRestart; }, [autoRestart]);
 
-  // Stop when stopTrigger increments (e.g. when all 3 detected)
+  // Stop when stopTrigger increments
   useEffect(() => {
     if (!stopTrigger || !recognitionRef.current || !isListeningRef.current) return;
     manualStopRef.current = true;
     recognitionRef.current.stop();
+    try { recognition2Ref.current?.stop(); } catch {}
   }, [stopTrigger]);
 
-  // Auto-start when trigger increments (e.g. when category page becomes active)
+  // Auto-start when startTrigger increments
   useEffect(() => {
     if (!startTrigger || !recognitionRef.current || isListeningRef.current) return;
     try {
       setTranscript("");
       hasSpeechStartedRef.current = false;
+      mergedVoiceDataRef.current = { description: "" };
       setIsListening(true);
       isListeningRef.current = true;
-      try { recognitionRef.current.start(); }
-      catch (e) {
+      try { recognitionRef.current.start(); } catch (e) {
         setIsListening(false);
         isListeningRef.current = false;
       }
+      try { recognition2Ref.current?.start(); } catch {}
     } catch (e) {
       setIsListening(false);
       isListeningRef.current = false;
@@ -69,7 +84,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   }, [startTrigger]);
 
   useEffect(() => {
-    // Initialize Web Speech API with multiple fallbacks
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition ||
@@ -77,68 +91,65 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       (window as any).msSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.warn("Speech Recognition not supported in this browser");
-      console.warn("Your browser doesn't support Web Speech API");
-      console.warn("Supported browsers: Chrome, Edge, Safari, Firefox");
       setIsSupported(false);
       return;
     }
 
-    console.log("Speech Recognition API found");
     setIsSupported(true);
 
+    // ── Shared silence-timeout helper ────────────────────────────────────────
+    const resetSilenceTimer = () => {
+      if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = setTimeout(() => {
+        if (isListeningRef.current && hasSpeechStartedRef.current) {
+          hasSpeechStartedRef.current = false;
+          if (onVoiceEndRef.current) onVoiceEndRef.current();
+        }
+      }, readSilenceDelay());
+    };
+
+    // ── Primary recognition (user's chosen lang, default th-TH) ─────────────
+    const primaryLang = readVoiceLang();
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "th-TH";
+    recognition.lang = primaryLang;
 
     recognition.onstart = () => {
-      console.log("Speech recognition started - waiting for speech");
+      console.log("Speech recognition started");
       hasSpeechStartedRef.current = false;
       processedResultIndicesRef.current.clear();
+      mergedVoiceDataRef.current = { description: "" };
     };
 
     recognition.onresult = (event: any) => {
-      let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcriptPart = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           console.log("Final transcript:", transcriptPart);
-          // Mark that speech has started
           hasSpeechStartedRef.current = true;
 
           setTranscript((prev) => prev + transcriptPart + " ");
-          if (onTranscriptRef.current) {
-            onTranscriptRef.current(transcriptPart);
-          }
+          if (onTranscriptRef.current) onTranscriptRef.current(transcriptPart);
 
-          // Parse voice input for category, account, and amount — always call
           const voiceData = parseVoiceInput(transcriptPart);
-          if (onVoiceInputRef.current) {
-            console.log("Voice data:", voiceData);
-            onVoiceInputRef.current(voiceData);
-          }
+          // Merge: primary sets description; fills fields not yet matched
+          mergedVoiceDataRef.current = {
+            description: transcriptPart,
+            accountId:   voiceData.accountId  ?? mergedVoiceDataRef.current.accountId,
+            categoryId:  voiceData.categoryId ?? mergedVoiceDataRef.current.categoryId,
+            amount:      voiceData.amount     ?? mergedVoiceDataRef.current.amount,
+          };
+          console.log("Voice data:", mergedVoiceDataRef.current);
+          if (onVoiceInputRef.current) onVoiceInputRef.current({ ...mergedVoiceDataRef.current });
 
-          // After silence delay, call onVoiceEnd without stopping recognition
-          if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-          }
-          silenceTimeoutRef.current = setTimeout(() => {
-            if (isListeningRef.current && hasSpeechStartedRef.current) {
-              hasSpeechStartedRef.current = false;
-              if (onVoiceEndRef.current) onVoiceEndRef.current();
-            }
-          }, readSilenceDelay());
-        } else {
-          interim += transcriptPart;
+          resetSilenceTimer();
         }
       }
     };
 
     recognition.onend = () => {
       console.log("Speech recognition ended");
-
-      // Clear silence timeout
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current);
         silenceTimeoutRef.current = undefined;
@@ -147,17 +158,13 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       const hadSpeech = hasSpeechStartedRef.current;
       hasSpeechStartedRef.current = false;
 
-      // Call onVoiceEnd callback when speech ends (if speech was detected)
-      if (hadSpeech && onVoiceEndRef.current) {
-        console.log("Calling onVoiceEnd callback");
-        onVoiceEndRef.current();
-      }
+      if (hadSpeech && onVoiceEndRef.current) onVoiceEndRef.current();
 
-      // Auto-restart if: was listening, not manually stopped, autoRestart enabled
       if (isListeningRef.current && !manualStopRef.current && autoRestartRef.current) {
         try {
           recognition.start();
-          return; // keep isListening = true, don't reset UI
+          try { recognition2Ref.current?.start(); } catch {}
+          return;
         } catch (e) {
           console.error("Auto-restart failed:", e);
         }
@@ -165,9 +172,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
       manualStopRef.current = false;
 
-      // Reset state to match reality - listening has stopped
       if (isListeningRef.current) {
-        console.log("Syncing UI state - recognition ended");
         setIsListening(false);
         isListeningRef.current = false;
       }
@@ -183,21 +188,70 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
     recognitionRef.current = recognition;
 
-    // Handle app focus/blur - stop recording when user switches away
+    // ── Secondary recognition (complementary lang for mixed-language input) ──
+    // Disabled on iOS — running two SpeechRecognition instances competes for the same
+    // SFSpeechRecognizer resource and slows down primary recognition noticeably.
+    // iOS users can work around English keywords by using the "English" voice lang setting.
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const secondaryLang = primaryLang === "en-US" ? "th-TH" : "en-US";
+    try {
+      if (isIOS) throw new Error("secondary disabled on iOS");
+      const recognition2 = new SpeechRecognition();
+      recognition2.continuous = true;
+      recognition2.interimResults = false; // Only final results needed
+      recognition2.lang = secondaryLang;
+
+      recognition2.onresult = (event: any) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (!event.results[i].isFinal) continue;
+          const text = event.results[i][0].transcript;
+          const data = parseVoiceInput(text);
+          const prev = mergedVoiceDataRef.current;
+          let changed = false;
+          const next: MergedVoiceData = { ...prev };
+          // Only fill fields the primary missed
+          if (data.accountId  && !prev.accountId)  { next.accountId  = data.accountId;  changed = true; }
+          if (data.categoryId && !prev.categoryId) { next.categoryId = data.categoryId; changed = true; }
+          if (data.amount     && !prev.amount)     { next.amount     = data.amount;     changed = true; }
+          if (changed) {
+            mergedVoiceDataRef.current = next;
+            console.log("Voice data (secondary merge):", next);
+            if (onVoiceInputRef.current) onVoiceInputRef.current({ ...next });
+            resetSilenceTimer();
+          }
+        }
+      };
+
+      recognition2.onerror = () => {}; // Silently ignore secondary errors
+
+      recognition2.onend = () => {
+        // Auto-restart secondary when primary is still listening
+        if (isListeningRef.current && !manualStopRef.current) {
+          try { recognition2.start(); } catch {}
+        }
+      };
+
+      recognition2Ref.current = recognition2;
+    } catch {
+      // Secondary recognition not supported — fall back to primary only
+    }
+
+    // ── App focus/visibility handlers ────────────────────────────────────────
     const handleBlur = () => {
       if (isListeningRef.current && recognition) {
         console.log("App lost focus, stopping recording");
         manualStopRef.current = true;
         recognition.stop();
+        try { recognition2Ref.current?.stop(); } catch {}
       }
     };
 
-    // visibilitychange is the most reliable signal for Capacitor WebView going to background
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         if (isListeningRef.current && recognition) {
           manualStopRef.current = true;
           recognition.stop();
+          try { recognition2Ref.current?.stop(); } catch {}
         }
       }
     };
@@ -205,19 +259,15 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     window.addEventListener("blur", handleBlur);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // Cleanup — prevent auto-restart after unmount
     return () => {
       manualStopRef.current = true;
       window.removeEventListener("blur", handleBlur);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (recognition) {
-        recognition.stop();
-      }
-      if (silenceTimeoutRef.current) {
-        clearTimeout(silenceTimeoutRef.current);
-      }
+      if (recognition) recognition.stop();
+      try { recognition2Ref.current?.stop(); } catch {}
+      if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
     };
-  }, []); // init once only
+  }, []);
 
   const handleToggleListening = () => {
     console.log("Toggle clicked, listening:", isListeningRef.current);
@@ -229,26 +279,22 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
     try {
       if (isListeningRef.current) {
-        // Stop listening — mark as manual so auto-restart won't trigger
         console.log("User clicked stop - stopping listening");
         manualStopRef.current = true;
         recognitionRef.current.stop();
-        // Don't update state here - let onend handler do it
+        try { recognition2Ref.current?.stop(); } catch {}
       } else {
-        // Start listening
         console.log("User clicked start - starting recognition");
 
-        // Reset state
         setTranscript("");
         hasSpeechStartedRef.current = false;
+        mergedVoiceDataRef.current = { description: "" };
 
-        // Clear any pending timeout
         if (speechStartTimeoutRef.current) {
           clearTimeout(speechStartTimeoutRef.current);
           speechStartTimeoutRef.current = undefined;
         }
 
-        // Update state before starting (this is what the user sees)
         setIsListening(true);
         isListeningRef.current = true;
 
@@ -258,12 +304,14 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
             console.error("recognition.start() threw:", (e as Error).message);
             setIsListening(false);
             isListeningRef.current = false;
+            return;
           }
+          // Start secondary after a brief delay to avoid simultaneous mic contention on iOS
+          setTimeout(() => {
+            try { recognition2Ref.current?.start(); } catch {}
+          }, 200);
         };
 
-        // On iOS native, SpeechRecognition handles mic permission itself.
-        // getUserMedia async breaks the gesture context on iOS WKWebView.
-        // On Android Capacitor, getUserMedia is needed to pre-grant mic before recognition.start().
         const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
           !(window as any).MSStream;
         if (!isIOSNative && navigator.mediaDevices?.getUserMedia) {
@@ -280,13 +328,11 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       }
     } catch (error) {
       console.error("Error toggling recognition:", (error as Error).message);
-      // Sync state if there was an error
       setIsListening(false);
       isListeningRef.current = false;
     }
   };
 
-  // Update ref when state changes
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
@@ -313,17 +359,9 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         className={`relative p-2 rounded-lg transition-colors focus:outline-none focus:bg-transparent ${
           isListening ? "text-red-500 bg-red-50" : "text-slate-600 active:bg-slate-200"
         } disabled:cursor-not-allowed disabled:opacity-50`}
-        title={
-          isListening
-            ? "Stop recording"
-            : isSupported
-            ? "Start recording"
-            : "Speech Recognition not supported"
-        }
+        title={isListening ? "Stop recording" : isSupported ? "Start recording" : "Speech Recognition not supported"}
       >
         <Mic size={24} />
-
-        {/* Sound wave pulse animation - shows when listening */}
         {isListening && (
           <div className="absolute inset-0 rounded-full border-2 border-red-500 opacity-40 animate-ping" style={{ animationDuration: "1.5s" }} />
         )}
