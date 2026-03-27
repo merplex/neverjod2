@@ -191,17 +191,29 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     const handleBlur = () => {
       if (isListeningRef.current && recognition) {
         console.log("App lost focus, stopping recording");
-        unmuteBeep(); // restore volume before stopping (in case muteBeep was called but onstart not yet fired)
+        unmuteBeep();
         recognition.stop();
       }
     };
 
+    // visibilitychange is the most reliable signal for Capacitor WebView going to background
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        unmuteBeep();
+        if (isListeningRef.current && recognition) {
+          recognition.stop();
+        }
+      }
+    };
+
     window.addEventListener("blur", handleBlur);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // Cleanup — prevent auto-restart after unmount
     return () => {
       manualStopRef.current = true;
       window.removeEventListener("blur", handleBlur);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       unmuteBeep(); // always restore volume when component unmounts (e.g. navigate away)
       if (recognition) {
         recognition.stop();
