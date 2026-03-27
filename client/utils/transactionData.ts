@@ -219,7 +219,7 @@ export const getRealTransactionsList = (): Transaction[] => {
         accountId: t.accountId,
         type: catType,
         isRepeat: t.isRepeat || false,
-        isTransfer: t.isTransfer || false,
+        isTransfer: t.isTransfer || t.categoryId === "transfer_out" || t.categoryId === "transfer_in",
       };
     });
   } catch (e) {
