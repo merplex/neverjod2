@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic } from "lucide-react";
 import { parseVoiceInput } from "../utils/keywordMatch";
-import { muteBeep, unmuteBeep } from "../utils/audioHelper";
 
 interface RecordingProps {
   onTranscript?: (text: string) => void;
@@ -58,7 +57,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       hasSpeechStartedRef.current = false;
       setIsListening(true);
       isListeningRef.current = true;
-      muteBeep().catch(() => {}); // fire-and-forget — don't block start
       try { recognitionRef.current.start(); }
       catch (e) {
         setIsListening(false);
@@ -98,7 +96,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       console.log("Speech recognition started - waiting for speech");
       hasSpeechStartedRef.current = false;
       processedResultIndicesRef.current.clear();
-      unmuteBeep(); // restore volume after recognition has started
     };
 
     recognition.onresult = (event: any) => {
@@ -158,7 +155,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
       // Auto-restart if: was listening, not manually stopped, autoRestart enabled
       if (isListeningRef.current && !manualStopRef.current && autoRestartRef.current) {
-        muteBeep().catch(() => {}); // fire-and-forget
         try {
           recognition.start();
           return; // keep isListening = true, don't reset UI
@@ -191,8 +187,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     const handleBlur = () => {
       if (isListeningRef.current && recognition) {
         console.log("App lost focus, stopping recording");
-        manualStopRef.current = true; // prevent onend from auto-restarting + re-muting
-        unmuteBeep();
+        manualStopRef.current = true;
         recognition.stop();
       }
     };
@@ -200,9 +195,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     // visibilitychange is the most reliable signal for Capacitor WebView going to background
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
-        unmuteBeep();
         if (isListeningRef.current && recognition) {
-          manualStopRef.current = true; // prevent onend from calling muteBeep() + auto-restart
+          manualStopRef.current = true;
           recognition.stop();
         }
       }
@@ -216,7 +210,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       manualStopRef.current = true;
       window.removeEventListener("blur", handleBlur);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      unmuteBeep(); // always restore volume when component unmounts (e.g. navigate away)
       if (recognition) {
         recognition.stop();
       }
@@ -260,7 +253,6 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
         isListeningRef.current = true;
 
         const doStart = () => {
-          muteBeep().catch(() => {});
           try { recognitionRef.current.start(); }
           catch (e) {
             console.error("recognition.start() threw:", (e as Error).message);

@@ -92,8 +92,6 @@ function AppContent() {
         // Save current page and hide timestamp for restore logic
         sessionStorage.setItem("last_path", window.location.pathname);
         sessionStorage.setItem("last_hide_at", Date.now().toString());
-        // Restore notification volume in case mic was active when user left
-        import("./utils/audioHelper").then(({ unmuteBeep }) => unmuteBeep()).catch(() => {});
       } else if (document.visibilityState === "visible") {
         const lastHideAt = sessionStorage.getItem("last_hide_at");
         const elapsed = lastHideAt ? Date.now() - parseInt(lastHideAt) : 0;
