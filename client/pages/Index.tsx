@@ -4,7 +4,9 @@ import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileTex
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
-import { matchCategory, matchAccount } from "../utils/keywordMatch";
+import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
+
+const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
 type InputPage = "category" | "account" | "amount";
 
@@ -67,6 +69,7 @@ const accounts = [
   { id: "baht_pay", name: "Baht Pay", type: "digital wallet", icon: Smartphone },
   { id: "other_acc", name: "Other", type: "other", icon: MoreHorizontal },
   { id: "kbank", name: "K-Bank", type: "digital bank", icon: Smartphone },
+  { id: "bbl", name: "Bangkok Bank", type: "savings account", icon: Building2 },
   { id: "revolut", name: "Revolut", type: "digital wallet", icon: CreditCard },
   { id: "wise", name: "Wise", type: "digital bank", icon: Wallet },
   { id: "stripe", name: "Stripe", type: "payment gateway", icon: CreditCard },
@@ -98,7 +101,7 @@ export default function Index() {
           travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
           salary: TrendingUp, card: CreditCard, wallet: Wallet, phone: Smartphone,
           cash: Banknote, other: MoreHorizontal,
-          home: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
+          home: Home, house: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
           clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
           scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
           truck: Truck, train: Train, bike: Bike, building: Building2,
@@ -285,6 +288,14 @@ export default function Index() {
     amount?: number;
     description: string;
   }) => {
+    // iOS: re-match against visible lists — screen is always source of truth
+    if (isIOSDevice) {
+      voiceData = {
+        ...voiceData,
+        categoryId: matchCategoryFromList(voiceData.description, categoriesList),
+        accountId: matchAccountFromList(voiceData.description, accountsList),
+      };
+    }
     // Accumulate voice data
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;

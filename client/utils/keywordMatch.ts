@@ -239,6 +239,50 @@ export function matchAccount(text: string): string | undefined {
   return bestId;
 }
 
+// Match category against a specific list (visible on screen) — screen is source of truth
+export function matchCategoryFromList(
+  text: string,
+  list: { id: string; name: string; keywords?: string[] }[]
+): string | undefined {
+  const raw: Record<string, { name: string; keywords: string[] }> = {};
+  for (const cat of list) {
+    if (!cat.id || cat.id === "__voice_status__" || cat.id === "nocat") continue;
+    const stored = cat.keywords && cat.keywords.length > 0 ? cat.keywords : [];
+    const fallback = stored.length === 0 ? (builtinCategoryKeywords[cat.id] || []) : [];
+    raw[cat.id] = { name: cat.name, keywords: [...stored, ...fallback] };
+  }
+  const map = buildKeywordMap(raw);
+  let bestId: string | undefined;
+  let bestScore = 0;
+  for (const [id, { keywords }] of Object.entries(map)) {
+    const score = matchKeywordBestScore(text, keywords);
+    if (score > bestScore) { bestScore = score; bestId = id; }
+  }
+  return bestId;
+}
+
+// Match account against a specific list (visible on screen) — screen is source of truth
+export function matchAccountFromList(
+  text: string,
+  list: { id: string; name: string; keywords?: string[] }[]
+): string | undefined {
+  const raw: Record<string, { name: string; keywords: string[] }> = {};
+  for (const acc of list) {
+    if (!acc.id || acc.id === "account_deleted") continue;
+    const stored = acc.keywords && acc.keywords.length > 0 ? acc.keywords : [];
+    const fallback = stored.length === 0 ? (builtinAccountKeywords[acc.id] || []) : [];
+    raw[acc.id] = { name: acc.name, keywords: [...stored, ...fallback] };
+  }
+  const map = buildKeywordMap(raw);
+  let bestId: string | undefined;
+  let bestScore = 0;
+  for (const [id, { keywords }] of Object.entries(map)) {
+    const score = matchKeywordBestScore(text, keywords);
+    if (score > bestScore) { bestScore = score; bestId = id; }
+  }
+  return bestId;
+}
+
 export function parseVoiceInput(transcript: string): MatchResult {
   // Try to match category and account from the transcript
   const categoryId = matchCategory(transcript);
