@@ -662,18 +662,18 @@ export default function Index() {
                     if (category.id === "__voice_status__") {
                       const { categoryName, accountName, amount } = liveVoiceStatus;
                       return (
-                        <div key="__voice_status__" className="w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center px-2 py-1 gap-0.5 overflow-hidden">
+                        <div key="__voice_status__" className={`w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center py-1 gap-0.5 overflow-hidden ${isIOSDevice ? "px-1" : "px-2"}`}>
                           <div className="flex items-center gap-1">
-                            <span className={`text-xs font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
-                            <span className="text-xs text-slate-600 truncate">{categoryName || "Category"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{categoryName || "Category"}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className={`text-xs font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
-                            <span className="text-xs text-slate-600 truncate">{accountName || "Account"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{accountName || "Account"}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className={`text-xs font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
-                            <span className="text-xs text-slate-600 truncate">{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
                           </div>
                         </div>
                       );

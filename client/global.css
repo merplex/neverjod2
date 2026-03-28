@@ -92,9 +92,10 @@ input, textarea, select {
 .pb-safe-nav {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-/* Content padding-bottom = nav height (~4.5rem/72px) + iOS safe area */
+/* Content padding-bottom = nav height (~3.75rem/60px) + iOS safe area */
+/* nav actual: border(2) + pt-2(8) + button-py-2(16) + icon(18) + gap(4) + text(12) = 60px */
 .pb-safe-content {
-  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
 }
 
 @layer base {
