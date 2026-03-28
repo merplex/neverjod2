@@ -548,8 +548,8 @@ export default function Index() {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
                       <div key={id} className="flex flex-col items-center gap-0.5">
-                        <div className="w-full aspect-square bg-white/20 rounded-lg flex items-center justify-center max-w-[44px] mx-auto">
-                          <Icon size={17} className="text-white" />
+                        <div className="w-full aspect-square bg-white/20 rounded-lg flex items-center justify-center">
+                          <Icon className="text-white w-1/2 h-1/2" />
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
                         <span className="text-[10px] font-bold text-white">
@@ -572,8 +572,8 @@ export default function Index() {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
                       <div key={id} className="flex flex-col items-center gap-0.5">
-                        <div className="w-full aspect-square bg-white/20 rounded-lg flex items-center justify-center max-w-[44px] mx-auto">
-                          <Icon size={17} className="text-white" />
+                        <div className="w-full aspect-square bg-white/20 rounded-lg flex items-center justify-center">
+                          <Icon className="text-white w-1/2 h-1/2" />
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
                         <span className="text-[10px] font-bold text-white">

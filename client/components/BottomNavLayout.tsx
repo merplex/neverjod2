@@ -26,7 +26,7 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
       {/* Bottom Navigation - Fixed within mobile frame */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-center z-40">
         <div className="w-full max-w-md bg-white border-t-2 border-slate-300 shadow-2xl pb-safe-nav">
-          <div className="px-2 py-2 flex justify-around items-center">
+          <div className="px-2 pt-2 pb-0 flex justify-around items-center">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               const active = isActive(item.path);

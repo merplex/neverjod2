@@ -580,32 +580,34 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             {/* Section C+D — fills remaining height */}
             <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
               {/* Section C: Numpad */}
-              <div className="flex flex-col gap-1.5 min-h-0" style={{ width: `${numpadSize}%` }}>
-                <div className="grid grid-cols-3 gap-1.5 flex-1 min-h-0" style={{ gridTemplateRows: "repeat(3, 1fr)" }}>
-                  {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => handleNumberClick(num)}
-                      className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-4 gap-1.5 flex-shrink-0" style={{ height: 44 }}>
+              <div className="grid gap-1.5 min-h-0 h-full" style={{ width: `${numpadSize}%`, gridTemplateRows: 'repeat(4, 1fr)' }}>
+                {[[7, 8, 9], [4, 5, 6], [1, 2, 3]].map((row) => (
+                  <div key={row[0]} className="flex gap-1.5 min-h-0">
+                    {row.map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => handleNumberClick(num)}
+                        className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+                <div className="flex gap-1.5 min-h-0">
                   {isRightMode ? (
                     <>
-                      <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                      <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                      <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                      <button onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                      <button onClick={handleDelete} className="flex-1 h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                      <button onClick={handleDecimal} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                      <button onClick={() => handleNumberClick(0)} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                      <button onClick={handleAmountSave} className="flex-1 h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
                     </>
                   ) : (
                     <>
-                      <button onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                      <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                      <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                      <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
+                      <button onClick={handleAmountSave} className="flex-1 h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                      <button onClick={() => handleNumberClick(0)} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
+                      <button onClick={handleDecimal} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                      <button onClick={handleDelete} className="flex-1 h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
                     </>
                   )}
                 </div>
