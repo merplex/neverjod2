@@ -27,6 +27,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             bridge.webView?.scrollView.bounces = false
             bridge.webView?.scrollView.alwaysBounceVertical = false
             bridge.webView?.scrollView.alwaysBounceHorizontal = false
+            // Disable native back-swipe gesture so JS useSwipeBack hook handles navigation
+            bridge.webView?.allowsBackForwardNavigationGestures = false
             return
         }
         for child in vc.children { disableBounce(in: child) }
