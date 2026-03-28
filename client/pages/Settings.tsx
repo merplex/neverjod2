@@ -385,14 +385,14 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Swipe Navigation</h2>
-              <p className="text-xs text-slate-500">ทิศทาง swipe เพื่อย้อนกลับ</p>
+              <p className="text-xs text-slate-500">ทิศทาง swipe เพื่อไปหน้ากรอกรายการ</p>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm text-slate-700 font-medium">Swipe right to go back</span>
+              <span className="text-sm text-slate-700 font-medium">Swipe right to create new</span>
               <p className="text-xs text-slate-400 mt-0.5">
-                {settings.swipeBackDirection === "right" ? "swipe ขวา = ย้อนกลับ" : "swipe ซ้าย = ย้อนกลับ"}
+                {settings.swipeBackDirection === "right" ? "swipe ขวา = ไปยังหน้ากรอกรายการ" : "swipe ซ้าย = ไปยังหน้ากรอกรายการ"}
               </p>
             </div>
             <button

@@ -71,12 +71,13 @@ function AppContent() {
         }
       } catch {}
       syncAll(token).then(() => {
-        // Reload once after first sync so all components re-read fresh localStorage
+        // Refresh data in-place after first sync (no reload — avoids resetting app state/mic)
         if (!sessionStorage.getItem("synced_once")) {
           sessionStorage.setItem("synced_once", "1");
-          window.location.reload();
-        } else {
-          // After reload, mark direction as "client" (we pushed our data)
+          window.dispatchEvent(new CustomEvent("sync-data-refresh"));
+        }
+        {
+          // Mark direction as "client" (we pushed our data)
           const now = new Date().toISOString();
           localStorage.setItem("sync_direction", "client");
           localStorage.setItem("last_client_sync_at", now);

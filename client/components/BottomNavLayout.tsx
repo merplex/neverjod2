@@ -1,9 +1,24 @@
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FileText, BarChart3, Grid3x3, Landmark, Settings } from "lucide-react";
 
 export default function BottomNavLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Intercept Android hardware back + edge-swipe gesture via Capacitor's backbutton event.
+  // On any page except home ("/"), go home. On home, let Android exit the app naturally.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (location.pathname !== "/") {
+        e.preventDefault();
+        navigate("/");
+      }
+      // On "/", no preventDefault → Android exits the app normally
+    };
+    document.addEventListener("backbutton", handler, false);
+    return () => document.removeEventListener("backbutton", handler, false);
+  }, [location.pathname, navigate]);
 
   const navItems = [
     { path: "/transactions", label: "Transaction", icon: FileText },

@@ -180,7 +180,7 @@ export default function TransactionDetail() {
 
   const handleDelete = () => {
     deleteLocalTransaction(transactionId!);
-    navigate("/");
+    navigate(-1);
   };
 
   const formatDate = (d: Date) =>

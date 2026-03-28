@@ -107,10 +107,9 @@ function getAccountsWithKeywords(): Record<string, { name: string; keywords: str
 }
 
 export function extractNumberFromText(text: string): number | undefined {
-  // First, try to find direct numeric matches like "500", "1020", "5,000"
-  const numberMatches = text.match(/\d+(?:[.,]\d+)?/g);
+  // First, try to find direct numeric matches — support comma-separated thousands like "1,205,000"
+  const numberMatches = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?/g);
   if (numberMatches && numberMatches.length > 0) {
-    // Find the largest number (assuming the amount is the largest number mentioned)
     let largestNumber = numberMatches[0];
     for (const num of numberMatches) {
       const val1 = parseFloat(num.replace(/,/g, ""));
@@ -122,7 +121,11 @@ export function extractNumberFromText(text: string): number | undefined {
     return parseFloat(largestNumber.replace(/,/g, ""));
   }
 
-  // Second, try to convert word numbers to digits (English)
+  // Second, try Thai number words (e.g., หนึ่งล้านสองแสนห้าพัน)
+  const thaiResult = parseThaiNumberText(text);
+  if (thaiResult !== undefined) return thaiResult;
+
+  // Third, try to convert word numbers to digits (English)
   const englishWordNumbers: Record<string, number> = {
     zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
     six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
@@ -154,6 +157,79 @@ export function extractNumberFromText(text: string): number | undefined {
 
   const total = result + current;
   return total > 0 ? total : undefined;
+}
+
+function parseThaiNumberText(text: string): number | undefined {
+  const thaiDigitMap: Record<string, number> = {
+    'ศูนย์': 0, 'หนึ่ง': 1, 'สอง': 2, 'สาม': 3, 'สี่': 4,
+    'ห้า': 5, 'หก': 6, 'เจ็ด': 7, 'แปด': 8, 'เก้า': 9,
+    'เอ็ด': 1, 'ยี่': 2,
+  };
+  const thaiUnits = ['ล้าน', 'แสน', 'หมื่น', 'พัน', 'ร้อย', 'สิบ'];
+
+  const hasThai = [...Object.keys(thaiDigitMap), ...thaiUnits].some(k => text.includes(k));
+  if (!hasThai) return undefined;
+
+  // Sort digit keys longest-first to avoid partial matches
+  const sortedDigitKeys = Object.keys(thaiDigitMap).sort((a, b) => b.length - a.length);
+
+  // Get numeric coefficient from a fragment (digit word or Arabic numeral)
+  function getCoeff(str: string): number {
+    str = str.trim();
+    if (!str) return 1;
+    const n = parseFloat(str.replace(/,/g, ''));
+    if (!isNaN(n)) return n;
+    for (const key of sortedDigitKeys) {
+      if (str.includes(key)) return thaiDigitMap[key];
+    }
+    return 1;
+  }
+
+  // Parse a sub-million segment (handles แสน หมื่น พัน ร้อย สิบ + trailing digit)
+  function parseSegment(str: string): number {
+    const units = [
+      { name: 'แสน', value: 100000 },
+      { name: 'หมื่น', value: 10000 },
+      { name: 'พัน', value: 1000 },
+      { name: 'ร้อย', value: 100 },
+      { name: 'สิบ', value: 10 },
+    ];
+    let val = 0;
+    let remaining = str;
+    for (const { name, value } of units) {
+      const idx = remaining.indexOf(name);
+      if (idx !== -1) {
+        const before = remaining.substring(0, idx);
+        val += getCoeff(before) * value;
+        remaining = remaining.substring(idx + name.length);
+      }
+    }
+    // Remaining is the units digit
+    remaining = remaining.trim();
+    if (remaining) {
+      const n = parseFloat(remaining.replace(/,/g, ''));
+      if (!isNaN(n)) {
+        val += n;
+      } else {
+        for (const key of sortedDigitKeys) {
+          if (remaining.includes(key)) { val += thaiDigitMap[key]; break; }
+        }
+      }
+    }
+    return val;
+  }
+
+  // Split by ล้าน (million boundary)
+  const laanIdx = text.indexOf('ล้าน');
+  if (laanIdx !== -1) {
+    const beforeLaan = text.substring(0, laanIdx);
+    const afterLaan = text.substring(laanIdx + 'ล้าน'.length);
+    const millions = parseSegment(beforeLaan) || getCoeff(beforeLaan);
+    return millions * 1000000 + parseSegment(afterLaan);
+  }
+
+  const result = parseSegment(text);
+  return result > 0 ? result : undefined;
 }
 
 function levenshtein(a: string, b: string): number {

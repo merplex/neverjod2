@@ -17,7 +17,11 @@ export function useSwipeBack() {
 
   useEffect(() => {
     function onTouchStart(e: TouchEvent) {
-      touchStartX.current = e.touches[0].clientX;
+      // Ignore edge swipes (< 30px from either edge) — those are handled by Android/Capacitor backbutton
+      const x = e.touches[0].clientX;
+      const screenW = window.innerWidth;
+      if (x < 30 || x > screenW - 30) return;
+      touchStartX.current = x;
       touchStartY.current = e.touches[0].clientY;
     }
 
@@ -29,7 +33,7 @@ export function useSwipeBack() {
       // Ignore if more vertical than horizontal
       if (Math.abs(dy) > Math.abs(dx)) return;
       // Require minimum swipe distance
-      if (Math.abs(dx) < 60) return;
+      if (Math.abs(dx) < 80) return;
 
       const direction = getSwipeBackDirection();
       const isSwipeRight = dx > 0;

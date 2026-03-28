@@ -39,6 +39,89 @@ const accounts = [
   { id: "bbl",   name: "Bangkok Bank-sample",  type: "savings account", icon: Building2,  balance: 0, keywords: ["แบงค์กรุงเทพ"] },
 ];
 
+function loadCategoriesFromStorage() {
+  try {
+    const stored = localStorage.getItem("app_categories");
+    if (stored) {
+      const storedCategories = JSON.parse(stored);
+      const catIconMap: Record<string, React.ComponentType<any>> = {
+        food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
+        bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
+        travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
+        salary: TrendingUp, card: CreditCard, wallet: Wallet, phone: Smartphone,
+        cash: Banknote, other: MoreHorizontal,
+        home: Home, house: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
+        clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
+        scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
+        truck: Truck, train: Train, bike: Bike, building: Building2,
+      };
+      return storedCategories
+        .map((cat: any) => {
+          if (!cat || !cat.id) return null;
+          const defaultCat = categories.find((d) => d.id === cat.id);
+          if (!defaultCat) {
+            if (!cat.id.startsWith("custom_")) {
+              const fallback = catIconMap[cat.iconId] || catIconMap[cat.id];
+              if (!fallback) return null;
+              return { ...cat, icon: fallback };
+            }
+            const icon = catIconMap[cat.iconId] || MoreHorizontal;
+            return { ...cat, icon };
+          }
+          return { ...cat, icon: defaultCat.icon };
+        })
+        .filter((cat: any) => cat !== null);
+    }
+    return categories;
+  } catch (e) {
+    console.error("Error loading categories from localStorage:", e);
+    return categories;
+  }
+}
+
+function loadAccountsFromStorage() {
+  try {
+    const stored = localStorage.getItem("app_accounts");
+    if (stored) {
+      const storedAccounts = JSON.parse(stored);
+      const iconMap: Record<string, React.ComponentType<any>> = {
+        creditcard: CreditCard, card: CreditCard, wallet: Wallet, cash: Banknote,
+        invest: TrendingUp, salary: TrendingUp, phone: Smartphone, other: MoreHorizontal,
+        food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
+        bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
+        travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
+        home: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
+        clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
+        scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
+        truck: Truck, train: Train, bike: Bike, building: Building2,
+      };
+      const legacyAccIconMap: Record<string, React.ComponentType<any>> = {
+        uob: CreditCard, banka: CreditCard, krungsri: Wallet, bangkok: CreditCard,
+        kasikorn: CreditCard, tmb: Wallet, acme: CreditCard, cash: Banknote,
+        crypto: TrendingUp, baht_pay: Smartphone, other_acc: MoreHorizontal,
+        revolut: CreditCard, wise: Wallet, stripe: CreditCard, paypal: Banknote,
+      };
+      return storedAccounts
+        .map((acc: any) => {
+          if (!acc || !acc.id) return null;
+          const defaultAcc = accounts.find((d) => d.id === acc.id);
+          if (!defaultAcc) {
+            if (legacyAccIconMap[acc.id]) return { ...acc, icon: legacyAccIconMap[acc.id] };
+            if (!acc.id.startsWith("custom_acc_")) return null;
+            const icon = iconMap[acc.iconId] || MoreHorizontal;
+            return { ...acc, icon };
+          }
+          return { ...acc, icon: defaultAcc.icon };
+        })
+        .filter((acc: any) => acc !== null);
+    }
+    return accounts;
+  } catch (e) {
+    console.error("Error loading accounts from localStorage:", e);
+    return accounts;
+  }
+}
+
 function readVoiceAutoStart(): boolean {
   try {
     const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
@@ -52,99 +135,8 @@ export default function Index() {
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [categoriesList, setCategoriesList] = useState(() => {
-    // Load from localStorage if available, otherwise use defaults
-    try {
-      const stored = localStorage.getItem("app_categories");
-      if (stored) {
-        const storedCategories = JSON.parse(stored);
-        const catIconMap: Record<string, React.ComponentType<any>> = {
-          food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
-          bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
-          travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
-          salary: TrendingUp, card: CreditCard, wallet: Wallet, phone: Smartphone,
-          cash: Banknote, other: MoreHorizontal,
-          home: Home, house: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
-          clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
-          scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
-          truck: Truck, train: Train, bike: Bike, building: Building2,
-        };
-        // Restore icons from default categories since they can't be serialized
-        return storedCategories
-          .map((cat: any) => {
-            if (!cat || !cat.id) return null;
-            const defaultCat = categories.find((d) => d.id === cat.id);
-            if (!defaultCat) {
-              // Custom category — resolve icon by iconId
-              if (!cat.id.startsWith("custom_")) {
-                // Still try catIconMap for legacy IDs (old hardcoded defaults no longer in list)
-                const fallback = catIconMap[cat.iconId] || catIconMap[cat.id];
-                if (!fallback) return null;
-                return { ...cat, icon: fallback };
-              }
-              const icon = catIconMap[cat.iconId] || MoreHorizontal;
-              return { ...cat, icon };
-            }
-            return {
-              ...cat,
-              icon: defaultCat.icon,
-            };
-          })
-          .filter((cat: any) => cat !== null);
-      }
-      return categories;
-    } catch (e) {
-      console.error("Error loading categories from localStorage:", e);
-      return categories;
-    }
-  });
-  const [accountsList, setAccountsList] = useState(() => {
-    // Load from localStorage if available, otherwise use defaults
-    try {
-      const stored = localStorage.getItem("app_accounts");
-      if (stored) {
-        const storedAccounts = JSON.parse(stored);
-        const iconMap: Record<string, React.ComponentType<any>> = {
-          creditcard: CreditCard, card: CreditCard, wallet: Wallet, cash: Banknote,
-          invest: TrendingUp, salary: TrendingUp, phone: Smartphone, other: MoreHorizontal,
-          food: Utensils, transport: Bus, entertainment: Music, shopping: ShoppingCart,
-          bills: FileText, health: Heart, education: BookOpen, utilities: Zap,
-          travel: Plane, clothing: ShoppingBag, sports: Dumbbell, gifts: Gift,
-          home: Home, car: Car, coffee: Coffee, briefcase: Briefcase, star: Star,
-          clock: Clock, camera: Camera, headphones: Headphones, wrench: Wrench,
-          scissors: Scissors, flame: Flame, leaf: Leaf, baby: Baby, package: Package,
-          truck: Truck, train: Train, bike: Bike, building: Building2,
-        };
-        const legacyAccIconMap: Record<string, React.ComponentType<any>> = {
-          uob: CreditCard, banka: CreditCard, krungsri: Wallet, bangkok: CreditCard,
-          kasikorn: CreditCard, tmb: Wallet, acme: CreditCard, cash: Banknote,
-          crypto: TrendingUp, baht_pay: Smartphone, other_acc: MoreHorizontal,
-          revolut: CreditCard, wise: Wallet, stripe: CreditCard, paypal: Banknote,
-        };
-        // Restore icons from default accounts since they can't be serialized
-        return storedAccounts
-          .map((acc: any) => {
-            if (!acc || !acc.id) return null;
-            const defaultAcc = accounts.find((d) => d.id === acc.id);
-            if (!defaultAcc) {
-              if (legacyAccIconMap[acc.id]) return { ...acc, icon: legacyAccIconMap[acc.id] };
-              if (!acc.id.startsWith("custom_acc_")) return null;
-              const icon = iconMap[acc.iconId] || MoreHorizontal;
-              return { ...acc, icon };
-            }
-            return {
-              ...acc,
-              icon: defaultAcc.icon,
-            };
-          })
-          .filter((acc: any) => acc !== null);
-      }
-      return accounts;
-    } catch (e) {
-      console.error("Error loading accounts from localStorage:", e);
-      return accounts;
-    }
-  });
+  const [categoriesList, setCategoriesList] = useState(loadCategoriesFromStorage);
+  const [accountsList, setAccountsList] = useState(loadAccountsFromStorage);
   const [isCategoryReorderMode, setIsCategoryReorderMode] = useState(false);
   const [isAccountPageReorderMode, setIsAccountPageReorderMode] = useState(false);
   const [selectedCategoryForSwap, setSelectedCategoryForSwap] = useState<string | null>(null);
@@ -188,6 +180,7 @@ export default function Index() {
     amount?: number;
   }>({});
   const allDetectedRef = useRef(false);
+  const displayScrollRef = useRef<HTMLDivElement>(null);
 
   const voiceTimeoutRef = useRef<NodeJS.Timeout>();
   const voiceAccumulatorRef = useRef<{
@@ -203,6 +196,12 @@ export default function Index() {
 
   useEffect(() => { showVoiceResultRef.current = showVoiceResult; }, [showVoiceResult]);
   useEffect(() => { pendingVoiceResultRef.current = voiceResultData; }, [voiceResultData]);
+
+  useEffect(() => {
+    if (displayScrollRef.current) {
+      displayScrollRef.current.scrollLeft = displayScrollRef.current.scrollWidth;
+    }
+  }, [display]);
 
   useEffect(() => {
     const autoSave = () => {
@@ -222,6 +221,16 @@ export default function Index() {
       window.removeEventListener("pagehide", autoSave);
       window.removeEventListener("beforeunload", autoSave);
     };
+  }, []);
+
+  // Refresh categories/accounts from localStorage when sync completes (no page reload needed)
+  useEffect(() => {
+    const handler = () => {
+      setCategoriesList(loadCategoriesFromStorage());
+      setAccountsList(loadAccountsFromStorage());
+    };
+    window.addEventListener("sync-data-refresh", handler);
+    return () => window.removeEventListener("sync-data-refresh", handler);
   }, []);
 
   const handleCategorySelect = (categoryId: string) => {
@@ -456,6 +465,12 @@ export default function Index() {
     const newDisplay = display.slice(0, -1) || "0";
     setDisplay(newDisplay);
     if (!isCalcMode) setValue(parseFloat(newDisplay) || 0);
+  };
+
+  const handleClear = () => {
+    setDisplay("0");
+    setValue(0);
+    setIsCalcMode(false);
   };
 
   const handleEquals = () => {
@@ -825,10 +840,22 @@ export default function Index() {
                 {/* Group B+C+D: Display + Numpad + Controls */}
                 <div className="flex flex-col flex-1 min-h-0 gap-2">
                   {/* Section B: Display */}
-                  <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-3 rounded-lg flex justify-between items-center flex-shrink-0">
-                    <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
-                      {categoryType === "income" ? "+" : "-"}฿{display}
+                  <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-3 rounded-lg flex items-center gap-2 flex-shrink-0">
+                    <div
+                      ref={displayScrollRef}
+                      className="flex-1 overflow-x-auto"
+                      style={{ scrollbarWidth: "none" }}
+                    >
+                      <div className={`text-2xl font-bold font-mono tracking-tight whitespace-nowrap ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
+                        {categoryType === "income" ? "+" : "-"}฿{display}
+                      </div>
                     </div>
+                    <button
+                      onClick={handleClear}
+                      className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center"
+                    >
+                      C
+                    </button>
                     <button
                       onClick={() => setCurrentPage("account")}
                       className="p-2 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0"
@@ -839,10 +866,9 @@ export default function Index() {
 
                   {/* Section C-D: Numpad and Controls */}
                   <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
-                    {/* Section C: Numpad */}
-                    <div className="flex flex-col flex-1 min-h-0 gap-2" style={{ width: `${numpadSize}%`, flex: "none" }}>
-                      {/* 3-column grid - fills remaining */}
-                      <div className="grid grid-cols-3 gap-2 flex-1 min-h-0" style={{ gridTemplateRows: "repeat(3, 1fr)" }}>
+                    {/* Section C: Numpad 4x3 */}
+                    <div className="flex-1 min-h-0" style={{ width: `${numpadSize}%`, flex: "none" }}>
+                      <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: "repeat(4, 1fr)" }}>
                         {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
                           <button
                             key={num}
@@ -852,13 +878,8 @@ export default function Index() {
                             {num}
                           </button>
                         ))}
-                      </div>
-
-                      {/* 4-column grid - fixed height */}
-                      <div className="grid grid-cols-4 gap-2 flex-shrink-0" style={{ height: "15%" }}>
                         {isRightMode ? (
                           <>
-                            <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
                             <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
                             <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
                             <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
@@ -868,7 +889,6 @@ export default function Index() {
                             <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
                             <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
                             <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                            <button onClick={handleDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
                           </>
                         )}
                       </div>
