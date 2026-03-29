@@ -852,20 +852,20 @@ export default function AccountsManagement() {
 
             {/* Date + Time */}
             <div className="flex gap-2">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.date")}</label>
                 <input
                   type="date"
                   value={transferDate}
                   onChange={(e) => setTransferDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white appearance-none"
                 />
               </div>
-              <div>
+              <div className="flex-shrink-0">
                 <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.time")}</label>
                 <button
                   onClick={() => setShowTimePicker(true)}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:bg-slate-50 transition-colors"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:bg-slate-50 transition-colors whitespace-nowrap"
                 >
                   {transferTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
                 </button>
