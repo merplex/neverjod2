@@ -65,6 +65,7 @@ export default function Settings() {
   useSwipeBack();
   const T = useT();
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const [initialLang] = useState(() => loadSettings().language);
 
   const isPremium = localStorage.getItem("app_premium") === "true";
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -96,6 +97,9 @@ export default function Settings() {
   useEffect(() => {
     saveSettings(settings);
     document.documentElement.setAttribute("data-theme", settings.colorTheme);
+    if (settings.language !== initialLang) {
+      window.location.reload();
+    }
   }, [settings]);
 
   // Re-read sync direction when auto-sync completes in the background
