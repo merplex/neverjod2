@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import DatePicker from "./DatePicker";
 import TimePicker from "./TimePicker";
+import { useT } from "../hooks/useT";
 
 // ---- icon maps ----
 const allIconsMap: Record<string, React.ComponentType<any>> = {
@@ -78,6 +79,7 @@ interface Props {
 }
 
 export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = false }: Props) {
+  const T = useT();
   // form state
   const [categoryId, setCategoryId] = useState("");
   const [categoryName, setCategoryName] = useState("");
@@ -293,7 +295,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20 text-left">Category</span>
               <span className={`flex-1 text-sm font-medium text-left ${categoryName ? "text-slate-800" : "text-slate-300"}`}>
-                {categoryName || "Tap to select"}
+                {categoryName || T("tap_to_select")}
               </span>
               <ChevronRight size={16} className="text-slate-300" />
             </button>
@@ -305,7 +307,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20 text-left">Account</span>
               <span className={`flex-1 text-sm font-medium text-left ${accountName ? "text-slate-800" : "text-slate-300"}`}>
-                {accountName || (categoryId ? "Tap to select" : "—")}
+                {accountName || (categoryId ? T("tap_to_select") : "—")}
               </span>
               <ChevronRight size={16} className="text-slate-300" />
             </button>
@@ -336,7 +338,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20">Amount</span>
               <span className={`text-sm font-semibold ${value > 0 ? signColor : "text-slate-300"}`}>
-                {value > 0 ? `${sign}฿${value.toLocaleString()}` : (categoryId && accountId ? "Tap to enter" : "—")}
+                {value > 0 ? `${sign}฿${value.toLocaleString()}` : (categoryId && accountId ? T("tap_to_enter") : "—")}
               </span>
             </button>
           </div>
@@ -347,7 +349,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="เพิ่มหมายเหตุ..."
+              placeholder={T("note_placeholder")}
               rows={3}
               className="w-full text-sm text-slate-700 outline-none resize-none placeholder:text-slate-300"
             />
@@ -370,10 +372,10 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                 <div className="px-4 py-2">
                   <p className="text-xs text-slate-400">
                     {repeatOption === "weekly" || repeatOption === "biweekly"
-                      ? `เริ่มวัน${["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"][currentDate.getDay()]} — ทุก ${repeatOption === "biweekly" ? "2 สัปดาห์" : "สัปดาห์"}`
+                      ? `${T("modal.start_day")}${[T("day.sun"),T("day.mon"),T("day.tue"),T("day.wed"),T("day.thu"),T("day.fri"),T("day.sat")][currentDate.getDay()]} — ${repeatOption === "biweekly" ? T("modal.every_2weeks") : T("modal.week")}`
                       : repeatOption === "daily"
-                      ? "ทุกวัน เริ่มวันนี้"
-                      : `วันที่ ${currentDate.getDate()} ของแต่ละรอบ`
+                      ? T("modal.every_day")
+                      : `${T("acc.date")} ${currentDate.getDate()} ${T("modal.day_of_cycle")}`
                     }
                   </p>
                 </div>
@@ -391,7 +393,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                 : "bg-slate-100 text-slate-400 cursor-not-allowed"
             }`}
           >
-            {isRepeatMode ? "Save Repeat Rule" : "Save Transaction"}
+            {isRepeatMode ? T("modal.save_repeat") : T("modal.save_transaction")}
           </button>
         </div>
       </div>
@@ -524,7 +526,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowRepeatPicker(false)} />
           <div className="relative bg-white rounded-t-2xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-800">ความถี่การทำซ้ำ</h3>
+              <h3 className="text-sm font-semibold text-slate-800">{T("modal.repeat_frequency")}</h3>
               <button onClick={() => setShowRepeatPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
