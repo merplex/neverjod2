@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
@@ -41,6 +41,21 @@ const colorThemes: { id: ColorTheme; name: string; swatches: string[] }[] = [
   { id: "sky",    name: "Sky",    swatches: ["#e0f2fe", "#38bdf8", "#0284c7", "#0369a1"] },
 ];
 
+const VOICE_LANG_OPTIONS = [
+  { value: "th-TH", label: "🇹🇭 ภาษาไทย", desc: "th-TH" },
+  { value: "en-US", label: "🇺🇸 English", desc: "en-US" },
+  { value: "zh-CN", label: "🇨🇳 中文", desc: "zh-CN" },
+  { value: "ja-JP", label: "🇯🇵 日本語", desc: "ja-JP" },
+  { value: "ko-KR", label: "🇰🇷 한국어", desc: "ko-KR" },
+  { value: "fr-FR", label: "🇫🇷 Français", desc: "fr-FR" },
+  { value: "de-DE", label: "🇩🇪 Deutsch", desc: "de-DE" },
+  { value: "es-ES", label: "🇪🇸 Español", desc: "es-ES" },
+  { value: "pt-BR", label: "🇧🇷 Português", desc: "pt-BR" },
+  { value: "vi-VN", label: "🇻🇳 Tiếng Việt", desc: "vi-VN" },
+  { value: "ms-MY", label: "🇲🇾 Bahasa Melayu", desc: "ms-MY" },
+  { value: "auto", label: "Auto", desc: "" },
+];
+
 function loadSettings(): AppSettings {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY);
@@ -66,6 +81,7 @@ export default function Settings() {
   const T = useT();
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [initialLang] = useState(() => loadSettings().language);
+  const [showVoiceLangPicker, setShowVoiceLangPicker] = useState(false);
 
   const isPremium = localStorage.getItem("app_premium") === "true";
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -320,24 +336,35 @@ export default function Settings() {
 
             <div className="border-t border-slate-100 pt-3">
               <span className="text-sm text-slate-600 block mb-2">{T("settings.voice_language")}</span>
-              <select
-                value={settings.voiceLang}
-                onChange={(e) => update("voiceLang", e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white text-slate-700 outline-none focus:border-theme-400"
+              <button
+                onClick={() => setShowVoiceLangPicker((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white"
               >
-                <option value="th-TH">🇹🇭 ภาษาไทย (th-TH)</option>
-                <option value="en-US">🇺🇸 English (en-US)</option>
-                <option value="zh-CN">🇨🇳 中文 (zh-CN)</option>
-                <option value="ja-JP">🇯🇵 日本語 (ja-JP)</option>
-                <option value="ko-KR">🇰🇷 한국어 (ko-KR)</option>
-                <option value="fr-FR">🇫🇷 Français (fr-FR)</option>
-                <option value="de-DE">🇩🇪 Deutsch (de-DE)</option>
-                <option value="es-ES">🇪🇸 Español (es-ES)</option>
-                <option value="pt-BR">🇧🇷 Português (pt-BR)</option>
-                <option value="vi-VN">🇻🇳 Tiếng Việt (vi-VN)</option>
-                <option value="ms-MY">🇲🇾 Bahasa Melayu (ms-MY)</option>
-                <option value="auto">Auto</option>
-              </select>
+                <span className="font-semibold text-slate-800">
+                  {VOICE_LANG_OPTIONS.find((o) => o.value === settings.voiceLang)?.label ?? settings.voiceLang}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">
+                    {VOICE_LANG_OPTIONS.find((o) => o.value === settings.voiceLang)?.desc}
+                  </span>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform ${showVoiceLangPicker ? "rotate-180" : ""}`} />
+                </div>
+              </button>
+              {showVoiceLangPicker && (
+                <div className="mt-1 border border-slate-200 rounded-xl overflow-hidden">
+                  {VOICE_LANG_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { update("voiceLang", opt.value); setShowVoiceLangPicker(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${opt.value === settings.voiceLang ? "bg-theme-50" : ""}`}
+                    >
+                      <span className={`text-sm font-semibold flex-1 text-left ${opt.value === settings.voiceLang ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
+                      <span className="text-xs text-slate-400 mr-3">{opt.desc}</span>
+                      {opt.value === settings.voiceLang && <span className="text-theme-600 text-sm">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-slate-400 mt-1.5">
                 {T("settings.voice_lang_auto_hint")}
               </p>
