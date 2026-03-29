@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
@@ -461,7 +461,7 @@ export default function Settings() {
           </button>
         </div>
 
-        {/* Cloud Backup */}
+        {/* Cloud Sync */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
@@ -469,7 +469,7 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
-              <p className="text-xs text-slate-500">รองรับการใช้หลายอุปกรณ์พร้อมกัน</p>
+              <p className="text-xs text-slate-500">รองรับการใช้หลายอุปกรณ์พร้อมกัน · Premium</p>
             </div>
           </div>
 
@@ -556,17 +556,63 @@ export default function Settings() {
           ) : (
             <button
               onClick={() => setShowAuthForm(true)}
-              className="w-full py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200"
             >
-              เข้าสู่ระบบ / สมัครสมาชิก
+              <RefreshCw size={15} />
+              Sync / เข้าสู่ระบบ
             </button>
           )}
         </div>
 
+        {/* Legal */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-5 pt-5 pb-3 flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+              <Shield size={18} className="text-slate-500" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Legal</h2>
+              <p className="text-xs text-slate-500">นโยบายและข้อกำหนดการใช้งาน</p>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100">
+            <button
+              onClick={() => navigate("/privacy")}
+              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
+            >
+              <FileText size={15} className="text-slate-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-slate-700">Privacy Policy · นโยบายความเป็นส่วนตัว</span>
+              <ChevronLeft size={14} className="text-slate-300 rotate-180 flex-shrink-0" />
+            </button>
+            <button
+              onClick={() => navigate("/terms")}
+              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
+            >
+              <FileText size={15} className="text-slate-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-slate-700">Terms of Use · ข้อกำหนดการใช้งาน</span>
+              <ChevronLeft size={14} className="text-slate-300 rotate-180 flex-shrink-0" />
+            </button>
+            <button
+              onClick={() => navigate("/eula")}
+              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
+            >
+              <FileText size={15} className="text-slate-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-slate-700">License Agreement · EULA</span>
+              <ChevronLeft size={14} className="text-slate-300 rotate-180 flex-shrink-0" />
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-slate-400 pb-2">NeverJod v1.0 · com.neverjod.app</p>
+
       </div>
 
       {showPremiumModal && (
-        <PremiumModal message={"บัญชีของคุณเป็นแพลนฟรี\nอัปเกรด Premium เพื่อใช้งาน Cloud Sync ข้ามอุปกรณ์"} onClose={() => setShowPremiumModal(false)} />
+        <PremiumModal
+          message={"บัญชีของคุณเป็นแพลนฟรี\nอัปเกรด Premium เพื่อใช้งาน Cloud Sync ข้ามอุปกรณ์"}
+          onClose={() => setShowPremiumModal(false)}
+          onSignUp={() => { setShowPremiumModal(false); setShowAuthForm(true); }}
+        />
       )}
     </div>
   );

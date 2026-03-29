@@ -24,7 +24,8 @@
       "Bash(npm --version)",
       "Bash(npx:*)",
       "Bash(echo \"done $?\")",
-      "Bash(grep -l \"Speech\\\\|recognition\\\\|Recording\\\\|voice\" client/components/*.tsx client/pages/Index.tsx)"
+      "Bash(grep -l \"Speech\\\\|recognition\\\\|Recording\\\\|voice\" client/components/*.tsx client/pages/Index.tsx)",
+      "Bash(git stash:*)"
     ]
   }
 }

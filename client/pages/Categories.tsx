@@ -145,6 +145,12 @@ export default function Categories() {
 
     const keywords = newKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+    // Free-tier: max 1 keyword per category
+    if (!isPremium && keywords.length > 1) {
+      showPremium("แพลนฟรีเพิ่ม keyword ได้สูงสุด 1 คำต่อหมวดหมู่\nอัปเกรด Premium เพื่อเพิ่ม keyword ได้ไม่จำกัด");
+      return;
+    }
+
     // Validate: keywords must not already exist in other categories or accounts
     const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
     for (const kw of keywords) {
@@ -185,6 +191,12 @@ export default function Categories() {
     if (!editingId || !editName.trim()) return;
 
     const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+
+    // Free-tier: max 1 keyword per category
+    if (!isPremium && keywords.length > 1) {
+      showPremium("แพลนฟรีเพิ่ม keyword ได้สูงสุด 1 คำต่อหมวดหมู่\nอัปเกรด Premium เพื่อเพิ่ม keyword ได้ไม่จำกัด");
+      return;
+    }
 
     // Validate: keywords must not already exist in other categories or any account
     const otherCats = categories.filter((c) => c.id !== editingId);
@@ -597,7 +609,11 @@ export default function Categories() {
       )}
 
       {showPremiumModal && (
-        <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
+        <PremiumModal
+          message={premiumMessage}
+          onClose={() => setShowPremiumModal(false)}
+          onSignUp={() => setShowCloudAuth(true)}
+        />
       )}
 
       {showCloudAuth && (

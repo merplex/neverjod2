@@ -148,6 +148,12 @@ export default function AccountsManagement() {
 
     const keywords = newAccKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+    // Free-tier: max 1 keyword per account
+    if (!isPremium && keywords.length > 1) {
+      showPremium("แพลนฟรีเพิ่ม keyword ได้สูงสุด 1 คำต่อบัญชี\nอัปเกรด Premium เพื่อเพิ่ม keyword ได้ไม่จำกัด");
+      return;
+    }
+
     // Validate: keywords must not already exist in other accounts or categories
     const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
     for (const kw of keywords) {
@@ -211,6 +217,12 @@ export default function AccountsManagement() {
     if (!editingId || !editName.trim()) return;
 
     const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+
+    // Free-tier: max 1 keyword per account
+    if (!isPremium && keywords.length > 1) {
+      showPremium("แพลนฟรีเพิ่ม keyword ได้สูงสุด 1 คำต่อบัญชี\nอัปเกรด Premium เพื่อเพิ่ม keyword ได้ไม่จำกัด");
+      return;
+    }
 
     // Validate: keywords must not already exist in other accounts or any category
     const otherAccs = accounts.filter((a) => a.id !== editingId);
@@ -720,7 +732,11 @@ export default function AccountsManagement() {
       )}
 
       {showPremiumModal && (
-        <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
+        <PremiumModal
+          message={premiumMessage}
+          onClose={() => setShowPremiumModal(false)}
+          onSignUp={() => setShowCloudAuth(true)}
+        />
       )}
 
       {showCloudAuth && (
