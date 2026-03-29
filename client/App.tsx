@@ -183,7 +183,7 @@ function AppContent() {
         <Route path="/eula" element={<Eula />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {showGuide && <OnboardingGuide onClose={() => setShowGuide(false)} />}
+      {showGuide && !LEGAL_PATHS.some((p) => pathname.startsWith(p)) && <OnboardingGuide onClose={() => setShowGuide(false)} />}
     </>
   );
 }

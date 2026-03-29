@@ -2,9 +2,12 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FileText, BarChart3, Grid3x3, Landmark, Settings } from "lucide-react";
 
+const LEGAL_PATHS = ["/privacy", "/terms", "/eula"];
+
 export default function BottomNavLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isLegal = LEGAL_PATHS.some((p) => location.pathname.startsWith(p));
 
   // Intercept Android hardware back + edge-swipe gesture via Capacitor's backbutton event.
   // On any page except home ("/"), go home. On home, let Android exit the app naturally.
@@ -36,10 +39,10 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className={`flex-1 ${isHome ? "" : "pb-safe-content"}`}>{children}</div>
+      <div className={`flex-1 ${isHome || isLegal ? "" : "pb-safe-content"}`}>{children}</div>
 
-      {/* Bottom Navigation - Fixed within mobile frame */}
-      <div className="fixed bottom-0 left-0 right-0 flex justify-center z-40">
+      {/* Bottom Navigation - hidden on legal pages */}
+      {isLegal ? null : <div className="fixed bottom-0 left-0 right-0 flex justify-center z-40">
         <div className="w-full max-w-md bg-white border-t-2 border-slate-300 shadow-2xl pb-safe-nav">
           <div className="px-2 pt-2 pb-0 flex justify-around items-center">
             {navItems.map((item) => {
@@ -63,7 +66,7 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
             })}
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
