@@ -13,7 +13,7 @@ type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky";
 interface AppSettings {
   voiceInputDelay: number;
   voiceAutoStart: boolean;
-  voiceLang: "th-TH" | "en-US" | "auto";
+  voiceLang: string;
   cloudBackupEnabled: boolean;
   language: "en" | "th";
   colorTheme: ColorTheme;
@@ -317,25 +317,38 @@ export default function Settings() {
             <div className="border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-slate-600">{T("settings.voice_language")}</span>
-                <span className="text-xs text-slate-400">
-                  {settings.voiceLang === "th-TH" ? T("settings.voice_lang_thai") : settings.voiceLang === "en-US" ? "English" : "Auto"}
-                </span>
+                <span className="text-xs text-slate-400">{settings.voiceLang}</span>
               </div>
-              <div className="flex gap-2">
-                {(["th-TH", "en-US", "auto"] as const).map((lang) => (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {[
+                  { code: "th-TH", label: "🇹🇭 ไทย" },
+                  { code: "en-US", label: "🇺🇸 English" },
+                  { code: "zh-CN", label: "🇨🇳 中文" },
+                  { code: "ja-JP", label: "🇯🇵 日本語" },
+                  { code: "ko-KR", label: "🇰🇷 한국어" },
+                  { code: "fr-FR", label: "🇫🇷 Français" },
+                  { code: "auto",  label: "Auto" },
+                ].map(({ code, label }) => (
                   <button
-                    key={lang}
-                    onClick={() => update("voiceLang", lang)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                      settings.voiceLang === lang
+                    key={code}
+                    onClick={() => update("voiceLang", code)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                      settings.voiceLang === code
                         ? "bg-theme-600 text-white border-theme-600"
                         : "bg-white text-slate-600 border-slate-200"
                     }`}
                   >
-                    {lang === "th-TH" ? T("settings.voice_lang_thai") : lang === "en-US" ? "English" : "Auto"}
+                    {label}
                   </button>
                 ))}
               </div>
+              <input
+                type="text"
+                value={settings.voiceLang === "auto" ? "" : settings.voiceLang}
+                onChange={(e) => { if (e.target.value) update("voiceLang", e.target.value); }}
+                placeholder="หรือพิมพ์ BCP-47 เช่น de-DE, es-ES, ar-SA"
+                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-600 placeholder:text-slate-300 outline-none focus:border-theme-400"
+              />
               <p className="text-xs text-slate-400 mt-1.5">
                 {T("settings.voice_lang_auto_hint")}
               </p>
