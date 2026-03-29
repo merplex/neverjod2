@@ -125,7 +125,10 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
   const isPremium = localStorage.getItem("app_premium") === "true";
   const overLimitCatIds = new Set<string>(
-    !isPremium ? categoriesList.filter((c: any) => c.id !== "nocat").slice(5).map((c: any) => c.id) : []
+    !isPremium ? [
+      ...categoriesList.filter((c: any) => c.id !== "nocat" && c.type !== "income").slice(5).map((c: any) => c.id),
+      ...categoriesList.filter((c: any) => c.id !== "nocat" && c.type === "income").slice(1).map((c: any) => c.id),
+    ] : []
   );
   const overLimitAccIds = new Set<string>(
     !isPremium ? accountsList.slice(3).map((a: any) => a.id) : []
@@ -272,7 +275,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+      <div className="bg-white border-b border-slate-200 px-4 pb-3 pt-safe-header flex items-center gap-3 flex-shrink-0">
         <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
           <X size={20} className="text-slate-600" />
         </button>
@@ -405,34 +408,48 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               </button>
             </div>
             <div className="overflow-y-auto flex-1">
-              <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
-                {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
-                  const Icon = resolveIcon(cat, MoreHorizontal);
-                  const locked = overLimitCatIds.has(cat.id);
-                  return locked ? (
-                    <button
-                      key={cat.id}
-                      disabled
-                      className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
-                    >
-                      <Icon size={18} className="text-slate-400" />
-                      <span className="text-xs text-center leading-tight text-slate-400">{cat.name}</span>
-                      <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
-                    </button>
-                  ) : (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleCategorySelect(cat.id, cat.name, cat.type)}
-                      className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
-                    >
-                      <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
-                      <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
-                        {cat.name}
+              {(["expense", "income"] as const).map((sectionType) => {
+                const sectionCats = categoriesList.filter((c: any) => c.id !== "nocat" && c.type === sectionType);
+                if (sectionCats.length === 0) return null;
+                return (
+                  <div key={sectionType}>
+                    <div className="px-4 py-1.5 bg-slate-50 border-y border-slate-100">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                        {sectionType === "expense" ? "Expense" : "Income"}
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                    <div className="grid grid-cols-3 divide-x divide-y divide-slate-100">
+                      {sectionCats.map((cat: any) => {
+                        const Icon = resolveIcon(cat, MoreHorizontal);
+                        const locked = overLimitCatIds.has(cat.id);
+                        return locked ? (
+                          <button
+                            key={cat.id}
+                            disabled
+                            className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
+                          >
+                            <Icon size={18} className="text-slate-400" />
+                            <span className="text-xs text-center leading-tight text-slate-400">{cat.name}</span>
+                            <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
+                          </button>
+                        ) : (
+                          <button
+                            key={cat.id}
+                            onClick={() => handleCategorySelect(cat.id, cat.name, cat.type)}
+                            className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
+                          >
+                            <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
+                            <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
+                              {cat.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pb-2" />
             </div>
           </div>
         </div>
@@ -566,7 +583,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
             {/* Section B: Display */}
             <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2 flex-shrink-0">
-              <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
+              <div className="text-2xl font-bold font-mono tracking-tight text-white">
                 {sign}฿{display}
               </div>
               <button
