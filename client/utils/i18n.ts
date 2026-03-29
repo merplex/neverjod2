@@ -70,7 +70,25 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Index
     "index.top_expenses": "อันดับรายจ่าย",
+    "index.top_incomes": "อันดับรายรับ",
     "index.no_data": "ยังไม่มีข้อมูล",
+
+    // Stats / Report
+    "stats.total": "รวมทั้งหมด",
+    "stats.expenses": "รายจ่าย",
+    "stats.no_expenses": "ไม่มีรายจ่ายในช่วงนี้",
+    "stats.total_expenses": "รวมรายจ่าย",
+    "stats.incomes": "รายรับ",
+    "stats.no_incomes": "ไม่มีรายรับในช่วงนี้",
+    "stats.total_incomes": "รวมรายรับ",
+    "stats.by_account": "แยกตาม Account",
+    "stats.income_col": "รายรับ",
+    "stats.expense_col": "รายจ่าย",
+    "stats.total_row": "รวม",
+    "stats.no_txn": "ไม่มีรายการในช่วงนี้",
+
+    // Auth modal
+    "auth.title": "เข้าสู่ระบบ",
 
     // Categories
     "cat.delete_title": "ลบ Category",
@@ -212,7 +230,25 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Index
     "index.top_expenses": "Top Expenses",
+    "index.top_incomes": "Top Income",
     "index.no_data": "No data yet",
+
+    // Stats / Report
+    "stats.total": "Total",
+    "stats.expenses": "Expenses",
+    "stats.no_expenses": "No expenses this period",
+    "stats.total_expenses": "Total Expenses",
+    "stats.incomes": "Income",
+    "stats.no_incomes": "No income this period",
+    "stats.total_incomes": "Total Income",
+    "stats.by_account": "By Account",
+    "stats.income_col": "Income",
+    "stats.expense_col": "Expense",
+    "stats.total_row": "Total",
+    "stats.no_txn": "No transactions this period",
+
+    // Auth modal
+    "auth.title": "Sign In",
 
     // Categories
     "cat.delete_title": "Delete Category",

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useT } from "../hooks/useT";
 import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
@@ -131,6 +132,7 @@ function readVoiceAutoStart(): boolean {
 
 export default function Index() {
   const navigate = useNavigate();
+  const T = useT();
   const [voiceAutoStart] = useState<boolean>(readVoiceAutoStart);
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -565,9 +567,9 @@ export default function Index() {
           <div className="flex flex-col gap-2">
             {/* Expense ranking */}
             <div className="bg-white/15 rounded-xl px-3 py-2">
-              <p className="text-white font-bold text-sm mb-2">อันดับรายจ่าย</p>
+              <p className="text-white font-bold text-sm mb-2">{T("index.top_expenses")}</p>
               {monthlyData.topExpenses.length === 0 ? (
-                <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
+                <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
               ) : (
                 <div className="grid grid-cols-5 gap-1">
                   {monthlyData.topExpenses.map(({ id, amount, cat }) => {
@@ -589,9 +591,9 @@ export default function Index() {
             </div>
             {/* Income ranking */}
             <div className="bg-white/15 rounded-xl px-3 py-2">
-              <p className="text-white font-bold text-sm mb-2">อันดับรายรับ</p>
+              <p className="text-white font-bold text-sm mb-2">{T("index.top_incomes")}</p>
               {monthlyData.topIncomes.length === 0 ? (
-                <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
+                <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
               ) : (
                 <div className="grid grid-cols-5 gap-1">
                   {monthlyData.topIncomes.map(({ id, amount, cat }) => {
