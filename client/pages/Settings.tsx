@@ -315,40 +315,25 @@ export default function Settings() {
             </div>
 
             <div className="border-t border-slate-100 pt-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-600">{T("settings.voice_language")}</span>
-                <span className="text-xs text-slate-400">{settings.voiceLang}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {[
-                  { code: "th-TH", label: "🇹🇭 ไทย" },
-                  { code: "en-US", label: "🇺🇸 English" },
-                  { code: "zh-CN", label: "🇨🇳 中文" },
-                  { code: "ja-JP", label: "🇯🇵 日本語" },
-                  { code: "ko-KR", label: "🇰🇷 한국어" },
-                  { code: "fr-FR", label: "🇫🇷 Français" },
-                  { code: "auto",  label: "Auto" },
-                ].map(({ code, label }) => (
-                  <button
-                    key={code}
-                    onClick={() => update("voiceLang", code)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
-                      settings.voiceLang === code
-                        ? "bg-theme-600 text-white border-theme-600"
-                        : "bg-white text-slate-600 border-slate-200"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <input
-                type="text"
-                value={settings.voiceLang === "auto" ? "" : settings.voiceLang}
-                onChange={(e) => { if (e.target.value) update("voiceLang", e.target.value); }}
-                placeholder="หรือพิมพ์ BCP-47 เช่น de-DE, es-ES, ar-SA"
-                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-600 placeholder:text-slate-300 outline-none focus:border-theme-400"
-              />
+              <span className="text-sm text-slate-600 block mb-2">{T("settings.voice_language")}</span>
+              <select
+                value={settings.voiceLang}
+                onChange={(e) => update("voiceLang", e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white text-slate-700 outline-none focus:border-theme-400"
+              >
+                <option value="th-TH">🇹🇭 ภาษาไทย (th-TH)</option>
+                <option value="en-US">🇺🇸 English (en-US)</option>
+                <option value="zh-CN">🇨🇳 中文 (zh-CN)</option>
+                <option value="ja-JP">🇯🇵 日本語 (ja-JP)</option>
+                <option value="ko-KR">🇰🇷 한국어 (ko-KR)</option>
+                <option value="fr-FR">🇫🇷 Français (fr-FR)</option>
+                <option value="de-DE">🇩🇪 Deutsch (de-DE)</option>
+                <option value="es-ES">🇪🇸 Español (es-ES)</option>
+                <option value="pt-BR">🇧🇷 Português (pt-BR)</option>
+                <option value="vi-VN">🇻🇳 Tiếng Việt (vi-VN)</option>
+                <option value="ms-MY">🇲🇾 Bahasa Melayu (ms-MY)</option>
+                <option value="auto">Auto</option>
+              </select>
               <p className="text-xs text-slate-400 mt-1.5">
                 {T("settings.voice_lang_auto_hint")}
               </p>
