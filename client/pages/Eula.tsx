@@ -76,7 +76,7 @@ export default function Eula() {
           <h3 className="font-semibold text-slate-800">8. ติดต่อเรา</h3>
           <p className="text-slate-600">
             ติดต่อได้ที่:{" "}
-            <span className="text-sky-600 font-medium">legal@neverjod.com</span>
+            <span className="text-sky-600 font-medium">support@neverjod.com</span>
           </p>
         </div>
 
@@ -112,7 +112,7 @@ export default function Eula() {
           <h3 className="font-semibold text-slate-800">Contact</h3>
           <p className="text-slate-600">
             Email us at{" "}
-            <span className="text-sky-600 font-medium">legal@neverjod.com</span>
+            <span className="text-sky-600 font-medium">support@neverjod.com</span>
           </p>
         </div>
       </div>

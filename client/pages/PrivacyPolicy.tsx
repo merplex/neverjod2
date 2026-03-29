@@ -66,7 +66,7 @@ export default function PrivacyPolicy() {
           <h3 className="font-semibold text-slate-800">6. ติดต่อเรา</h3>
           <p className="text-slate-600">
             หากมีคำถามเกี่ยวกับนโยบายความเป็นส่วนตัว ติดต่อได้ที่:{" "}
-            <span className="text-sky-600 font-medium">privacy@neverjod.com</span>
+            <span className="text-sky-600 font-medium">support@neverjod.com</span>
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export default function PrivacyPolicy() {
           <h3 className="font-semibold text-slate-800">Contact</h3>
           <p className="text-slate-600">
             Questions? Email us at{" "}
-            <span className="text-sky-600 font-medium">privacy@neverjod.com</span>
+            <span className="text-sky-600 font-medium">support@neverjod.com</span>
           </p>
         </div>
       </div>
