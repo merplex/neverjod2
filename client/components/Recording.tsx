@@ -123,32 +123,50 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
     recognition.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (!event.results[i].isFinal) continue;
+        const isFinal = event.results[i].isFinal;
         const transcriptPart = event.results[i][0].transcript;
-        console.log("[voice] final:", transcriptPart);
-        hasSpeechStartedRef.current = true;
-
-        if (onTranscriptRef.current) onTranscriptRef.current(transcriptPart);
-
-        const voiceData = parseVoiceInput(transcriptPart);
 
         if (isIOSDevice) {
-          // ── iOS: accumulate fields so multi-part sentences still resolve ──
-          iosMergedRef.current = {
+          // ── iOS Early Exit: process interim results too ──
+          // Parse interim to accumulate keywords as soon as they appear
+          hasSpeechStartedRef.current = true;
+          const voiceData = parseVoiceInput(transcriptPart);
+
+          const merged: MergedVoiceData = {
             description: transcriptPart,
             accountId:   voiceData.accountId  ?? iosMergedRef.current.accountId,
             categoryId:  voiceData.categoryId ?? iosMergedRef.current.categoryId,
             amount:      voiceData.amount     ?? iosMergedRef.current.amount,
           };
-          console.log("[voice] iOS merged:", iosMergedRef.current);
-          if (onVoiceInputRef.current) onVoiceInputRef.current({ ...iosMergedRef.current });
+          iosMergedRef.current = merged;
+
+          if (onTranscriptRef.current) onTranscriptRef.current(transcriptPart);
+          if (onVoiceInputRef.current) onVoiceInputRef.current({ ...merged });
+
+          // Early exit: all 3 keywords found → stop immediately, no need to wait for isFinal
+          if (merged.categoryId && merged.accountId && merged.amount) {
+            console.log("[voice] iOS early exit — all keywords found:", merged);
+            manualStopRef.current = true;
+            recognition.stop();
+            if (onVoiceEndRef.current) onVoiceEndRef.current();
+            return;
+          }
+
+          if (isFinal) {
+            console.log("[voice] iOS final:", transcriptPart);
+            resetSilenceTimer();
+          }
         } else {
-          // ── Android: pass each result directly; Index.tsx accumulates ──
+          // ── Android: unchanged — process final results only ──
+          if (!isFinal) continue;
+          console.log("[voice] final:", transcriptPart);
+          hasSpeechStartedRef.current = true;
+          if (onTranscriptRef.current) onTranscriptRef.current(transcriptPart);
+          const voiceData = parseVoiceInput(transcriptPart);
           console.log("[voice] Android data:", voiceData);
           if (onVoiceInputRef.current) onVoiceInputRef.current(voiceData);
+          resetSilenceTimer();
         }
-
-        resetSilenceTimer();
       }
     };
 
