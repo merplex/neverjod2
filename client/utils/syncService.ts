@@ -24,6 +24,19 @@ export async function apiLogin(email: string, password: string) {
   return data as { token: string; email: string; isPremium: boolean };
 }
 
+export async function apiVerifyPurchase(receipt: string) {
+  const token = localStorage.getItem("app_token");
+  if (!token) throw new Error("ต้อง login ก่อนซื้อ");
+  const res = await fetch(`${API_BASE}/subscription/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ receipt }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Verify failed");
+  return data as { ok: boolean };
+}
+
 // --- Soft-delete tombstone helpers ---
 
 export function markDeleted(type: "category" | "account" | "transaction", item: any) {
