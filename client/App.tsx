@@ -63,6 +63,12 @@ function ThemeProvider() {
     window.addEventListener("storage", apply);
     return () => window.removeEventListener("storage", apply);
   }, []);
+
+  useEffect(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    document.documentElement.classList.add(isIOS ? "platform-ios" : "platform-android");
+  }, []);
+
   return null;
 }
 import Index from "./pages/Index";
