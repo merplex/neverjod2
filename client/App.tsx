@@ -17,10 +17,10 @@ const LEGAL_PATHS = ["/privacy", "/terms", "/eula"];
 
 function DesktopBlock() {
   const { pathname } = useLocation();
-  const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+  const isNativeApp = !!(window as any).Capacitor?.isNativePlatform?.();
   const isLegal = LEGAL_PATHS.some((p) => pathname.startsWith(p));
 
-  if (isMobile || isLegal) return null;
+  if (isNativeApp || isLegal) return null;
 
   return (
     <div className="fixed inset-0 bg-slate-900 flex items-center justify-center z-[9999] px-6">
@@ -88,11 +88,14 @@ declare global {
 
 function AppContent() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [showGuide, setShowGuide] = useState(() => {
     try { return !localStorage.getItem("app_onboarding_done"); } catch { return false; }
   });
 
   useEffect(() => {
+    // Don't redirect if user opened a legal page directly
+    if (LEGAL_PATHS.some((p) => pathname.startsWith(p))) return;
     if (checkAndExecuteRepeats()) window.dispatchEvent(new CustomEvent("repeats-updated"));
     // Restore last page if app was briefly hidden (< 1 min), else go home
     const lastPath = sessionStorage.getItem("last_path");
