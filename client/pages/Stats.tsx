@@ -234,7 +234,7 @@ export default function Stats() {
             )}
 
             {/* Income section */}
-            <div className="px-4 py-3 bg-slate-50">
+            <div className="px-4 py-3 bg-slate-50 border-t-2 border-slate-200">
               <p className="font-semibold text-slate-700 text-sm">{T("stats.incomes")}</p>
             </div>
             {incomeByCat.length === 0 ? (
@@ -255,7 +255,7 @@ export default function Stats() {
             )}
 
             {/* Per-account section */}
-            <div className="px-4 py-3 bg-slate-50">
+            <div className="px-4 py-3 bg-slate-50 border-t-2 border-slate-200">
               <p className="font-semibold text-slate-700 text-sm">{T("stats.by_account")}</p>
             </div>
             {accountMonthData.length === 0 ? (

@@ -529,8 +529,9 @@ export default function Index() {
         ? new Date(today.getFullYear(), today.getMonth(), resetDay)
         : new Date(today.getFullYear(), today.getMonth() - 1, resetDay);
 
-      const startStr = periodStart.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
-      const endStr = today.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+      const dateLocale = s.language === "en" ? "en-GB" : "th-TH";
+      const startStr = periodStart.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
+      const endStr = today.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
       const periodLabel = `${startStr} – ${endStr}`;
 
       const raw: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
