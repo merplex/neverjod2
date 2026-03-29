@@ -56,10 +56,16 @@
       "Bash(cmd /c \"dir /s /b \"\"C:\\\\Users\\\\User\\\\StudioProjects\\\\neverjod2\\\\android\\\\app\"\" 2>nul\")",
       "Bash(pnpm build:mobile)",
       "Bash(grep -r \"voiceCalculator\\\\|ThaiNumber\\\\|parseThaiNumber\" /c/Users/User/StudioProjects/neverjod2/client --include=*.ts --include=*.tsx)",
-      "Bash(JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\" ./gradlew assembleDebug)",
       "Bash(JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\" ./android/gradlew -p android assembleDebug)",
+      "Bash(git stash:*)",
       "Bash(pnpm install:*)",
-      "Bash(git stash:*)"
+      "Bash(pnpm test:*)",
+      "Bash(npm test:*)",
+      "Bash(xcodebuild -project ios/App/App.xcodeproj -scheme App -destination \"generic/platform=iOS Simulator\" build)",
+      "Bash(xargs cat:*)",
+      "Bash(find ios/App -name *.xcworkspace -o -name package.resolved)",
+      "Bash(xcodebuild:*)",
+      "Bash(must be fixed before building\" in Xcode:*)"
     ]
   }
 }
