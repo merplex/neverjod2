@@ -223,6 +223,17 @@ export default function Index() {
     };
   }, []);
 
+  // Restart voice when app comes back to foreground while on home page
+  useEffect(() => {
+    const onResume = () => {
+      if (document.visibilityState === "visible" && currentPage === "category" && voiceAutoStart) {
+        setVoiceStartTrigger((n) => n + 1);
+      }
+    };
+    document.addEventListener("visibilitychange", onResume);
+    return () => document.removeEventListener("visibilitychange", onResume);
+  }, [currentPage, voiceAutoStart]);
+
   // Refresh categories/accounts from localStorage when sync completes (no page reload needed)
   useEffect(() => {
     const handler = () => {
@@ -846,7 +857,7 @@ export default function Index() {
                       className="flex-1 overflow-x-auto"
                       style={{ scrollbarWidth: "none" }}
                     >
-                      <div className={`text-2xl font-bold font-mono tracking-tight whitespace-nowrap ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
+                      <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
                         {categoryType === "income" ? "+" : "-"}฿{display}
                       </div>
                     </div>
@@ -869,28 +880,20 @@ export default function Index() {
                     {/* Section C: Numpad 4x3 */}
                     <div className="flex-1 min-h-0" style={{ width: `${numpadSize}%`, flex: "none" }}>
                       <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: "repeat(4, 1fr)" }}>
-                        {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
-                          <button
-                            key={num}
-                            onClick={() => handleNumberClick(num)}
-                            className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            {num}
-                          </button>
-                        ))}
-                        {isRightMode ? (
-                          <>
-                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                            <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                          </>
-                        ) : (
-                          <>
-                            <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                          </>
-                        )}
+                        {(isRightMode
+                          ? [7, 8, 9, 4, 5, 6, 1, 2, 3, '.', 0, 'save'] as const
+                          : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
+                        ).map((btn) => {
+                          if (btn === 'save') return (
+                            <button key="save" onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                          );
+                          if (btn === '.') return (
+                            <button key="dot" onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                          );
+                          return (
+                            <button key={btn} onClick={() => handleNumberClick(btn as number)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">{btn}</button>
+                          );
+                        })}
                       </div>
                     </div>
 

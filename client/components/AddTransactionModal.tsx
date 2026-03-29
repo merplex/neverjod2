@@ -582,10 +582,18 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             </div>
 
             {/* Section B: Display */}
-            <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2 flex-shrink-0">
-              <div className="text-2xl font-bold font-mono tracking-tight text-white">
-                {sign}฿{display}
+            <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
+              <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                <div className="text-2xl font-bold font-mono tracking-tight text-white whitespace-nowrap">
+                  {sign}฿{display}
+                </div>
               </div>
+              <button
+                onClick={() => { setDisplay("0"); setValue(0); setIsCalcMode(false); }}
+                className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center"
+              >
+                C
+              </button>
               <button
                 onClick={() => setShowAmountPad(false)}
                 className="p-1.5 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0"
@@ -596,38 +604,22 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
             {/* Section C+D — fills remaining height */}
             <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
-              {/* Section C: Numpad */}
-              <div className="grid gap-1.5 min-h-0 h-full" style={{ width: `${numpadSize}%`, gridTemplateRows: 'repeat(4, 1fr)' }}>
-                {[[7, 8, 9], [4, 5, 6], [1, 2, 3]].map((row) => (
-                  <div key={row[0]} className="flex gap-1.5 min-h-0">
-                    {row.map((num) => (
-                      <button
-                        key={num}
-                        onClick={() => handleNumberClick(num)}
-                        className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-                <div className="flex gap-1.5 min-h-0">
-                  {isRightMode ? (
-                    <>
-                      <button onClick={handleDelete} className="flex-1 h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                      <button onClick={handleDecimal} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                      <button onClick={() => handleNumberClick(0)} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                      <button onClick={handleAmountSave} className="flex-1 h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={handleAmountSave} className="flex-1 h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                      <button onClick={() => handleNumberClick(0)} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                      <button onClick={handleDecimal} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                      <button onClick={handleDelete} className="flex-1 h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                    </>
-                  )}
-                </div>
+              {/* Section C: Numpad 4x3 */}
+              <div className="grid grid-cols-3 gap-1.5 min-h-0 h-full" style={{ width: `${numpadSize}%`, gridTemplateRows: 'repeat(4, 1fr)', flex: 'none' }}>
+                {(isRightMode
+                  ? [7, 8, 9, 4, 5, 6, 1, 2, 3, '.', 0, 'save'] as const
+                  : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
+                ).map((btn) => {
+                  if (btn === 'save') return (
+                    <button key="save" onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                  );
+                  if (btn === '.') return (
+                    <button key="dot" onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                  );
+                  return (
+                    <button key={btn} onClick={() => handleNumberClick(btn as number)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">{btn}</button>
+                  );
+                })}
               </div>
 
               {/* Section D: Calc toggle + Lock/= */}
