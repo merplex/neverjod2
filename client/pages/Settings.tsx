@@ -26,7 +26,7 @@ const defaultSettings: AppSettings = {
   voiceAutoStart: true,
   voiceLang: "th-TH",
   cloudBackupEnabled: false,
-  language: "en",
+  language: "th",
   colorTheme: "teal",
   swipeBackDirection: "right",
   monthResetDay: 1,
