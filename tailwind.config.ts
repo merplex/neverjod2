@@ -24,6 +24,7 @@ export default {
           600: "hsl(var(--t-600))",
           700: "hsl(var(--t-700))",
           900: "hsl(var(--t-900))",
+          on:  "hsl(var(--t-on))",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

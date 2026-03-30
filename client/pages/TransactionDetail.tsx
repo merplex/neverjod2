@@ -495,11 +495,11 @@ export default function TransactionDetail() {
                         <button onClick={handleNumpadDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
                         <button onClick={handleNumpadDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
                         <button onClick={() => handleNumpadClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-theme-on font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
                       </>
                     ) : (
                       <>
-                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-theme-on font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
                         <button onClick={() => handleNumpadClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
                         <button onClick={handleNumpadDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
                         <button onClick={handleNumpadDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
