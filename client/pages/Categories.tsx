@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useT } from "../hooks/useT";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import PremiumModal from "../components/PremiumModal";
@@ -44,6 +45,7 @@ const iconOptions = [
 
 export default function Categories() {
   const navigate = useNavigate();
+  const T = useT();
   useSwipeBack();
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
@@ -145,17 +147,23 @@ export default function Categories() {
 
     const keywords = newKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+    // Free-tier: max 1 keyword per category
+    if (!isPremium && keywords.length > 1) {
+      showPremium(T("cat.free_keyword_limit"));
+      return;
+    }
+
     // Validate: keywords must not already exist in other categories or accounts
     const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
     for (const kw of keywords) {
       const dupCat = categories.find((c) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setNewKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        setNewKeywordError(T("cat.keyword_duplicate", { kw, name: dupCat.name }));
         return;
       }
       const dupAcc = storedAccounts.find((a: any) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setNewKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        setNewKeywordError(T("cat.keyword_duplicate", { kw, name: dupAcc.name }));
         return;
       }
     }
@@ -186,6 +194,12 @@ export default function Categories() {
 
     const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+    // Free-tier: max 1 keyword per category
+    if (!isPremium && keywords.length > 1) {
+      showPremium(T("cat.free_keyword_limit"));
+      return;
+    }
+
     // Validate: keywords must not already exist in other categories or any account
     const otherCats = categories.filter((c) => c.id !== editingId);
     const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
@@ -193,12 +207,12 @@ export default function Categories() {
     for (const kw of keywords) {
       const dupCat = otherCats.find((c) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        setKeywordError(T("cat.keyword_duplicate", { kw, name: dupCat.name }));
         return;
       }
       const dupAcc = storedAccounts.find((a: any) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        setKeywordError(T("cat.keyword_duplicate", { kw, name: dupAcc.name }));
         return;
       }
     }
@@ -305,7 +319,7 @@ export default function Categories() {
                 // Over free limit — need premium
                 const token = localStorage.getItem("cloud_token");
                 if (!token) { setShowCloudAuth(true); return; }
-                if (!isPremium) { showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`); return; }
+                if (!isPremium) { showPremium(T("cat.free_cat_limit", { limit: FREE_CAT_LIMIT })); return; }
               }
               setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true);
             }}
@@ -412,13 +426,13 @@ export default function Categories() {
                       )}
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                      <label className="text-xs font-semibold text-slate-600">{T("cat.keywords_label")}</label>
                       <input
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
                         className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
-                        placeholder="ค่าเดินทาง, ค่ารถ, รถไฟฟ้า"
+                        placeholder={T("cat.keywords_placeholder")}
                       />
                       {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
                     </div>
@@ -496,7 +510,7 @@ export default function Categories() {
                     {category.id !== "nocat" && (
                       isOverLimitCat(category.id) ? (
                         <button
-                          onClick={() => showPremium(`แพลนฟรีใช้งานได้ ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อปลดล็อคทุก category`)}
+                          onClick={() => showPremium(T("cat.free_unlock", { limit: FREE_CAT_LIMIT }))}
                           className="p-2 rounded-lg text-amber-400 hover:bg-amber-50 transition-colors"
                         >
                           <Lock size={18} />
@@ -597,7 +611,11 @@ export default function Categories() {
       )}
 
       {showPremiumModal && (
-        <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
+        <PremiumModal
+          message={premiumMessage}
+          onClose={() => setShowPremiumModal(false)}
+          onSignUp={() => setShowCloudAuth(true)}
+        />
       )}
 
       {showCloudAuth && (
@@ -608,7 +626,7 @@ export default function Categories() {
             if (premium) {
               setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(true);
             } else {
-              showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_CAT_LIMIT} หมวดหมู่\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
+              showPremium(T("cat.free_cat_limit", { limit: FREE_CAT_LIMIT }));
             }
           }}
         />
@@ -624,28 +642,25 @@ export default function Categories() {
                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <Trash2 size={20} className="text-red-500" />
                 </div>
-                <h2 className="text-base font-bold text-slate-900">ลบ Category</h2>
+                <h2 className="text-base font-bold text-slate-900">{T("cat.delete_title")}</h2>
               </div>
               <p className="text-sm text-slate-700">
-                Category <span className="font-semibold">"{cat?.name}"</span> มี{" "}
-                <span className="font-bold text-red-600">{count} รายการ</span> ที่ใช้งานอยู่
+                Category <span className="font-semibold">"{cat?.name}"</span> {T("has")}{" "}
+                <span className="font-bold text-red-600">{count} {T("items")}</span> {T("items_in_use")}
               </p>
-              <p className="text-sm text-slate-500">
-                ถ้ายืนยัน รายการทั้งหมดจะย้ายไปอยู่ใน{" "}
-                <span className="font-semibold text-slate-700">No Category</span> และลบ category นี้ออก
-              </p>
+              <p className="text-sm text-slate-500">{T("cat.delete_warning")}</p>
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => confirmDelete(deleteConfirmId)}
                   className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
                 >
-                  ยืนยันลบ
+                  {T("confirm_delete")}
                 </button>
                 <button
                   onClick={() => setDeleteConfirmId(null)}
                   className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
                 >
-                  ยกเลิก
+                  {T("cancel")}
                 </button>
               </div>
             </div>

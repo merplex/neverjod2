@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
+import { useT } from "../hooks/useT";
 import { getRealTransactionsList } from "../utils/transactionData";
 
 type TabType = "summary" | "stats";
@@ -14,6 +15,7 @@ const MONTHS = [
 export default function Stats() {
   const navigate = useNavigate();
   useSwipeBack();
+  const T = useT();
   const [tab, setTab] = useState<TabType>("summary");
 
   const now = new Date();
@@ -138,7 +140,7 @@ export default function Stats() {
                 const total = summaryData.reduce((s: number, acc: any) => s + Number(acc.balance || 0) + acc.income - acc.expense, 0);
                 return (
                   <div className="flex items-center justify-between px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
-                    <p className="font-semibold text-slate-600 text-sm">รวมทั้งหมด</p>
+                    <p className="font-semibold text-slate-600 text-sm">{T("stats.total")}</p>
                     <p className={`font-bold text-sm ${total >= 0 ? "text-slate-800" : "text-red-500"}`}>
                       {total >= 0 ? "+" : "-"}฿{Math.abs(total).toLocaleString()}
                     </p>
@@ -212,10 +214,10 @@ export default function Stats() {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             {/* Expense section */}
             <div className="px-4 py-3 bg-slate-50">
-              <p className="font-semibold text-slate-700 text-sm">รายจ่าย</p>
+              <p className="font-semibold text-slate-700 text-sm">{T("stats.expenses")}</p>
             </div>
             {expenseByCat.length === 0 ? (
-              <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">ไม่มีรายจ่ายในช่วงนี้</p>
+              <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">{T("stats.no_expenses")}</p>
             ) : (
               <>
                 {expenseByCat.map(([cat, total]) => (
@@ -225,18 +227,18 @@ export default function Stats() {
                   </div>
                 ))}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
-                  <span className="text-sm font-semibold text-slate-600">รวมรายจ่าย</span>
+                  <span className="text-sm font-semibold text-slate-600">{T("stats.total_expenses")}</span>
                   <span className="text-sm font-bold text-red-500">-฿{expenseByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
                 </div>
               </>
             )}
 
             {/* Income section */}
-            <div className="px-4 py-3 bg-slate-50">
-              <p className="font-semibold text-slate-700 text-sm">รายรับ</p>
+            <div className="px-4 py-3 bg-slate-50 border-t-2 border-slate-200">
+              <p className="font-semibold text-slate-700 text-sm">{T("stats.incomes")}</p>
             </div>
             {incomeByCat.length === 0 ? (
-              <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">ไม่มีรายรับในช่วงนี้</p>
+              <p className="text-xs text-slate-400 px-4 py-3 text-center border-b border-slate-100">{T("stats.no_incomes")}</p>
             ) : (
               <>
                 {incomeByCat.map(([cat, total]) => (
@@ -246,24 +248,24 @@ export default function Stats() {
                   </div>
                 ))}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
-                  <span className="text-sm font-semibold text-slate-600">รวมรายรับ</span>
+                  <span className="text-sm font-semibold text-slate-600">{T("stats.total_incomes")}</span>
                   <span className="text-sm font-bold text-green-600">+฿{incomeByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
                 </div>
               </>
             )}
 
             {/* Per-account section */}
-            <div className="px-4 py-3 bg-slate-50">
-              <p className="font-semibold text-slate-700 text-sm">แยกตาม Account</p>
+            <div className="px-4 py-3 bg-slate-50 border-t-2 border-slate-200">
+              <p className="font-semibold text-slate-700 text-sm">{T("stats.by_account")}</p>
             </div>
             {accountMonthData.length === 0 ? (
-              <p className="text-xs text-slate-400 px-4 py-3 text-center">ไม่มีรายการในช่วงนี้</p>
+              <p className="text-xs text-slate-400 px-4 py-3 text-center">{T("stats.no_txn")}</p>
             ) : (
               <>
                 <div className="grid grid-cols-3 px-4 py-2 border-b border-slate-100">
                   <span className="text-xs font-medium text-slate-400">Account</span>
-                  <span className="text-xs font-medium text-slate-400 text-center">รายรับ</span>
-                  <span className="text-xs font-medium text-slate-400 text-right">รายจ่าย</span>
+                  <span className="text-xs font-medium text-slate-400 text-center">{T("stats.income_col")}</span>
+                  <span className="text-xs font-medium text-slate-400 text-right">{T("stats.expense_col")}</span>
                 </div>
                 {accountMonthData.map((acc: any) => (
                   <div key={acc.id} className="grid grid-cols-3 px-4 py-3 items-center border-b border-slate-100">
@@ -277,7 +279,7 @@ export default function Stats() {
                   </div>
                 ))}
                 <div className="grid grid-cols-3 px-4 py-3 items-center bg-slate-50">
-                  <span className="text-sm font-semibold text-slate-600">รวม</span>
+                  <span className="text-sm font-semibold text-slate-600">{T("stats.total_row")}</span>
                   <span className="text-sm font-bold text-green-600 text-center">
                     +฿{accountMonthData.reduce((s: number, a: any) => s + a.income, 0).toLocaleString()}
                   </span>

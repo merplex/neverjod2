@@ -107,6 +107,19 @@ function getAccountsWithKeywords(): Record<string, { name: string; keywords: str
 }
 
 export function extractNumberFromText(text: string): number | undefined {
+  // Thai unit multipliers for mixed numeric+Thai (e.g. "2ล้าน", "3แสน")
+  const thaiUnitMap: Record<string, number> = {
+    'ล้าน': 1000000, 'แสน': 100000, 'หมื่น': 10000, 'พัน': 1000, 'ร้อย': 100,
+  };
+
+  // Check for number immediately followed by Thai unit (e.g. "2ล้าน", "1.5แสน")
+  for (const [unit, multiplier] of Object.entries(thaiUnitMap)) {
+    const mixedMatch = text.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*${unit}`));
+    if (mixedMatch) {
+      return parseFloat(mixedMatch[1]) * multiplier;
+    }
+  }
+
   // First, try to find direct numeric matches — support comma-separated thousands like "1,205,000"
   const numberMatches = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?/g);
   if (numberMatches && numberMatches.length > 0) {

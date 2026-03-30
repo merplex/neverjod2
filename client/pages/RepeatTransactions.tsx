@@ -2,15 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Trash2, RefreshCw, Pencil, X } from "lucide-react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
+import { useT } from "../hooks/useT";
 import {
   getRepeatTransactions, deleteRepeatTransaction, updateRepeatTransaction,
   REPEAT_OPTIONS, RepeatTransaction, RepeatOption,
 } from "../utils/repeatTransactionService";
 import AddTransactionModal from "../components/AddTransactionModal";
+import { getLang } from "../utils/i18n";
 
 function repeatLabel(rt: RepeatTransaction): string {
   const opt = REPEAT_OPTIONS.find((o) => o.value === rt.repeatOption);
-  return opt ? opt.label : rt.repeatOption;
+  if (!opt) return rt.repeatOption;
+  return getLang() === "en" ? opt.labelEn : opt.label;
 }
 
 function formatNextDue(isoStr: string): string {
@@ -20,6 +23,7 @@ function formatNextDue(isoStr: string): string {
 
 export default function RepeatTransactions() {
   const navigate = useNavigate();
+  const T = useT();
   useSwipeBack();
 
   const [list, setList] = useState<RepeatTransaction[]>(() => getRepeatTransactions());
@@ -57,9 +61,9 @@ export default function RepeatTransactions() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="h-[100dvh] flex flex-col bg-slate-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header">
+      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header flex-shrink-0">
         <div className="max-w-md mx-auto flex items-center gap-2">
           <button
             onClick={() => navigate("/settings")}
@@ -77,12 +81,13 @@ export default function RepeatTransactions() {
         </div>
       </div>
 
+      <div className="flex-1 overflow-y-auto pb-safe-content">
       <div className="max-w-md mx-auto px-4 py-4 space-y-3">
         {list.length === 0 ? (
           <div className="text-center py-16">
             <RefreshCw size={40} className="mx-auto text-slate-300 mb-3" />
-            <p className="text-slate-500 text-sm">ยังไม่มี repeat transaction</p>
-            <p className="text-slate-400 text-xs mt-1">กด + เพื่อสร้าง</p>
+            <p className="text-slate-500 text-sm">{T("repeat.empty")}</p>
+            <p className="text-slate-400 text-xs mt-1">{T("repeat.empty_hint")}</p>
           </div>
         ) : (
           list.map((rt) => {
@@ -110,7 +115,7 @@ export default function RepeatTransactions() {
                         {repeatLabel(rt)}
                       </span>
                       <span className="text-xs text-slate-400">
-                        ถัดไป: {formatNextDue(rt.nextDue)}
+                        {T("repeat.next_due")}: {formatNextDue(rt.nextDue)}
                       </span>
                     </div>
                     {/* Description */}
@@ -147,12 +152,12 @@ export default function RepeatTransactions() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditId(null)} />
           <div className="relative bg-white rounded-t-2xl p-5 pb-8 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-800">แก้ไข Repeat Transaction</p>
+              <p className="text-sm font-semibold text-slate-800">{T("repeat.edit_title")}</p>
               <button onClick={() => setEditId(null)}><X size={18} className="text-slate-400" /></button>
             </div>
             {/* Amount */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1 block">จำนวนเงิน</label>
+              <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.amount")}</label>
               <input
                 type="number"
                 value={editAmount}
@@ -162,7 +167,7 @@ export default function RepeatTransactions() {
             </div>
             {/* Description */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1 block">หมายเหตุ</label>
+              <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.note")}</label>
               <input
                 type="text"
                 value={editDesc}
@@ -172,13 +177,13 @@ export default function RepeatTransactions() {
             </div>
             {/* Repeat Option */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1 block">ความถี่</label>
+              <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.frequency")}</label>
               <button
                 onClick={() => setShowEditRepeatPicker((v) => !v)}
                 className="w-full flex items-center justify-between px-3 py-2 border border-slate-200 rounded-xl text-sm"
               >
                 <span className="font-semibold text-slate-800">
-                  {REPEAT_OPTIONS.find((o) => o.value === editRepeatOption)?.label}
+                  {(() => { const o = REPEAT_OPTIONS.find((o) => o.value === editRepeatOption); return o ? (getLang() === "en" ? o.labelEn : o.label) : editRepeatOption; })()}
                 </span>
                 <span className="text-xs text-slate-400">
                   {REPEAT_OPTIONS.find((o) => o.value === editRepeatOption)?.desc}
@@ -192,7 +197,7 @@ export default function RepeatTransactions() {
                       onClick={() => { setEditRepeatOption(opt.value); setShowEditRepeatPicker(false); }}
                       className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${opt.value === editRepeatOption ? "bg-theme-50" : ""}`}
                     >
-                      <span className={`text-sm font-semibold w-28 text-left ${opt.value === editRepeatOption ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
+                      <span className={`text-sm font-semibold w-28 text-left ${opt.value === editRepeatOption ? "text-theme-700" : "text-slate-800"}`}>{getLang() === "en" ? opt.labelEn : opt.label}</span>
                       <span className="text-xs text-slate-400 flex-1 text-left">{opt.desc}</span>
                       {opt.value === editRepeatOption && <span className="text-theme-600">✓</span>}
                     </button>
@@ -204,7 +209,7 @@ export default function RepeatTransactions() {
               onClick={handleEditSave}
               className="w-full py-3 bg-theme-600 hover:bg-theme-700 text-white rounded-xl font-semibold text-sm transition-colors"
             >
-              บันทึก
+              {T("save")}
             </button>
           </div>
         </div>
@@ -215,23 +220,25 @@ export default function RepeatTransactions() {
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirmId(null)} />
           <div className="relative bg-white rounded-t-2xl p-5 pb-8 space-y-3">
-            <p className="text-sm font-semibold text-slate-800 text-center">ลบ repeat transaction นี้?</p>
-            <p className="text-xs text-slate-500 text-center">transaction ที่สร้างไปแล้วจะไม่ถูกลบ</p>
+            <p className="text-sm font-semibold text-slate-800 text-center">{T("repeat.delete_confirm")}</p>
+            <p className="text-xs text-slate-500 text-center">{T("repeat.delete_hint")}</p>
             <button
               onClick={() => handleDelete(deleteConfirmId)}
               className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold text-sm transition-colors"
             >
-              ลบ
+              {T("delete")}
             </button>
             <button
               onClick={() => setDeleteConfirmId(null)}
               className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors"
             >
-              ยกเลิก
+              {T("cancel")}
             </button>
           </div>
         </div>
       )}
+
+      </div>
 
       {/* Add Modal */}
       {showAddModal && (

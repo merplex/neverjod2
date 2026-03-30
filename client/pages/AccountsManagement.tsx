@@ -5,6 +5,7 @@ import PremiumModal from "../components/PremiumModal";
 import { markDeleted, syncPush } from "../utils/syncService";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
+import { useT } from "../hooks/useT";
 import TimePicker from "../components/TimePicker";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Plane, ShoppingBag, Dumbbell, Gift, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 
@@ -29,6 +30,7 @@ const defaultAccounts: Account[] = [
 
 export default function AccountsManagement() {
   const navigate = useNavigate();
+  const T = useT();
   useSwipeBack();
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
@@ -148,17 +150,23 @@ export default function AccountsManagement() {
 
     const keywords = newAccKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+    // Free-tier: max 1 keyword per account
+    if (!isPremium && keywords.length > 1) {
+      showPremium(T("acc.free_keyword_limit"));
+      return;
+    }
+
     // Validate: keywords must not already exist in other accounts or categories
     const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
     for (const kw of keywords) {
       const dupAcc = accounts.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setNewAccKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        setNewAccKeywordError(T("acc.keyword_duplicate", { kw, name: dupAcc.name }));
         return;
       }
       const dupCat = storedCategories.find((c: any) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setNewAccKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        setNewAccKeywordError(T("acc.keyword_duplicate", { kw, name: dupCat.name }));
         return;
       }
     }
@@ -212,6 +220,12 @@ export default function AccountsManagement() {
 
     const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
+    // Free-tier: max 1 keyword per account
+    if (!isPremium && keywords.length > 1) {
+      showPremium(T("acc.free_keyword_limit"));
+      return;
+    }
+
     // Validate: keywords must not already exist in other accounts or any category
     const otherAccs = accounts.filter((a) => a.id !== editingId);
     const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
@@ -219,12 +233,12 @@ export default function AccountsManagement() {
     for (const kw of keywords) {
       const dupAcc = otherAccs.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupAcc.name}`);
+        setKeywordError(T("acc.keyword_duplicate", { kw, name: dupAcc.name }));
         return;
       }
       const dupCat = storedCategories.find((c: any) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setKeywordError(`Keyword "${kw}" ซ้ำกับที่มีอยู่ใน ${dupCat.name}`);
+        setKeywordError(T("acc.keyword_duplicate", { kw, name: dupCat.name }));
         return;
       }
     }
@@ -377,7 +391,7 @@ export default function AccountsManagement() {
       categoryId: "transfer_out",
       accountId: transferFromId,
       amount,
-      description: `โอนไปยัง ${toAcc?.name || transferToId}`,
+      description: T("acc.transfer_to", { name: toAcc?.name || transferToId }),
       date: txDate.toISOString(),
       time: timeStr,
       isTransfer: true,
@@ -387,7 +401,7 @@ export default function AccountsManagement() {
       categoryId: "transfer_in",
       accountId: transferToId,
       amount,
-      description: `รับโอนจาก ${fromAcc?.name || transferFromId}`,
+      description: T("acc.transfer_from", { name: fromAcc?.name || transferFromId }),
       date: txDate.toISOString(),
       time: timeStr,
       isTransfer: true,
@@ -418,7 +432,7 @@ export default function AccountsManagement() {
                 if (atLimit) {
                   const token = localStorage.getItem("cloud_token");
                   if (!token) { setShowCloudAuth(true); return; }
-                  if (!isPremium) { showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`); return; }
+                  if (!isPremium) { showPremium(T("acc.free_acc_limit", { limit: FREE_ACC_LIMIT })); return; }
                 }
                 setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true);
               }}
@@ -507,7 +521,7 @@ export default function AccountsManagement() {
                         value={editType}
                         onChange={(e) => setEditType(e.target.value)}
                         className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                        placeholder="เช่น credit card, savings account"
+                        placeholder={T("acc.type_placeholder")}
                       />
                     </div>
                     <div>
@@ -520,13 +534,13 @@ export default function AccountsManagement() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                      <label className="text-xs font-semibold text-slate-600">{T("acc.keywords_label")}</label>
                       <input
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
                         className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
-                        placeholder="กสิกร, kbank, เขียว"
+                        placeholder={T("acc.keywords_placeholder")}
                       />
                       {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
                     </div>
@@ -600,7 +614,7 @@ export default function AccountsManagement() {
                     {account.id !== "account_deleted" && (
                       isOverLimitAcc(account.id) ? (
                         <button
-                          onClick={() => showPremium(`แพลนฟรีใช้งานได้ ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อปลดล็อคทุก account`)}
+                          onClick={() => showPremium(T("acc.free_unlock", { limit: FREE_ACC_LIMIT }))}
                           className="p-2 rounded-lg text-amber-400 hover:bg-amber-50 transition-colors"
                         >
                           <Lock size={18} />
@@ -720,7 +734,11 @@ export default function AccountsManagement() {
       )}
 
       {showPremiumModal && (
-        <PremiumModal message={premiumMessage} onClose={() => setShowPremiumModal(false)} />
+        <PremiumModal
+          message={premiumMessage}
+          onClose={() => setShowPremiumModal(false)}
+          onSignUp={() => setShowCloudAuth(true)}
+        />
       )}
 
       {showCloudAuth && (
@@ -731,7 +749,7 @@ export default function AccountsManagement() {
             if (premium) {
               setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other"); setNewAccKeywords(""); setNewAccKeywordError(""); setShowAddForm(true);
             } else {
-              showPremium(`แพลนฟรีเพิ่มได้สูงสุด ${FREE_ACC_LIMIT} บัญชี\nอัปเกรด Premium เพื่อเพิ่มได้ไม่จำกัด`);
+              showPremium(T("acc.free_acc_limit", { limit: FREE_ACC_LIMIT }));
             }
           }}
         />
@@ -748,27 +766,25 @@ export default function AccountsManagement() {
                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <Trash2 size={20} className="text-red-500" />
                 </div>
-                <h2 className="text-base font-bold text-slate-900">ลบ Account</h2>
+                <h2 className="text-base font-bold text-slate-900">{T("acc.delete_title")}</h2>
               </div>
               <p className="text-sm text-slate-700">
-                Account <span className="font-semibold">"{acc?.name}"</span> มี{" "}
-                <span className="font-bold text-red-600">{count} รายการ</span> ที่ใช้งานอยู่
+                Account <span className="font-semibold">"{acc?.name}"</span> {T("has")}{" "}
+                <span className="font-bold text-red-600">{count} {T("items")}</span> {T("items_in_use")}
               </p>
-              <p className="text-sm text-slate-500">
-                ถ้ายืนยัน รายการทั้งหมดจะย้ายไปอยู่ใน <span className="font-semibold text-slate-700">Account Deleted</span> และลบ account นี้ออก
-              </p>
+              <p className="text-sm text-slate-500">{T("acc.delete_warning")}</p>
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => confirmDelete(deleteConfirmId)}
                   className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
                 >
-                  ยืนยันลบ
+                  {T("confirm_delete")}
                 </button>
                 <button
                   onClick={() => setDeleteConfirmId(null)}
                   className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
                 >
-                  ยกเลิก
+                  {T("cancel")}
                 </button>
               </div>
             </div>
@@ -784,7 +800,7 @@ export default function AccountsManagement() {
 
             {/* From Account */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">จากบัญชี</label>
+              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.from_account")}</label>
               <button
                 onClick={() => { setShowFromPicker(true); setShowToPicker(false); }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 border rounded-xl text-sm transition-colors ${transferFromId ? "border-theme-400 bg-theme-50" : "border-slate-200 hover:bg-slate-50"}`}
@@ -797,14 +813,14 @@ export default function AccountsManagement() {
                     </span>
                   </>
                 ) : (
-                  <span className="text-slate-400 text-xs">เลือกบัญชีต้นทาง</span>
+                  <span className="text-slate-400 text-xs">{T("acc.select_source")}</span>
                 )}
               </button>
             </div>
 
             {/* To Account */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">ไปยังบัญชี</label>
+              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.to_account")}</label>
               <button
                 onClick={() => { setShowToPicker(true); setShowFromPicker(false); }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 border rounded-xl text-sm transition-colors ${transferToId ? "border-theme-400 bg-theme-50" : "border-slate-200 hover:bg-slate-50"}`}
@@ -817,14 +833,14 @@ export default function AccountsManagement() {
                     </span>
                   </>
                 ) : (
-                  <span className="text-slate-400 text-xs">เลือกบัญชีปลายทาง</span>
+                  <span className="text-slate-400 text-xs">{T("acc.select_dest")}</span>
                 )}
               </button>
             </div>
 
             {/* Amount */}
             <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">จำนวนเงิน</label>
+              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.amount")}</label>
               <input
                 type="number"
                 value={transferAmount}
@@ -836,20 +852,20 @@ export default function AccountsManagement() {
 
             {/* Date + Time */}
             <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">วันที่</label>
+              <div className="flex-[2] min-w-0">
+                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.date")}</label>
                 <input
                   type="date"
                   value={transferDate}
                   onChange={(e) => setTransferDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white appearance-none"
                 />
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">เวลา</label>
+              <div className="flex-[1]">
+                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.time")}</label>
                 <button
                   onClick={() => setShowTimePicker(true)}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:bg-slate-50 transition-colors"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:bg-slate-50 transition-colors whitespace-nowrap"
                 >
                   {transferTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
                 </button>
@@ -862,13 +878,13 @@ export default function AccountsManagement() {
                 onClick={handleTransfer}
                 className="flex-1 py-2.5 bg-theme-600 text-white rounded-xl text-sm font-semibold hover:bg-theme-700 transition-colors"
               >
-                โอน
+                {T("acc.transfer")}
               </button>
               <button
                 onClick={closeTransferModal}
                 className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
               >
-                ยกเลิก
+                {T("cancel")}
               </button>
             </div>
           </div>
@@ -881,7 +897,7 @@ export default function AccountsManagement() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowFromPicker(false)} />
           <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-800">เลือกบัญชีต้นทาง</h3>
+              <h3 className="text-sm font-semibold text-slate-800">{T("acc.select_source")}</h3>
               <button onClick={() => setShowFromPicker(false)}><X size={18} className="text-slate-400" /></button>
             </div>
             <div className="overflow-y-auto">
@@ -909,7 +925,7 @@ export default function AccountsManagement() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowToPicker(false)} />
           <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-800">เลือกบัญชีปลายทาง</h3>
+              <h3 className="text-sm font-semibold text-slate-800">{T("acc.select_dest")}</h3>
               <button onClick={() => setShowToPicker(false)}><X size={18} className="text-slate-400" /></button>
             </div>
             <div className="overflow-y-auto">

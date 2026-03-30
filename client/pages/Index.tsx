@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useT } from "../hooks/useT";
 import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
@@ -131,8 +132,26 @@ function readVoiceAutoStart(): boolean {
 
 export default function Index() {
   const navigate = useNavigate();
+  const T = useT();
   const [voiceAutoStart] = useState<boolean>(readVoiceAutoStart);
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
+
+  // Seed defaults to localStorage on first launch so other pages (e.g. AddTransactionModal
+  // opened from RepeatTransactions) can read categories/accounts without visiting home first.
+  // Skip if user has cloud token — their data comes from sync, not defaults.
+  useEffect(() => {
+    if (localStorage.getItem("cloud_token")) return;
+    if (!localStorage.getItem("app_categories")) {
+      localStorage.setItem("app_categories", JSON.stringify(
+        categories.map(({ icon: _icon, ...rest }) => rest)
+      ));
+    }
+    if (!localStorage.getItem("app_accounts")) {
+      localStorage.setItem("app_accounts", JSON.stringify(
+        accounts.map(({ icon: _icon, ...rest }) => rest)
+      ));
+    }
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [categoriesList, setCategoriesList] = useState(loadCategoriesFromStorage);
@@ -222,6 +241,17 @@ export default function Index() {
       window.removeEventListener("beforeunload", autoSave);
     };
   }, []);
+
+  // Restart voice when app comes back to foreground while on home page
+  useEffect(() => {
+    const onResume = () => {
+      if (document.visibilityState === "visible" && currentPage === "category" && voiceAutoStart) {
+        setVoiceStartTrigger((n) => n + 1);
+      }
+    };
+    document.addEventListener("visibilitychange", onResume);
+    return () => document.removeEventListener("visibilitychange", onResume);
+  }, [currentPage, voiceAutoStart]);
 
   // Refresh categories/accounts from localStorage when sync completes (no page reload needed)
   useEffect(() => {
@@ -516,8 +546,9 @@ export default function Index() {
         ? new Date(today.getFullYear(), today.getMonth(), resetDay)
         : new Date(today.getFullYear(), today.getMonth() - 1, resetDay);
 
-      const startStr = periodStart.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
-      const endStr = today.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+      const dateLocale = s.language === "en" ? "en-GB" : "th-TH";
+      const startStr = periodStart.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
+      const endStr = today.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
       const periodLabel = `${startStr} – ${endStr}`;
 
       const raw: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
@@ -554,9 +585,9 @@ export default function Index() {
           <div className="flex flex-col gap-2">
             {/* Expense ranking */}
             <div className="bg-white/15 rounded-xl px-3 py-2">
-              <p className="text-white font-bold text-sm mb-2">อันดับรายจ่าย</p>
+              <p className="text-white font-bold text-sm mb-2">{T("index.top_expenses")}</p>
               {monthlyData.topExpenses.length === 0 ? (
-                <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
+                <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
               ) : (
                 <div className="grid grid-cols-5 gap-1">
                   {monthlyData.topExpenses.map(({ id, amount, cat }) => {
@@ -578,9 +609,9 @@ export default function Index() {
             </div>
             {/* Income ranking */}
             <div className="bg-white/15 rounded-xl px-3 py-2">
-              <p className="text-white font-bold text-sm mb-2">อันดับรายรับ</p>
+              <p className="text-white font-bold text-sm mb-2">{T("index.top_incomes")}</p>
               {monthlyData.topIncomes.length === 0 ? (
-                <p className="text-white/60 text-[10px]">ยังไม่มีข้อมูล</p>
+                <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
               ) : (
                 <div className="grid grid-cols-5 gap-1">
                   {monthlyData.topIncomes.map(({ id, amount, cat }) => {
@@ -662,18 +693,18 @@ export default function Index() {
                     if (category.id === "__voice_status__") {
                       const { categoryName, accountName, amount } = liveVoiceStatus;
                       return (
-                        <div key="__voice_status__" className="w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center px-2 py-1 gap-0.5 overflow-hidden">
+                        <div key="__voice_status__" className={`w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center py-1 gap-0.5 overflow-hidden ${isIOSDevice ? "px-1" : "px-2"}`}>
                           <div className="flex items-center gap-1">
-                            <span className={`text-xs font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
-                            <span className="text-xs text-slate-600 truncate">{categoryName || "Category"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{categoryName || "Category"}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className={`text-xs font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
-                            <span className="text-xs text-slate-600 truncate">{accountName || "Account"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{accountName || "Account"}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className={`text-xs font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
-                            <span className="text-xs text-slate-600 truncate">{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
+                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
                           </div>
                         </div>
                       );
@@ -712,7 +743,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={24} />
-                        <span className="font-bold text-xs text-center truncate leading-tight w-full block">{category.name}</span>
+                        <span className="font-medium text-xs text-center truncate leading-tight w-full block">{category.name}</span>
                       </button>
                     );
                   }}
@@ -732,7 +763,7 @@ export default function Index() {
             {currentPage === "account" && (
               <div className="flex flex-col flex-1 min-h-0">
                 <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-bold text-slate-900">Select Account</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Select Account</h2>
                   <div className="flex items-center gap-2">
                     {!isAccountPageReorderMode && (
                       <button
@@ -789,7 +820,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={24} />
-                        <span className="font-bold text-xs text-center truncate leading-tight w-full">{account.name}</span>
+                        <span className="font-medium text-xs text-center truncate leading-tight w-full">{account.name}</span>
                       </button>
                     );
                   }}
@@ -846,7 +877,7 @@ export default function Index() {
                       className="flex-1 overflow-x-auto"
                       style={{ scrollbarWidth: "none" }}
                     >
-                      <div className={`text-2xl font-bold font-mono tracking-tight whitespace-nowrap ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
+                      <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
                         {categoryType === "income" ? "+" : "-"}฿{display}
                       </div>
                     </div>
@@ -869,28 +900,20 @@ export default function Index() {
                     {/* Section C: Numpad 4x3 */}
                     <div className="flex-1 min-h-0" style={{ width: `${numpadSize}%`, flex: "none" }}>
                       <div className="grid grid-cols-3 gap-2 h-full" style={{ gridTemplateRows: "repeat(4, 1fr)" }}>
-                        {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
-                          <button
-                            key={num}
-                            onClick={() => handleNumberClick(num)}
-                            className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                          >
-                            {num}
-                          </button>
-                        ))}
-                        {isRightMode ? (
-                          <>
-                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                            <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                          </>
-                        ) : (
-                          <>
-                            <button onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                            <button onClick={() => handleNumberClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                            <button onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                          </>
-                        )}
+                        {(isRightMode
+                          ? [7, 8, 9, 4, 5, 6, 1, 2, 3, '.', 0, 'save'] as const
+                          : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
+                        ).map((btn) => {
+                          if (btn === 'save') return (
+                            <button key="save" onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                          );
+                          if (btn === '.') return (
+                            <button key="dot" onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                          );
+                          return (
+                            <button key={btn} onClick={() => handleNumberClick(btn as number)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">{btn}</button>
+                          );
+                        })}
                       </div>
                     </div>
 

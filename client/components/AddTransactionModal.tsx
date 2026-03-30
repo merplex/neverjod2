@@ -4,6 +4,7 @@ import {
   REPEAT_OPTIONS, RepeatOption,
   addRepeatTransaction, buildInitialNextDue,
 } from "../utils/repeatTransactionService";
+import { getLang } from "../utils/i18n";
 import {
   Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap,
   Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import DatePicker from "./DatePicker";
 import TimePicker from "./TimePicker";
+import { useT } from "../hooks/useT";
 
 // ---- icon maps ----
 const allIconsMap: Record<string, React.ComponentType<any>> = {
@@ -78,6 +80,7 @@ interface Props {
 }
 
 export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = false }: Props) {
+  const T = useT();
   // form state
   const [categoryId, setCategoryId] = useState("");
   const [categoryName, setCategoryName] = useState("");
@@ -125,7 +128,10 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
   const isPremium = localStorage.getItem("app_premium") === "true";
   const overLimitCatIds = new Set<string>(
-    !isPremium ? categoriesList.filter((c: any) => c.id !== "nocat").slice(5).map((c: any) => c.id) : []
+    !isPremium ? [
+      ...categoriesList.filter((c: any) => c.id !== "nocat" && c.type !== "income").slice(5).map((c: any) => c.id),
+      ...categoriesList.filter((c: any) => c.id !== "nocat" && c.type === "income").slice(1).map((c: any) => c.id),
+    ] : []
   );
   const overLimitAccIds = new Set<string>(
     !isPremium ? accountsList.slice(3).map((a: any) => a.id) : []
@@ -272,7 +278,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+      <div className="bg-white border-b border-slate-200 px-4 pb-3 pt-safe-header flex items-center gap-3 flex-shrink-0">
         <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
           <X size={20} className="text-slate-600" />
         </button>
@@ -290,7 +296,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20 text-left">Category</span>
               <span className={`flex-1 text-sm font-medium text-left ${categoryName ? "text-slate-800" : "text-slate-300"}`}>
-                {categoryName || "Tap to select"}
+                {categoryName || T("tap_to_select")}
               </span>
               <ChevronRight size={16} className="text-slate-300" />
             </button>
@@ -302,7 +308,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20 text-left">Account</span>
               <span className={`flex-1 text-sm font-medium text-left ${accountName ? "text-slate-800" : "text-slate-300"}`}>
-                {accountName || (categoryId ? "Tap to select" : "—")}
+                {accountName || (categoryId ? T("tap_to_select") : "—")}
               </span>
               <ChevronRight size={16} className="text-slate-300" />
             </button>
@@ -333,7 +339,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20">Amount</span>
               <span className={`text-sm font-semibold ${value > 0 ? signColor : "text-slate-300"}`}>
-                {value > 0 ? `${sign}฿${value.toLocaleString()}` : (categoryId && accountId ? "Tap to enter" : "—")}
+                {value > 0 ? `${sign}฿${value.toLocaleString()}` : (categoryId && accountId ? T("tap_to_enter") : "—")}
               </span>
             </button>
           </div>
@@ -344,7 +350,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="เพิ่มหมายเหตุ..."
+              placeholder={T("note_placeholder")}
               rows={3}
               className="w-full text-sm text-slate-700 outline-none resize-none placeholder:text-slate-300"
             />
@@ -360,17 +366,17 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100"
                 >
                   <span className="text-xs text-slate-400 w-20 text-left">Repeat</span>
-                  <span className="flex-1 text-sm font-medium text-slate-800 text-left">{selected.label}</span>
+                  <span className="flex-1 text-sm font-medium text-slate-800 text-left">{getLang() === "en" ? selected.labelEn : selected.label}</span>
                   <span className="text-xs text-slate-400 mr-2">{selected.desc}</span>
                   <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
                 </button>
                 <div className="px-4 py-2">
                   <p className="text-xs text-slate-400">
                     {repeatOption === "weekly" || repeatOption === "biweekly"
-                      ? `เริ่มวัน${["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"][currentDate.getDay()]} — ทุก ${repeatOption === "biweekly" ? "2 สัปดาห์" : "สัปดาห์"}`
+                      ? `${T("modal.start_day")}${[T("day.sun"),T("day.mon"),T("day.tue"),T("day.wed"),T("day.thu"),T("day.fri"),T("day.sat")][currentDate.getDay()]} — ${repeatOption === "biweekly" ? T("modal.every_2weeks") : T("modal.week")}`
                       : repeatOption === "daily"
-                      ? "ทุกวัน เริ่มวันนี้"
-                      : `วันที่ ${currentDate.getDate()} ของแต่ละรอบ`
+                      ? T("modal.every_day")
+                      : `${T("acc.date")} ${currentDate.getDate()} ${T("modal.day_of_cycle")}`
                     }
                   </p>
                 </div>
@@ -388,7 +394,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                 : "bg-slate-100 text-slate-400 cursor-not-allowed"
             }`}
           >
-            {isRepeatMode ? "Save Repeat Rule" : "Save Transaction"}
+            {isRepeatMode ? T("modal.save_repeat") : T("modal.save_transaction")}
           </button>
         </div>
       </div>
@@ -405,34 +411,48 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               </button>
             </div>
             <div className="overflow-y-auto flex-1">
-              <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
-                {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
-                  const Icon = resolveIcon(cat, MoreHorizontal);
-                  const locked = overLimitCatIds.has(cat.id);
-                  return locked ? (
-                    <button
-                      key={cat.id}
-                      disabled
-                      className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
-                    >
-                      <Icon size={18} className="text-slate-400" />
-                      <span className="text-xs text-center leading-tight text-slate-400">{cat.name}</span>
-                      <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
-                    </button>
-                  ) : (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleCategorySelect(cat.id, cat.name, cat.type)}
-                      className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
-                    >
-                      <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
-                      <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
-                        {cat.name}
+              {(["expense", "income"] as const).map((sectionType) => {
+                const sectionCats = categoriesList.filter((c: any) => c.id !== "nocat" && c.type === sectionType);
+                if (sectionCats.length === 0) return null;
+                return (
+                  <div key={sectionType}>
+                    <div className="px-4 py-1.5 bg-slate-50 border-y border-slate-100">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                        {sectionType === "expense" ? "Expense" : "Income"}
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                    <div className="grid grid-cols-3 divide-x divide-y divide-slate-100">
+                      {sectionCats.map((cat: any) => {
+                        const Icon = resolveIcon(cat, MoreHorizontal);
+                        const locked = overLimitCatIds.has(cat.id);
+                        return locked ? (
+                          <button
+                            key={cat.id}
+                            disabled
+                            className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
+                          >
+                            <Icon size={18} className="text-slate-400" />
+                            <span className="text-xs text-center leading-tight text-slate-400">{cat.name}</span>
+                            <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
+                          </button>
+                        ) : (
+                          <button
+                            key={cat.id}
+                            onClick={() => handleCategorySelect(cat.id, cat.name, cat.type)}
+                            className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
+                          >
+                            <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
+                            <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
+                              {cat.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pb-2" />
             </div>
           </div>
         </div>
@@ -507,7 +527,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowRepeatPicker(false)} />
           <div className="relative bg-white rounded-t-2xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-800">ความถี่การทำซ้ำ</h3>
+              <h3 className="text-sm font-semibold text-slate-800">{T("modal.repeat_frequency")}</h3>
               <button onClick={() => setShowRepeatPicker(false)}>
                 <span className="text-slate-400 text-lg">✕</span>
               </button>
@@ -520,7 +540,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                   className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors ${opt.value === repeatOption ? "bg-theme-50" : ""}`}
                 >
                   <span className={`text-sm font-semibold w-28 text-left ${opt.value === repeatOption ? "text-theme-700" : "text-slate-800"}`}>
-                    {opt.label}
+                    {getLang() === "en" ? opt.labelEn : opt.label}
                   </span>
                   <span className="text-xs text-slate-400 flex-1 text-left">{opt.desc}</span>
                   {opt.value === repeatOption && (
@@ -565,10 +585,18 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             </div>
 
             {/* Section B: Display */}
-            <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2 flex-shrink-0">
-              <div className={`text-2xl font-bold font-mono tracking-tight ${categoryType === "income" ? "text-green-300" : "text-red-300"}`}>
-                {sign}฿{display}
+            <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
+              <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                <div className="text-2xl font-bold font-mono tracking-tight text-white whitespace-nowrap">
+                  {sign}฿{display}
+                </div>
               </div>
+              <button
+                onClick={() => { setDisplay("0"); setValue(0); setIsCalcMode(false); }}
+                className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center"
+              >
+                C
+              </button>
               <button
                 onClick={() => setShowAmountPad(false)}
                 className="p-1.5 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0"
@@ -579,38 +607,22 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
             {/* Section C+D — fills remaining height */}
             <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
-              {/* Section C: Numpad */}
-              <div className="grid gap-1.5 min-h-0 h-full" style={{ width: `${numpadSize}%`, gridTemplateRows: 'repeat(4, 1fr)' }}>
-                {[[7, 8, 9], [4, 5, 6], [1, 2, 3]].map((row) => (
-                  <div key={row[0]} className="flex gap-1.5 min-h-0">
-                    {row.map((num) => (
-                      <button
-                        key={num}
-                        onClick={() => handleNumberClick(num)}
-                        className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-                <div className="flex gap-1.5 min-h-0">
-                  {isRightMode ? (
-                    <>
-                      <button onClick={handleDelete} className="flex-1 h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                      <button onClick={handleDecimal} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                      <button onClick={() => handleNumberClick(0)} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                      <button onClick={handleAmountSave} className="flex-1 h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={handleAmountSave} className="flex-1 h-full px-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                      <button onClick={() => handleNumberClick(0)} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                      <button onClick={handleDecimal} className="flex-1 h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                      <button onClick={handleDelete} className="flex-1 h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                    </>
-                  )}
-                </div>
+              {/* Section C: Numpad 4x3 */}
+              <div className="grid grid-cols-3 gap-1.5 min-h-0 h-full" style={{ width: `${numpadSize}%`, gridTemplateRows: 'repeat(4, 1fr)', flex: 'none' }}>
+                {(isRightMode
+                  ? [7, 8, 9, 4, 5, 6, 1, 2, 3, '.', 0, 'save'] as const
+                  : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
+                ).map((btn) => {
+                  if (btn === 'save') return (
+                    <button key="save" onClick={handleAmountSave} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                  );
+                  if (btn === '.') return (
+                    <button key="dot" onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
+                  );
+                  return (
+                    <button key={btn} onClick={() => handleNumberClick(btn as number)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">{btn}</button>
+                  );
+                })}
               </div>
 
               {/* Section D: Calc toggle + Lock/= */}

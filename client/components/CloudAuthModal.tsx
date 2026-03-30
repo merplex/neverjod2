@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { apiLogin, apiRegister } from "../utils/syncService";
+import { useT } from "../hooks/useT";
 
 interface Props {
   onSuccess: (isPremium: boolean) => void;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function CloudAuthModal({ onSuccess, onClose }: Props) {
+  const T = useT();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +39,7 @@ export default function CloudAuthModal({ onSuccess, onClose }: Props) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] px-4">
       <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-800">เข้าสู่ระบบ</h2>
+          <h2 className="text-base font-bold text-slate-800">{T("auth.title")}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X size={20} />
           </button>
@@ -48,13 +50,13 @@ export default function CloudAuthModal({ onSuccess, onClose }: Props) {
             onClick={() => setMode("login")}
             className={`px-3 py-1 rounded-full font-medium ${mode === "login" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
           >
-            เข้าสู่ระบบ
+            {T("login")}
           </button>
           <button
             onClick={() => setMode("register")}
             className={`px-3 py-1 rounded-full font-medium ${mode === "register" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
           >
-            สมัครสมาชิก
+            {T("register")}
           </button>
         </div>
 
@@ -82,14 +84,14 @@ export default function CloudAuthModal({ onSuccess, onClose }: Props) {
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm text-slate-500 border border-slate-200 hover:bg-slate-50"
           >
-            ยกเลิก
+            {T("cancel")}
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50"
           >
-            {loading ? "..." : mode === "login" ? "เข้าสู่ระบบ" : "สมัคร"}
+            {loading ? "..." : mode === "login" ? T("login") : T("register_short")}
           </button>
         </div>
       </div>

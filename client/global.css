@@ -89,12 +89,24 @@ input, textarea, select {
 .pt-safe-header {
   padding-top: calc(1rem + env(safe-area-inset-top, 0px));
 }
+
+/* Android: full safe-area-inset-bottom (covers nav bar ~48px) */
 .pb-safe-nav {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-/* Content padding-bottom = nav height (~4.5rem/72px) + iOS safe area */
+/* iOS: gesture bar is thin (~5px) — no need for full safe-area, 8px is enough */
+.platform-ios .pb-safe-nav {
+  padding-bottom: 8px;
+}
+
+/* Android: nav height + full safe-area */
+/* nav actual: border(2) + pt-2(8) + button-py-2(16) + icon(18) + gap(4) + text(12) = 60px */
 .pb-safe-content {
-  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+}
+/* iOS: nav height + same 8px as pb-safe-nav above */
+.platform-ios .pb-safe-content {
+  padding-bottom: calc(3.75rem + 8px);
 }
 
 @layer base {

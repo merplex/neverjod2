@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
 import PremiumModal from "../components/PremiumModal";
+import { useT } from "../hooks/useT";
 
 const SETTINGS_KEY = "app_settings";
 
@@ -12,7 +13,7 @@ type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky";
 interface AppSettings {
   voiceInputDelay: number;
   voiceAutoStart: boolean;
-  voiceLang: "th-TH" | "en-US" | "auto";
+  voiceLang: string;
   cloudBackupEnabled: boolean;
   language: "en" | "th";
   colorTheme: ColorTheme;
@@ -25,7 +26,7 @@ const defaultSettings: AppSettings = {
   voiceAutoStart: true,
   voiceLang: "th-TH",
   cloudBackupEnabled: false,
-  language: "en",
+  language: "th",
   colorTheme: "teal",
   swipeBackDirection: "right",
   monthResetDay: 1,
@@ -38,6 +39,21 @@ const colorThemes: { id: ColorTheme; name: string; swatches: string[] }[] = [
   { id: "rose",   name: "Rose",   swatches: ["#ffe4e6", "#fb7185", "#e11d48", "#be123c"] },
   { id: "amber",  name: "Amber",  swatches: ["#fef3c7", "#fbbf24", "#d97706", "#b45309"] },
   { id: "sky",    name: "Sky",    swatches: ["#e0f2fe", "#38bdf8", "#0284c7", "#0369a1"] },
+];
+
+const VOICE_LANG_OPTIONS = [
+  { value: "th-TH", label: "🇹🇭 ภาษาไทย", desc: "th-TH" },
+  { value: "en-US", label: "🇺🇸 English", desc: "en-US" },
+  { value: "zh-CN", label: "🇨🇳 中文", desc: "zh-CN" },
+  { value: "ja-JP", label: "🇯🇵 日本語", desc: "ja-JP" },
+  { value: "ko-KR", label: "🇰🇷 한국어", desc: "ko-KR" },
+  { value: "fr-FR", label: "🇫🇷 Français", desc: "fr-FR" },
+  { value: "de-DE", label: "🇩🇪 Deutsch", desc: "de-DE" },
+  { value: "es-ES", label: "🇪🇸 Español", desc: "es-ES" },
+  { value: "pt-BR", label: "🇧🇷 Português", desc: "pt-BR" },
+  { value: "vi-VN", label: "🇻🇳 Tiếng Việt", desc: "vi-VN" },
+  { value: "ms-MY", label: "🇲🇾 Bahasa Melayu", desc: "ms-MY" },
+  { value: "auto", label: "Auto", desc: "" },
 ];
 
 function loadSettings(): AppSettings {
@@ -62,7 +78,10 @@ function saveSettings(settings: AppSettings) {
 export default function Settings() {
   const navigate = useNavigate();
   useSwipeBack();
+  const T = useT();
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const [initialLang] = useState(() => loadSettings().language);
+  const [showVoiceLangPicker, setShowVoiceLangPicker] = useState(false);
 
   const isPremium = localStorage.getItem("app_premium") === "true";
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -94,6 +113,9 @@ export default function Settings() {
   useEffect(() => {
     saveSettings(settings);
     document.documentElement.setAttribute("data-theme", settings.colorTheme);
+    if (settings.language !== initialLang) {
+      window.location.reload();
+    }
   }, [settings]);
 
   // Re-read sync direction when auto-sync completes in the background
@@ -214,7 +236,7 @@ export default function Settings() {
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-sm font-semibold text-slate-800">Repeat Transactions</h2>
-            <p className="text-xs text-slate-500">สร้างและจัดการ transaction ที่ทำซ้ำอัตโนมัติ</p>
+            <p className="text-xs text-slate-500">{T("settings.repeat_hint")}</p>
           </div>
           <ChevronLeft size={16} className="text-slate-300 rotate-180 flex-shrink-0" />
         </button>
@@ -227,7 +249,7 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Color Theme</h2>
-              <p className="text-xs text-slate-500">ธีมสีของแอป</p>
+              <p className="text-xs text-slate-500">{T("settings.app_theme")}</p>
             </div>
           </div>
 
@@ -267,7 +289,7 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Voice Input</h2>
-              <p className="text-xs text-slate-500">ระยะเวลาหลังหยุดพูดก่อน autosave</p>
+              <p className="text-xs text-slate-500">{T("settings.autosave_hint")}</p>
             </div>
           </div>
 
@@ -276,7 +298,7 @@ export default function Settings() {
               <div>
                 <span className="text-sm text-slate-700 font-medium">Auto Start</span>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {settings.voiceAutoStart ? "เปิดไมค์อัตโนมัติเมื่อเข้าหน้าแรก" : "ต้องกดปุ่มไมค์เองก่อนพูด"}
+                  {settings.voiceAutoStart ? T("settings.auto_start_on") : T("settings.auto_start_off")}
                 </p>
               </div>
               <button
@@ -291,9 +313,9 @@ export default function Settings() {
 
             <div className="border-t border-slate-100 pt-3 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">หน่วงเวลา autosave</span>
+                <span className="text-sm text-slate-600">{T("settings.autosave_delay")}</span>
                 <span className="text-sm font-semibold text-theme-600">
-                  {settings.voiceInputDelay} วินาที
+                  {settings.voiceInputDelay} {T("seconds")}
                 </span>
               </div>
               <input
@@ -306,36 +328,45 @@ export default function Settings() {
                 className="w-full accent-theme-600"
               />
               <div className="flex justify-between text-xs text-slate-400">
-                <span>1 วิ</span>
-                <span>5 วิ</span>
-                <span>10 วิ</span>
+                <span>1 {T("sec")}</span>
+                <span>5 {T("sec")}</span>
+                <span>10 {T("sec")}</span>
               </div>
             </div>
 
             <div className="border-t border-slate-100 pt-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-600">ภาษารับเสียง</span>
-                <span className="text-xs text-slate-400">
-                  {settings.voiceLang === "th-TH" ? "ไทย" : settings.voiceLang === "en-US" ? "English" : "Auto"}
+              <span className="text-sm text-slate-600 block mb-2">{T("settings.voice_language")}</span>
+              <button
+                onClick={() => setShowVoiceLangPicker((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white"
+              >
+                <span className="font-semibold text-slate-800">
+                  {VOICE_LANG_OPTIONS.find((o) => o.value === settings.voiceLang)?.label ?? settings.voiceLang}
                 </span>
-              </div>
-              <div className="flex gap-2">
-                {(["th-TH", "en-US", "auto"] as const).map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => update("voiceLang", lang)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                      settings.voiceLang === lang
-                        ? "bg-theme-600 text-white border-theme-600"
-                        : "bg-white text-slate-600 border-slate-200"
-                    }`}
-                  >
-                    {lang === "th-TH" ? "ไทย" : lang === "en-US" ? "English" : "Auto"}
-                  </button>
-                ))}
-              </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">
+                    {VOICE_LANG_OPTIONS.find((o) => o.value === settings.voiceLang)?.desc}
+                  </span>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform ${showVoiceLangPicker ? "rotate-180" : ""}`} />
+                </div>
+              </button>
+              {showVoiceLangPicker && (
+                <div className="mt-1 border border-slate-200 rounded-xl overflow-hidden">
+                  {VOICE_LANG_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { update("voiceLang", opt.value); setShowVoiceLangPicker(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${opt.value === settings.voiceLang ? "bg-theme-50" : ""}`}
+                    >
+                      <span className={`text-sm font-semibold flex-1 text-left ${opt.value === settings.voiceLang ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
+                      <span className="text-xs text-slate-400 mr-3">{opt.desc}</span>
+                      {opt.value === settings.voiceLang && <span className="text-theme-600 text-sm">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-slate-400 mt-1.5">
-                Auto = ใช้ภาษาของเครื่อง · iOS แนะนำเลือกตรงๆ
+                {T("settings.voice_lang_auto_hint")}
               </p>
             </div>
           </div>
@@ -348,15 +379,15 @@ export default function Settings() {
               <RefreshCw size={18} className="text-theme-600" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">รีเซ็ตรายเดือน</h2>
-              <p className="text-xs text-slate-500">วันที่เริ่มนับรอบรายจ่ายใหม่ทุกเดือน</p>
+              <h2 className="text-sm font-semibold text-slate-800">{T("settings.monthly_reset")}</h2>
+              <p className="text-xs text-slate-500">{T("settings.monthly_reset_hint")}</p>
             </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">รีเซ็ตวันที่</span>
+              <span className="text-sm text-slate-600">{T("settings.reset_day")}</span>
               <span className="text-sm font-semibold text-theme-600">
-                {settings.monthResetDay} ของทุกเดือน
+                {settings.monthResetDay} {T("of_each_month")}
               </span>
             </div>
             <input
@@ -385,14 +416,14 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Swipe Navigation</h2>
-              <p className="text-xs text-slate-500">ทิศทาง swipe เพื่อไปหน้ากรอกรายการ</p>
+              <p className="text-xs text-slate-500">{T("settings.swipe_direction")}</p>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm text-slate-700 font-medium">Swipe right to create new</span>
               <p className="text-xs text-slate-400 mt-0.5">
-                {settings.swipeBackDirection === "right" ? "swipe ขวา = ไปยังหน้ากรอกรายการ" : "swipe ซ้าย = ไปยังหน้ากรอกรายการ"}
+                {settings.swipeBackDirection === "right" ? T("settings.swipe_right") : T("settings.swipe_left")}
               </p>
             </div>
             <button
@@ -414,7 +445,7 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Language</h2>
-              <p className="text-xs text-slate-500">ภาษาแสดงผลในแอป</p>
+              <p className="text-xs text-slate-500">{T("settings.display_language")}</p>
             </div>
           </div>
 
@@ -437,7 +468,7 @@ export default function Settings() {
                   : "bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300"
               }`}
             >
-              🇹🇭 ภาษาไทย
+              🇹🇭 {T("settings.language_th")}
             </button>
           </div>
         </div>
@@ -450,18 +481,18 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Guide</h2>
-              <p className="text-xs text-slate-500">คู่มือการใช้งานแอป</p>
+              <p className="text-xs text-slate-500">{T("settings.user_guide")}</p>
             </div>
           </div>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("show-guide"))}
             className="w-full py-2.5 rounded-xl bg-theme-50 text-theme-700 text-sm font-semibold hover:bg-theme-100 transition-colors border border-theme-200"
           >
-            ดูคู่มือการใช้งาน
+            {T("settings.view_guide")}
           </button>
         </div>
 
-        {/* Cloud Backup */}
+        {/* Cloud Sync */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
@@ -469,7 +500,7 @@ export default function Settings() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
-              <p className="text-xs text-slate-500">รองรับการใช้หลายอุปกรณ์พร้อมกัน</p>
+              <p className="text-xs text-slate-500">{T("settings.sync_hint")}</p>
             </div>
           </div>
 
@@ -477,7 +508,7 @@ export default function Settings() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-700">เชื่อมต่อแล้ว</p>
+                  <p className="text-sm font-medium text-slate-700">{T("settings.connected")}</p>
                   <p className="text-xs text-slate-400">{cloudEmail}</p>
                 </div>
                 <button
@@ -485,7 +516,7 @@ export default function Settings() {
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                 >
                   <LogOut size={12} />
-                  ออกจากระบบ
+                  {T("logout")}
                 </button>
               </div>
               <button
@@ -496,12 +527,12 @@ export default function Settings() {
                 <RefreshCw size={15} className={syncStatus === "syncing" ? "animate-spin" : ""} />
                 <span>
                   {syncStatus === "syncing"
-                    ? "กำลังซิงค์อยู่..."
+                    ? T("settings.syncing")
                     : syncStatus === "error"
-                    ? "ซิงค์ล้มเหลว ✗"
+                    ? T("settings.sync_failed")
                     : lastSyncTime
-                    ? `ซิงค์แล้ว · ${lastSyncTime} · from ${syncDirection ?? "server"}`
-                    : "ซิงค์ตอนนี้"}
+                    ? `${T("settings.connected")} · ${lastSyncTime} · from ${syncDirection ?? "server"}`
+                    : T("settings.sync_now")}
                 </span>
               </button>
             </div>
@@ -512,13 +543,13 @@ export default function Settings() {
                   onClick={() => setAuthMode("login")}
                   className={`px-3 py-1 rounded-full font-medium ${authMode === "login" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
                 >
-                  เข้าสู่ระบบ
+                  {T("login")}
                 </button>
                 <button
                   onClick={() => setAuthMode("register")}
                   className={`px-3 py-1 rounded-full font-medium ${authMode === "register" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
                 >
-                  สมัครสมาชิก
+                  {T("register")}
                 </button>
               </div>
               <input
@@ -542,31 +573,77 @@ export default function Settings() {
                   onClick={() => setShowAuthForm(false)}
                   className="flex-1 py-2.5 rounded-xl text-sm text-slate-500 border border-slate-200 hover:bg-slate-50"
                 >
-                  ยกเลิก
+                  {T("cancel")}
                 </button>
                 <button
                   onClick={handleAuth}
                   disabled={authLoading}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50"
                 >
-                  {authLoading ? "..." : authMode === "login" ? "เข้าสู่ระบบ" : "สมัคร"}
+                  {authLoading ? "..." : authMode === "login" ? T("login") : T("register_short")}
                 </button>
               </div>
             </div>
           ) : (
             <button
               onClick={() => setShowAuthForm(true)}
-              className="w-full py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200"
             >
-              เข้าสู่ระบบ / สมัครสมาชิก
+              <RefreshCw size={15} />
+              {T("settings.sync_title")}
             </button>
           )}
         </div>
 
+        {/* Legal */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-5 pt-5 pb-3 flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+              <Shield size={18} className="text-slate-500" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Legal</h2>
+              <p className="text-xs text-slate-500">{T("settings.legal")}</p>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100">
+            <button
+              onClick={() => navigate("/privacy")}
+              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
+            >
+              <FileText size={15} className="text-slate-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-slate-700">Privacy Policy · นโยบายความเป็นส่วนตัว</span>
+              <ChevronLeft size={14} className="text-slate-300 rotate-180 flex-shrink-0" />
+            </button>
+            <button
+              onClick={() => navigate("/terms")}
+              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
+            >
+              <FileText size={15} className="text-slate-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-slate-700">Terms of Use · ข้อกำหนดการใช้งาน</span>
+              <ChevronLeft size={14} className="text-slate-300 rotate-180 flex-shrink-0" />
+            </button>
+            <button
+              onClick={() => navigate("/eula")}
+              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
+            >
+              <FileText size={15} className="text-slate-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-slate-700">License Agreement · EULA</span>
+              <ChevronLeft size={14} className="text-slate-300 rotate-180 flex-shrink-0" />
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-slate-400 pb-2">NeverJod v1.0 · com.neverjod.app</p>
+
       </div>
 
       {showPremiumModal && (
-        <PremiumModal message={"บัญชีของคุณเป็นแพลนฟรี\nอัปเกรด Premium เพื่อใช้งาน Cloud Sync ข้ามอุปกรณ์"} onClose={() => setShowPremiumModal(false)} />
+        <PremiumModal
+          message={"บัญชีของคุณเป็นแพลนฟรี\nอัปเกรด Premium เพื่อใช้งาน Cloud Sync ข้ามอุปกรณ์"}
+          onClose={() => setShowPremiumModal(false)}
+          onSignUp={() => { setShowPremiumModal(false); setShowAuthForm(true); }}
+        />
       )}
     </div>
   );
