@@ -50,6 +50,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const manualStopRef = useRef(false);
   // iOS only — accumulates best-matched fields across multiple final results
   const iosMergedRef = useRef<MergedVoiceData>({ description: "" });
+  // Android only — last interim result containing Thai unit words (before ASR normalizes to digits)
+  const androidThaiInterimRef = useRef<string>("");
 
   useEffect(() => { onVoiceInputRef.current = onVoiceInput; }, [onVoiceInput]);
   useEffect(() => { onVoiceEndRef.current = onVoiceEnd; }, [onVoiceEnd]);
@@ -114,11 +116,15 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = lang;
+    // Android: request extra alternatives — Thai text sometimes appears in lower-ranked results
+    // even when the top result has been normalized to digits
+    if (!isIOSDevice) recognition.maxAlternatives = 7;
 
     recognition.onstart = () => {
       console.log("[voice] started, platform:", isIOSDevice ? "iOS" : "Android");
       hasSpeechStartedRef.current = false;
       iosMergedRef.current = { description: "" };
+      androidThaiInterimRef.current = "";
     };
 
     recognition.onresult = (event: any) => {
@@ -171,14 +177,38 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
             resetSilenceTimer();
           }
         } else {
-          // ── Android: unchanged — process final results only ──
-          if (!isFinal) continue;
-          console.log("[voice] final:", transcriptPart);
+          // ── Android ──
+          // Android ASR normalizes Thai number words to digits in the FINAL result
+          // (e.g. "สามหมื่นสองร้อยห้าสิบ" → "3250" instead of "30250").
+          // Interim results arrive BEFORE normalization and still contain Thai unit words.
+          // So we capture the last interim that has Thai units and use it for amount parsing.
+          const hasThaiUnits = /แสน|หมื่น|พัน|ร้อย|สิบ|ล้าน/.test(transcriptPart);
+          if (!isFinal) {
+            if (hasThaiUnits) {
+              androidThaiInterimRef.current = transcriptPart;
+              console.log("[voice] Android interim Thai:", transcriptPart);
+            }
+            continue;
+          }
+          // Check all alternatives for Thai unit words — Android normalizes the top result
+          // to digits but may still provide the original Thai text as a lower-ranked alternative
+          const resultItem = event.results[i];
+          let thaiAlt: string | undefined;
+          for (let k = 0; k < resultItem.length; k++) {
+            const alt = resultItem[k].transcript;
+            if (/แสน|หมื่น|พัน|ร้อย|สิบ|ล้าน/.test(alt)) { thaiAlt = alt; break; }
+          }
+          console.log("[voice] final:", transcriptPart, "| alternatives:", Array.from({ length: resultItem.length }, (_, k) => resultItem[k].transcript));
           hasSpeechStartedRef.current = true;
           if (onTranscriptRef.current) onTranscriptRef.current(transcriptPart);
+          // Priority: Thai alternative > Thai interim > final digit text
+          const textForAmount = thaiAlt ?? androidThaiInterimRef.current ?? transcriptPart;
+          androidThaiInterimRef.current = "";
           const voiceData = parseVoiceInput(transcriptPart);
-          console.log("[voice] Android data:", voiceData);
-          if (onVoiceInputRef.current) onVoiceInputRef.current(voiceData);
+          const amountFromThai = parseVoiceInput(textForAmount).amount;
+          const merged = { ...voiceData, amount: amountFromThai ?? voiceData.amount };
+          console.log("[voice] Android merged:", merged, "| Thai source:", textForAmount);
+          if (onVoiceInputRef.current) onVoiceInputRef.current(merged);
           resetSilenceTimer();
         }
       }

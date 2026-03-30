@@ -165,7 +165,9 @@ export function extractNumberFromText(text: string): number | undefined {
   const numberMatches = t.match(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g);
   if (numberMatches && numberMatches.length > 0) {
     const values = numberMatches.map(n => parseFloat(n.replace(/,/g, "")));
-    const allDescending = values.length > 1 && values.every((v, i) => i === 0 || v < values[i - 1]);
+    // Only sum descending values when the largest is ≥ 1000 (ASR splits large numbers like "80000 30").
+    // Avoid summing small digits like "44 4" = 48 which came from ASR collapsing a large number.
+    const allDescending = values.length > 1 && values[0] >= 1000 && values.every((v, i) => i === 0 || v < values[i - 1]);
     if (allDescending) return values.reduce((s, v) => s + v, 0);
     return Math.max(...values);
   }
@@ -262,7 +264,6 @@ function parseThaiNumberText(text: string): number | undefined {
     return val;
   }
 
-  console.log("[parseThaiNumber] input:", text);
   // Split by ล้าน (million boundary)
   const laanIdx = text.indexOf('ล้าน');
   if (laanIdx !== -1) {
