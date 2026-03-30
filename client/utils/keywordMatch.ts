@@ -106,35 +106,68 @@ function getAccountsWithKeywords(): Record<string, { name: string; keywords: str
   return buildKeywordMap(defaultAccountsWithKeywords);
 }
 
+// Fix encoding variants and phonetic aliases before number parsing.
+// Only risky aliases (common Thai words like ร้าน, แสง) are gated behind a digit/digit-word prefix
+// so they don't corrupt non-number text (e.g. "ร้านอาหาร").
+function normalizeThaiNumber(text: string): string {
+  // Digit or Thai digit word — used as a prefix guard for ambiguous unit aliases
+  const dPre = '((?:หนึ่ง|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า|เอ็ด|ยี่|\\d+(?:\\.\\d+)?))';
+  let t = text.normalize('NFC');
+
+  // Fix sara-ae encoding: เเ (two U+0E40) mistakenly used instead of แ (U+0E41)
+  t = t.replace(/เเ/g, 'แ');
+
+  // หนึ่ง spoken quickly/unclearly — safe globally (these forms have no other meaning)
+  t = t.replace(/นึ่ง|นึง|อึ่ง|หนืง/g, 'หนึ่ง');
+
+  // ล้าน aliases
+  t = t.replace(/laan/gi, 'ล้าน');
+  t = t.replace(/\blan\b/gi, 'ล้าน');
+  // ร้าน/ร้า/ลาน/ราน are also common Thai words — only replace after a digit/digit-word
+  t = t.replace(new RegExp(`${dPre}\\s*(?:ร้าน|ร้า|ลาน|ราน)`, 'g'), '$1ล้าน');
+  t = t.replace(new RegExp(`${dPre}\\s*ล้า(?!น)`, 'g'), '$1ล้าน');
+
+  // แสน aliases — also gated (แสง = light, เสน = sinew, etc.)
+  t = t.replace(new RegExp(`${dPre}\\s*(?:แหลน|แสง|เสน|แซน)`, 'g'), '$1แสน');
+  t = t.replace(new RegExp(`${dPre}\\s*แส(?!น)`, 'g'), '$1แสน');
+
+  // หมื่น aliases — none have common other meanings, safe globally
+  t = t.replace(/หมึ่ง|หมึง|หมึน|หมืน|มื่น/g, 'หมื่น');
+
+  return t;
+}
+
 export function extractNumberFromText(text: string): number | undefined {
+  // Normalize encoding variants and phonetic aliases first
+  const t = normalizeThaiNumber(text);
+
   // If text contains Thai unit words, route to Thai parser first —
   // direct numeric match would grab a stray digit (e.g. "2" from "2ล้าน") and return wrong value.
   // parseThaiNumberText already handles mixed digit+Thai like "2ล้าน5พัน" → 2,005,000.
   const thaiUnits = ['ล้าน', 'แสน', 'หมื่น', 'พัน', 'ร้อย', 'สิบ'];
-  if (thaiUnits.some(u => text.includes(u))) {
-    const thaiResult = parseThaiNumberText(text);
+  if (thaiUnits.some(u => t.includes(u))) {
+    const thaiResult = parseThaiNumberText(t);
     if (thaiResult !== undefined) return thaiResult;
   }
 
-  // First, try to find direct numeric matches — support comma-separated thousands like "1,205,000"
-  const numberMatches = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?/g);
+  // Direct numeric — use + (not *) for comma-thousands so "300015" matches as one token,
+  // not split into "300" + "015" which would pick the wrong largest value.
+  const numberMatches = t.match(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g);
   if (numberMatches && numberMatches.length > 0) {
     let largestNumber = numberMatches[0];
     for (const num of numberMatches) {
-      const val1 = parseFloat(num.replace(/,/g, ""));
-      const val2 = parseFloat(largestNumber.replace(/,/g, ""));
-      if (val1 > val2) {
+      if (parseFloat(num.replace(/,/g, "")) > parseFloat(largestNumber.replace(/,/g, ""))) {
         largestNumber = num;
       }
     }
     return parseFloat(largestNumber.replace(/,/g, ""));
   }
 
-  // Second, try Thai number words (e.g., หนึ่งล้านสองแสนห้าพัน) — catches pure Thai without units above
-  const thaiResult = parseThaiNumberText(text);
+  // Pure Thai digit words fallback (e.g. "สามร้อยสิบห้า" with no prior unit match)
+  const thaiResult = parseThaiNumberText(t);
   if (thaiResult !== undefined) return thaiResult;
 
-  // Third, try to convert word numbers to digits (English)
+  // English word numbers
   const englishWordNumbers: Record<string, number> = {
     zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
     six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
@@ -144,23 +177,17 @@ export function extractNumberFromText(text: string): number | undefined {
     hundred: 100, thousand: 1000, million: 1000000,
   };
 
-  const lowerText = text.toLowerCase();
+  const lowerText = t.toLowerCase();
   let result = 0;
   let current = 0;
 
   for (const word of lowerText.split(/\s+/)) {
     const cleanWord = word.replace(/[^\w]/g, '');
     const num = englishWordNumbers[cleanWord];
-
     if (num !== undefined) {
-      if (num >= 1000) {
-        result += current * num;
-        current = 0;
-      } else if (num === 100) {
-        current *= num;
-      } else {
-        current += num;
-      }
+      if (num >= 1000) { result += current * num; current = 0; }
+      else if (num === 100) { current *= num; }
+      else { current += num; }
     }
   }
 
