@@ -5,18 +5,20 @@ export type RepeatOption =
   | "monthly"        // every month, same day
   | "bimonthly"      // every 2 months
   | "quarterly"      // every 3 months
+  | "quadmonthly"    // every 4 months
   | "semiannual"     // every 6 months
   | "annual";        // every year
 
-export const REPEAT_OPTIONS: { value: RepeatOption; label: string; desc: string }[] = [
-  { value: "daily",      label: "ทุกวัน",          desc: "Every day" },
-  { value: "weekly",     label: "ทุกสัปดาห์",      desc: "Every week, same weekday" },
-  { value: "biweekly",   label: "ทุก 2 สัปดาห์",   desc: "Every 2 weeks" },
-  { value: "monthly",    label: "ทุกเดือน",         desc: "Every month, same date" },
-  { value: "bimonthly",  label: "ทุก 2 เดือน",      desc: "Every 2 months" },
-  { value: "quarterly",  label: "ทุก 3 เดือน",      desc: "Quarterly" },
-  { value: "semiannual", label: "ทุก 6 เดือน",      desc: "Every 6 months" },
-  { value: "annual",     label: "ทุกปี",            desc: "Every year, same date" },
+export const REPEAT_OPTIONS: { value: RepeatOption; label: string; labelEn: string; desc: string }[] = [
+  { value: "daily",        label: "ทุกวัน",          labelEn: "Everyday",    desc: "Every day" },
+  { value: "weekly",       label: "ทุกสัปดาห์",      labelEn: "Every week",  desc: "Every week, same weekday" },
+  { value: "biweekly",     label: "ทุก 2 สัปดาห์",   labelEn: "2 weekly",    desc: "Every 2 weeks, same weekday" },
+  { value: "monthly",      label: "ทุกเดือน",         labelEn: "Monthly",     desc: "Every month, same date" },
+  { value: "bimonthly",    label: "ทุก 2 เดือน",      labelEn: "2 monthly",   desc: "Every 2 months" },
+  { value: "quarterly",    label: "ทุก 3 เดือน",      labelEn: "3 monthly",   desc: "Every 3 months" },
+  { value: "quadmonthly",  label: "ทุก 4 เดือน",      labelEn: "4 monthly",   desc: "Every 4 months" },
+  { value: "semiannual",   label: "ทุก 6 เดือน",      labelEn: "6 monthly",   desc: "Every 6 months" },
+  { value: "annual",       label: "ทุกปี",            labelEn: "Yearly",      desc: "Every year, same date" },
 ];
 
 export interface RepeatTransaction {
@@ -114,6 +116,9 @@ export function calcNextDue(rt: RepeatTransaction, from: Date): Date {
       break;
     case "quarterly":
       next = addMonths(from, 3, rt.dayOfMonth);
+      break;
+    case "quadmonthly":
+      next = addMonths(from, 4, rt.dayOfMonth);
       break;
     case "semiannual":
       next = addMonths(from, 6, rt.dayOfMonth);

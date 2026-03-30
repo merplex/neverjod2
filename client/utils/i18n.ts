@@ -142,7 +142,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "modal.start_day": "เริ่มวัน",
     "modal.every_2weeks": "ทุก 2 สัปดาห์",
     "modal.week": "สัปดาห์",
-    "modal.every_day": "ทุกวัน เริ่มวันนี้",
+    "modal.every_day": "ทุกวัน เริ่มจากวันที่และเวลาที่ระบุ",
     "modal.day_of_cycle": "วันที่ ของแต่ละรอบ",
 
     // Premium Modal
@@ -302,7 +302,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "modal.start_day": "Start Day",
     "modal.every_2weeks": "Every 2 weeks",
     "modal.week": "week",
-    "modal.every_day": "Every day starting today",
+    "modal.every_day": "Everyday, from specified date & time",
     "modal.day_of_cycle": "Day of each cycle",
 
     // Premium Modal
