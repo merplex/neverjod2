@@ -137,8 +137,10 @@ export default function Index() {
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
 
   // Seed defaults to localStorage on first launch so other pages (e.g. AddTransactionModal
-  // opened from RepeatTransactions) can read categories/accounts without visiting home first
+  // opened from RepeatTransactions) can read categories/accounts without visiting home first.
+  // Skip if user has cloud token — their data comes from sync, not defaults.
   useEffect(() => {
+    if (localStorage.getItem("cloud_token")) return;
     if (!localStorage.getItem("app_categories")) {
       localStorage.setItem("app_categories", JSON.stringify(
         categories.map(({ icon: _icon, ...rest }) => rest)
