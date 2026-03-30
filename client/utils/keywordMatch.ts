@@ -120,6 +120,13 @@ function normalizeThaiNumber(text: string): string {
   // หนึ่ง spoken quickly/unclearly — safe globally (these forms have no other meaning)
   t = t.replace(/นึ่ง|นึง|อึ่ง|หนืง/g, 'หนึ่ง');
 
+  // เอ็ด aliases (units digit = 1, e.g. สิบเอ็ด = 11)
+  t = t.replace(/เอด|เอะ/g, 'เอ็ด');
+
+  // ยี่ aliases (tens digit = 2, e.g. ยี่สิบ = 20)
+  t = t.replace(/ยี้/g, 'ยี่');
+  t = t.replace(/ยี(?!่)/g, 'ยี่');
+
   // ล้าน aliases
   t = t.replace(/laan/gi, 'ล้าน');
   t = t.replace(/\blan\b/gi, 'ล้าน');
