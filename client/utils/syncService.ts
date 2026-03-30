@@ -111,7 +111,9 @@ function normalizeRepeatItem(raw: any): any {
   return out;
 }
 
-// Merge repeat transactions (ID-based; server wins; local-only items preserved)
+// Merge repeat transactions (ID-based; server wins on conflict; local-only items preserved)
+// Same ID-collision rule as cat/acc: if a source="local" item clashes with a server item,
+// reassign the local item a new unique ID so BOTH coexist — nothing is silently dropped.
 function mergeRepeatTransIntoLocal(serverItems: any[]) {
   const local: any[] = JSON.parse(localStorage.getItem("app_repeat_transactions") || "[]");
   const serverById = new Map<string, any>();
@@ -128,17 +130,34 @@ function mergeRepeatTransIntoLocal(serverItems: any[]) {
 
   const result: any[] = [];
   const seenIds = new Set<string>();
+  let renameCounter = 0;
+
   for (const localItem of local) {
-    if (deletedIds.has(localItem.id)) continue;         // server deleted
+    if (deletedIds.has(localItem.id)) continue;  // server deleted this item
+
+    if (localItem.source === "local") {
+      // Not yet synced — must always appear.
+      // If ID collides with a server item, give local a new ID so both coexist.
+      if (serverById.has(localItem.id)) {
+        const newId = `local_${Date.now()}_${++renameCounter}`;
+        result.push({ ...localItem, id: newId });
+        seenIds.add(newId);
+      } else {
+        result.push(localItem);
+        seenIds.add(localItem.id);
+      }
+      continue;
+    }
+
     if (serverById.has(localItem.id)) {
-      result.push(serverById.get(localItem.id)!);       // server wins
+      result.push(serverById.get(localItem.id)!);  // server wins
       seenIds.add(localItem.id);
     } else {
-      result.push(localItem);                            // keep local (includes source:"local")
+      result.push(localItem);  // server hasn't changed it — keep local
       seenIds.add(localItem.id);
     }
   }
-  // Append new server items not present locally
+  // Append new server items not yet present locally
   for (const [id, item] of serverById) {
     if (!seenIds.has(id)) result.push(item);
   }
