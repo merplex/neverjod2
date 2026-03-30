@@ -121,6 +121,13 @@ export default function AccountsManagement() {
 
   const isPremium = localStorage.getItem("app_premium") === "true";
 
+  // Notify home page (Index.tsx) whenever account list changes
+  const isFirstRenderAcc = useRef(true);
+  useEffect(() => {
+    if (isFirstRenderAcc.current) { isFirstRenderAcc.current = false; return; }
+    window.dispatchEvent(new CustomEvent("app-data-updated"));
+  }, [accounts]);
+
   // Free-tier downgrade: strip keywords > 1 per account and push to server
   useEffect(() => {
     const premium = localStorage.getItem("app_premium") === "true";

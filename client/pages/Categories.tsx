@@ -118,6 +118,13 @@ export default function Categories() {
 
   const isPremium = localStorage.getItem("app_premium") === "true";
 
+  // Notify home page (Index.tsx) whenever category list changes
+  const isFirstRenderCat = useRef(true);
+  useEffect(() => {
+    if (isFirstRenderCat.current) { isFirstRenderCat.current = false; return; }
+    window.dispatchEvent(new CustomEvent("app-data-updated"));
+  }, [categories]);
+
   // Free-tier downgrade: strip keywords > 1 per category and push to server
   useEffect(() => {
     const premium = localStorage.getItem("app_premium") === "true";

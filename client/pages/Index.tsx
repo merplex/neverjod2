@@ -64,12 +64,13 @@ function loadCategoriesFromStorage() {
             if (!cat.id.startsWith("custom_")) {
               const fallback = catIconMap[cat.iconId] || catIconMap[cat.id];
               if (!fallback) return null;
-              return { ...cat, icon: fallback };
+              return { ...cat, icon: fallback, type: cat.type || "expense" };
             }
             const icon = catIconMap[cat.iconId] || MoreHorizontal;
-            return { ...cat, icon };
+            return { ...cat, icon, type: cat.type || "expense" };
           }
-          return { ...cat, icon: defaultCat.icon };
+          // For known defaults, use defaultCat.type as fallback if localStorage lacks the field
+          return { ...cat, icon: defaultCat.icon, type: cat.type || defaultCat.type };
         })
         .filter((cat: any) => cat !== null);
     }
@@ -260,7 +261,11 @@ export default function Index() {
       setAccountsList(loadAccountsFromStorage());
     };
     window.addEventListener("sync-data-refresh", handler);
-    return () => window.removeEventListener("sync-data-refresh", handler);
+    window.addEventListener("app-data-updated", handler);
+    return () => {
+      window.removeEventListener("sync-data-refresh", handler);
+      window.removeEventListener("app-data-updated", handler);
+    };
   }, []);
 
   const handleCategorySelect = (categoryId: string) => {

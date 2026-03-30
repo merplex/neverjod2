@@ -137,6 +137,8 @@ function normalizeThaiNumber(text: string): string {
   // แสน aliases — also gated (แสง = light, เสน = sinew, etc.)
   t = t.replace(new RegExp(`${dPre}\\s*(?:แหลน|แสง|เสน|แซน)`, 'g'), '$1แสน');
   t = t.replace(new RegExp(`${dPre}\\s*แส(?!น)`, 'g'), '$1แสน');
+  // English phonetic aliases for แสน: ASR sometimes outputs "sand"/"saen" for /sɛ̌ːn/
+  t = t.replace(new RegExp(`${dPre}\\s*(?:sand|saen)(?![a-zA-Z])`, 'gi'), '$1แสน');
 
   // หมื่น aliases — none have common other meanings, safe globally
   t = t.replace(/หมึ่ง|หมึง|หมึน|หมืน|มื่น/g, 'หมื่น');
@@ -260,6 +262,7 @@ function parseThaiNumberText(text: string): number | undefined {
     return val;
   }
 
+  console.log("[parseThaiNumber] input:", text);
   // Split by ล้าน (million boundary)
   const laanIdx = text.indexOf('ล้าน');
   if (laanIdx !== -1) {
