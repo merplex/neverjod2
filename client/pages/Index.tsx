@@ -757,8 +757,10 @@ export default function Index() {
                         className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold overflow-hidden ${
                           isCategoryReorderMode
                             ? isSelected
-                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
-                              : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
+                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700 z-10 relative"
+                              : selectedCategoryForSwap !== null
+                                ? "bg-slate-100 hover:bg-theme-100 text-slate-800 border-2 border-theme-400"
+                                : "bg-theme-100 hover:bg-theme-200 text-theme-900 border-2 border-theme-300"
                             : "bg-theme-50 hover:bg-theme-200 text-theme-900"
                         }`}
                       >
@@ -834,8 +836,10 @@ export default function Index() {
                         className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold ${
                           isAccountPageReorderMode
                             ? isSelected
-                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
-                              : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
+                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700 z-10 relative"
+                              : selectedAccountForSwap !== null
+                                ? "bg-slate-100 hover:bg-theme-100 text-slate-800 border-2 border-theme-400"
+                                : "bg-theme-100 hover:bg-theme-200 text-theme-900 border-2 border-theme-300"
                             : "bg-theme-50 hover:bg-theme-200 text-theme-900"
                         }`}
                       >

@@ -93,6 +93,8 @@ export default function AccountsManagement() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPointerY = useRef(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
@@ -302,21 +304,49 @@ export default function AccountsManagement() {
     setEditingId(null);
   };
 
-  const handleDragMove = (e: React.PointerEvent) => {
-    if (!draggingId) return;
-    const y = e.clientY;
+  const findDragOver = (y: number) => {
     for (const id of Object.keys(itemRefs.current)) {
       const el = itemRefs.current[id];
       if (!el) continue;
       const rect = el.getBoundingClientRect();
       if (y >= rect.top && y <= rect.bottom) {
         setDragOverId(id);
-        break;
+        return;
       }
     }
   };
 
+  const stopAutoScroll = () => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  };
+
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!draggingId) return;
+    const y = e.clientY;
+    lastPointerY.current = y;
+    findDragOver(y);
+
+    const edgeThreshold = 80;
+    const scrollSpeed = 8;
+    stopAutoScroll();
+    if (y < edgeThreshold) {
+      scrollIntervalRef.current = setInterval(() => {
+        window.scrollBy(0, -scrollSpeed);
+        findDragOver(lastPointerY.current);
+      }, 16);
+    } else if (y > window.innerHeight - edgeThreshold) {
+      scrollIntervalRef.current = setInterval(() => {
+        window.scrollBy(0, scrollSpeed);
+        findDragOver(lastPointerY.current);
+      }, 16);
+    }
+  };
+
   const handleDragEnd = (fromId: string) => {
+    stopAutoScroll();
     if (fromId && dragOverId && fromId !== dragOverId) {
       const reorderable = accounts.filter((a) => a.id !== "account_deleted");
       const deletedAccount = accounts.find((a) => a.id === "account_deleted");
@@ -589,7 +619,7 @@ export default function AccountsManagement() {
                         }}
                         onPointerMove={handleDragMove}
                         onPointerUp={() => handleDragEnd(account.id)}
-                        onPointerCancel={() => { setDraggingId(null); setDragOverId(null); }}
+                        onPointerCancel={() => { stopAutoScroll(); setDraggingId(null); setDragOverId(null); }}
                         className="mt-1 p-1 rounded transition-colors flex-shrink-0 text-slate-300 hover:text-slate-500 touch-none cursor-grab active:cursor-grabbing"
                       >
                         <GripVertical size={18} />
