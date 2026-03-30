@@ -95,6 +95,7 @@ export default function AccountsManagement() {
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPointerY = useRef(0);
+  const dragBoundsRef = useRef({ top: 80, bottom: window.innerHeight - 80 });
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
@@ -329,15 +330,14 @@ export default function AccountsManagement() {
     lastPointerY.current = y;
     findDragOver(y);
 
-    const edgeThreshold = 80;
     const scrollSpeed = 8;
     stopAutoScroll();
-    if (y < edgeThreshold) {
+    if (y < dragBoundsRef.current.top) {
       scrollIntervalRef.current = setInterval(() => {
         window.scrollBy(0, -scrollSpeed);
         findDragOver(lastPointerY.current);
       }, 16);
-    } else if (y > window.innerHeight - edgeThreshold) {
+    } else if (y > dragBoundsRef.current.bottom) {
       scrollIntervalRef.current = setInterval(() => {
         window.scrollBy(0, scrollSpeed);
         findDragOver(lastPointerY.current);
@@ -614,6 +614,12 @@ export default function AccountsManagement() {
                         onPointerDown={(e) => {
                           e.preventDefault();
                           e.currentTarget.setPointerCapture(e.pointerId);
+                          const headerEl = document.querySelector('.sticky.top-0') as HTMLElement | null;
+                          const navEl = document.querySelector('.fixed.bottom-0') as HTMLElement | null;
+                          dragBoundsRef.current = {
+                            top: headerEl ? headerEl.getBoundingClientRect().bottom : 80,
+                            bottom: navEl ? navEl.getBoundingClientRect().top : window.innerHeight - 80,
+                          };
                           setDraggingId(account.id);
                           setDragOverId(account.id);
                         }}

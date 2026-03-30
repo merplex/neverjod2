@@ -109,6 +109,7 @@ export default function Categories() {
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPointerY = useRef(0);
+  const dragBoundsRef = useRef({ top: 80, bottom: window.innerHeight - 80 });
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIconId, setNewIconId] = useState("other");
@@ -299,15 +300,14 @@ export default function Categories() {
     findDragOver(y);
 
     // Auto-scroll when pointer is near top or bottom edge
-    const edgeThreshold = 80;
     const scrollSpeed = 8;
     stopAutoScroll();
-    if (y < edgeThreshold) {
+    if (y < dragBoundsRef.current.top) {
       scrollIntervalRef.current = setInterval(() => {
         window.scrollBy(0, -scrollSpeed);
         findDragOver(lastPointerY.current);
       }, 16);
-    } else if (y > window.innerHeight - edgeThreshold) {
+    } else if (y > dragBoundsRef.current.bottom) {
       scrollIntervalRef.current = setInterval(() => {
         window.scrollBy(0, scrollSpeed);
         findDragOver(lastPointerY.current);
@@ -506,6 +506,13 @@ export default function Categories() {
                         onPointerDown={(e) => {
                           e.preventDefault();
                           e.currentTarget.setPointerCapture(e.pointerId);
+                          // Measure actual header bottom and bottom-nav top at drag start
+                          const headerEl = document.querySelector('.sticky.top-0') as HTMLElement | null;
+                          const navEl = document.querySelector('.fixed.bottom-0') as HTMLElement | null;
+                          dragBoundsRef.current = {
+                            top: headerEl ? headerEl.getBoundingClientRect().bottom : 80,
+                            bottom: navEl ? navEl.getBoundingClientRect().top : window.innerHeight - 80,
+                          };
                           setDraggingId(category.id);
                           setDragOverId(category.id);
                         }}
