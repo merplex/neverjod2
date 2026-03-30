@@ -170,7 +170,8 @@ export default function Categories() {
 
     const iconEntry = iconOptions.find((o) => o.id === newIconId) || iconOptions[iconOptions.length - 1];
     const newId = `custom_${Date.now()}`;
-    const newCat: Category & { iconId?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords, updated_at: new Date().toISOString() };
+    const isPreSync = !localStorage.getItem("last_sync_at");
+    const newCat: Category & { iconId?: string; source?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords, updated_at: new Date().toISOString(), ...(isPreSync ? { source: "local" } : {}) };
     const updated = [...categories.filter((c) => c.id !== "nocat"), newCat, ...categories.filter((c) => c.id === "nocat")];
     setCategories(updated);
     localStorage.setItem("app_categories", JSON.stringify(updated));

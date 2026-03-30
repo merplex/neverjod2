@@ -108,11 +108,15 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
 }
 
 // Name-based merge for categories and accounts.
-// Rules:
-//   1. Same ID → server always wins (overwrite local)
-//   2. Same name, different ID → server wins; track old local ID for transaction ref update
-//   3. Different name, different ID → keep both (truly separate items)
-// Returns a map of { oldLocalId → serverItemId } for any ID replacements made.
+// Rules for local-owned items (source="local" or no source):
+//   - Always coexist with server data — never dropped
+//   - If ID collides with a server item → reassign a new unique ID (both items appear)
+//   - Transaction refs are updated to the new ID
+// Rules for server-owned items (source present, not "local"):
+//   1. Same ID → server version already in result
+//   2. Same name, different ID → server wins; track old local ID for tx ref update
+//   3. Different name, different ID → keep both
+// Returns a map of { oldLocalId → newId } for all ID changes (rename + server-name-wins).
 function mergeCategOrAccIntoLocal(
   storageKey: string,
   serverItems: any[]
@@ -125,14 +129,28 @@ function mergeCategOrAccIntoLocal(
   const serverById = new Map(serverLive.map((i) => [i.id, i]));
   const serverByName = new Map(serverLive.map((i) => [i.name?.toLowerCase()?.trim(), i]));
 
-  // Track which local IDs were replaced by a server item with a different ID
+  // Track all ID changes: local-item-renamed and server-name-wins
   const idReplacements = new Map<string, string>();
 
   // Start result with all live server items
   const resultMap = new Map<string, any>(serverLive.map((i) => [i.id, i]));
 
+  let renameCounter = 0;
   for (const localItem of local) {
-    if (deletedIds.has(localItem.id)) continue;   // Server soft-deleted this
+    if (localItem.source === "local") {
+      // Local-owned (not yet pushed): must always appear.
+      // If ID collides with a server item, assign a new unique ID so both coexist.
+      if (resultMap.has(localItem.id)) {
+        const newId = `local_${Date.now()}_${++renameCounter}`;
+        idReplacements.set(localItem.id, newId);
+        resultMap.set(newId, { ...localItem, id: newId });
+      } else {
+        resultMap.set(localItem.id, localItem);
+      }
+      continue;
+    }
+
+    if (deletedIds.has(localItem.id)) continue;   // Server soft-deleted this server-owned item
     if (serverById.has(localItem.id)) continue;    // Same ID → server version already in result
 
     const nameKey = localItem.name?.toLowerCase()?.trim();
@@ -190,6 +208,14 @@ export async function syncPush(token: string, force = false) {
   // Transactions are still stamped with `now` since they are always new data.
   const isFirstSync = !localStorage.getItem("last_sync_at");
   const catAccStamp = isFirstSync ? new Date(0).toISOString() : now;
+
+  // Promote source:"local" → source:"server" before push so server gets the correct ownership
+  // and subsequent pulls treat them as server-owned (no ID-rename loop).
+  for (const key of ["app_categories", "app_accounts"] as const) {
+    const items: any[] = JSON.parse(localStorage.getItem(key) || "[]");
+    const promoted = items.map((i) => i.source === "local" ? { ...i, source: "server" } : i);
+    localStorage.setItem(key, JSON.stringify(promoted));
+  }
 
   const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
     .map((c) => ({ ...c, updated_at: catAccStamp }));

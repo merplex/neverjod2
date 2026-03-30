@@ -173,7 +173,8 @@ export default function AccountsManagement() {
 
     const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[accIconOptions.length - 1];
     const newId = `custom_acc_${Date.now()}`;
-    const newAcc: Account & { iconId?: string } = {
+    const isPreSync = !localStorage.getItem("last_sync_at");
+    const newAcc: Account & { iconId?: string; source?: string } = {
       id: newId,
       name: newAccName.trim(),
       type: newAccType.trim(),
@@ -182,6 +183,7 @@ export default function AccountsManagement() {
       balance: parseFloat(newAccBalance) || 0,
       keywords,
       updated_at: new Date().toISOString(),
+      ...(isPreSync ? { source: "local" } : {}),
     };
     const deletedAcc = accounts.find((a) => a.id === "account_deleted");
     const rest = accounts.filter((a) => a.id !== "account_deleted");

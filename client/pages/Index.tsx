@@ -143,12 +143,12 @@ export default function Index() {
     if (localStorage.getItem("cloud_token")) return;
     if (!localStorage.getItem("app_categories")) {
       localStorage.setItem("app_categories", JSON.stringify(
-        categories.map(({ icon: _icon, ...rest }) => rest)
+        categories.map(({ icon: _icon, ...rest }) => ({ ...rest, source: "local" }))
       ));
     }
     if (!localStorage.getItem("app_accounts")) {
       localStorage.setItem("app_accounts", JSON.stringify(
-        accounts.map(({ icon: _icon, ...rest }) => rest)
+        accounts.map(({ icon: _icon, ...rest }) => ({ ...rest, source: "local" }))
       ));
     }
   }, []);
