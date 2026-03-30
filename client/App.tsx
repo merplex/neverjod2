@@ -121,20 +121,22 @@ function AppContent() {
           localStorage.setItem("app_premium", payload.isPremium ? "true" : "false");
         }
       } catch {}
-      syncAll(token).then(() => {
-        // Refresh data in-place after first sync (no reload — avoids resetting app state/mic)
-        if (!sessionStorage.getItem("synced_once")) {
-          sessionStorage.setItem("synced_once", "1");
-          window.dispatchEvent(new CustomEvent("sync-data-refresh"));
-        }
-        {
-          // Mark direction as "client" (we pushed our data)
-          const now = new Date().toISOString();
-          localStorage.setItem("sync_direction", "client");
-          localStorage.setItem("last_client_sync_at", now);
-          window.dispatchEvent(new CustomEvent("sync-updated"));
-        }
-      }).catch(() => {});
+      if (localStorage.getItem("sync_auto_enabled") === "true") {
+        syncAll(token).then(() => {
+          // Refresh data in-place after first sync (no reload — avoids resetting app state/mic)
+          if (!sessionStorage.getItem("synced_once")) {
+            sessionStorage.setItem("synced_once", "1");
+            window.dispatchEvent(new CustomEvent("sync-data-refresh"));
+          }
+          {
+            // Mark direction as "client" (we pushed our data)
+            const now = new Date().toISOString();
+            localStorage.setItem("sync_direction", "client");
+            localStorage.setItem("last_client_sync_at", now);
+            window.dispatchEvent(new CustomEvent("sync-updated"));
+          }
+        }).catch(() => {});
+      }
     }
   }, []);
 
@@ -152,7 +154,7 @@ function AppContent() {
           navigate("/", { replace: true });
         }
         const token = localStorage.getItem("cloud_token");
-        if (token) {
+        if (token && localStorage.getItem("sync_auto_enabled") === "true") {
           syncAll(token).then(() => {
             const now = new Date().toISOString();
             localStorage.setItem("sync_direction", "client");
