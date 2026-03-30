@@ -50,6 +50,7 @@ export function markDeleted(type: "category" | "account" | "transaction", item: 
 
 function flushPendingDeletes() {
   localStorage.removeItem("app_pending_deletes");
+  localStorage.removeItem("app_pending_deletes_repeats");
 }
 
 function getPendingDeletes(): { categories: any[]; accounts: any[]; transactions: any[] } {
@@ -88,6 +89,61 @@ function normalizeServerItem(item: any): any {
     try { out.keywords = JSON.parse(out.keywords); } catch { out.keywords = []; }
   }
   return out;
+}
+
+// Normalize snake_case DB fields for repeat transactions
+function normalizeRepeatItem(raw: any): any {
+  const out = { ...raw };
+  if ("category_id"   in out) { out.categoryId   = out.category_id;   delete out.category_id; }
+  if ("account_id"    in out) { out.accountId    = out.account_id;    delete out.account_id; }
+  if ("category_name" in out) { out.categoryName = out.category_name; delete out.category_name; }
+  if ("account_name"  in out) { out.accountName  = out.account_name;  delete out.account_name; }
+  if ("category_type" in out) { out.categoryType = out.category_type; delete out.category_type; }
+  if ("repeat_option" in out) { out.repeatOption = out.repeat_option; delete out.repeat_option; }
+  if ("day_of_month"  in out) { out.dayOfMonth   = out.day_of_month;  delete out.day_of_month; }
+  if ("month_of_year" in out) { out.monthOfYear  = out.month_of_year; delete out.month_of_year; }
+  if ("start_date"    in out) { out.startDate    = out.start_date;    delete out.start_date; }
+  if ("next_due"      in out) { out.nextDue      = out.next_due;      delete out.next_due; }
+  if ("last_executed" in out) { out.lastExecuted = out.last_executed; delete out.last_executed; }
+  if ("amount" in out && typeof out.amount === "string") { out.amount = parseFloat(out.amount) || 0; }
+  delete out.user_id;
+  delete out.updated_at;
+  return out;
+}
+
+// Merge repeat transactions (ID-based; server wins; local-only items preserved)
+function mergeRepeatTransIntoLocal(serverItems: any[]) {
+  const local: any[] = JSON.parse(localStorage.getItem("app_repeat_transactions") || "[]");
+  const serverById = new Map<string, any>();
+  const deletedIds = new Set<string>();
+
+  for (const raw of serverItems) {
+    const item = normalizeRepeatItem(raw);
+    if (raw.deleted_at) {
+      deletedIds.add(item.id);
+    } else {
+      serverById.set(item.id, { ...item, source: "server" });
+    }
+  }
+
+  const result: any[] = [];
+  const seenIds = new Set<string>();
+  for (const localItem of local) {
+    if (deletedIds.has(localItem.id)) continue;         // server deleted
+    if (serverById.has(localItem.id)) {
+      result.push(serverById.get(localItem.id)!);       // server wins
+      seenIds.add(localItem.id);
+    } else {
+      result.push(localItem);                            // keep local (includes source:"local")
+      seenIds.add(localItem.id);
+    }
+  }
+  // Append new server items not present locally
+  for (const [id, item] of serverById) {
+    if (!seenIds.has(id)) result.push(item);
+  }
+
+  localStorage.setItem("app_repeat_transactions", JSON.stringify(result));
 }
 
 // Merge transactions (ID-based, server wins on conflict)
@@ -239,6 +295,13 @@ export async function syncPush(token: string, force = false) {
     localStorage.setItem(key, JSON.stringify(promoted));
   }
 
+  // Promote repeat transactions source:"local" → "server"
+  {
+    const repeats: any[] = JSON.parse(localStorage.getItem("app_repeat_transactions") || "[]");
+    const promoted = repeats.map((r) => r.source === "local" ? { ...r, source: "server" } : r);
+    localStorage.setItem("app_repeat_transactions", JSON.stringify(promoted));
+  }
+
   const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
     .map((c) => ({ ...c, updated_at: catAccStamp }));
   const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
@@ -256,10 +319,16 @@ export async function syncPush(token: string, force = false) {
   const allAccounts = mergeWithTombstones(accounts, pending.accounts, now);
   const allTransactions = mergeWithTombstones(transactions, pending.transactions, now);
 
+  // Repeat transactions: merge with repeat tombstones
+  const repeatTransactions = (JSON.parse(localStorage.getItem("app_repeat_transactions") || "[]") as any[])
+    .map((r) => ({ ...r, updated_at: catAccStamp }));
+  const pendingRepeats: any[] = JSON.parse(localStorage.getItem("app_pending_deletes_repeats") || "[]");
+  const allRepeatTransactions = mergeWithTombstones(repeatTransactions, pendingRepeats, now);
+
   const res = await fetch(`${API_BASE}/sync/push`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions }),
+    body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions }),
   });
   if (!res.ok) throw new Error("Push failed");
   flushPendingDeletes();
@@ -297,6 +366,8 @@ export async function syncPull(token: string) {
   updateTransactionRefs(catIdMap, accIdMap);
   // Transactions: ID-based merge (fingerprint dedup handled server-side)
   if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions);
+  // Repeat transactions: ID-based merge (server wins; local-only items preserved)
+  if (data.repeatTransactions?.length) mergeRepeatTransIntoLocal(data.repeatTransactions);
   // Always refresh premium status from server (handles DB changes without re-login)
   if (typeof data.isPremium === "boolean") {
     localStorage.setItem("app_premium", data.isPremium ? "true" : "false");

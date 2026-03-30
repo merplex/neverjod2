@@ -40,6 +40,7 @@ export interface RepeatTransaction {
   startDate: string;     // ISO — date of first transaction
   nextDue: string;       // ISO — next scheduled execution
   lastExecuted?: string;
+  source?: "local" | "server";  // "local" = not yet synced; "server" = synced
 }
 
 const KEY = "app_repeat_transactions";
@@ -52,11 +53,21 @@ export function saveRepeatTransactions(list: RepeatTransaction[]) {
 }
 export function addRepeatTransaction(rt: RepeatTransaction) {
   const list = getRepeatTransactions();
-  list.push(rt);
+  list.push({ ...rt, source: rt.source ?? "local" });
   saveRepeatTransactions(list);
 }
 export function deleteRepeatTransaction(id: string) {
-  saveRepeatTransactions(getRepeatTransactions().filter((r) => r.id !== id));
+  const list = getRepeatTransactions();
+  const item = list.find((r) => r.id === id);
+  // If already synced to server, record tombstone so next push removes it there too
+  if (item && item.source !== "local") {
+    const pending: any[] = JSON.parse(localStorage.getItem("app_pending_deletes_repeats") || "[]");
+    if (!pending.find((p: any) => p.id === id)) {
+      pending.push({ id, deleted_at: new Date().toISOString() });
+      localStorage.setItem("app_pending_deletes_repeats", JSON.stringify(pending));
+    }
+  }
+  saveRepeatTransactions(list.filter((r) => r.id !== id));
 }
 export function updateRepeatTransaction(id: string, updates: Partial<Pick<RepeatTransaction, "amount" | "description" | "repeatOption">>) {
   const list = getRepeatTransactions();

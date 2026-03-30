@@ -22,7 +22,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
 // Client sends local data; server upserts with last-write-wins
 router.post("/push", authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const { categories = [], accounts = [], transactions = [] } = req.body;
+  const { categories = [], accounts = [], transactions = [], repeatTransactions = [] } = req.body;
 
   try {
     // Categories + Accounts in parallel
@@ -91,6 +91,39 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
         )
     );
 
+    // Repeat transactions: upsert with last-write-wins
+    await Promise.all(
+      repeatTransactions.map((rt: any) =>
+        pool.query(
+          `INSERT INTO sync_repeat_transactions
+             (id, user_id, category_id, account_id, category_name, account_name, amount, description,
+              category_type, repeat_option, day_of_month, weekday, month_of_year, time,
+              start_date, next_due, last_executed, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+           ON CONFLICT (id, user_id) DO UPDATE
+             SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
+                 category_name = EXCLUDED.category_name, account_name = EXCLUDED.account_name,
+                 amount = EXCLUDED.amount, description = EXCLUDED.description,
+                 category_type = EXCLUDED.category_type, repeat_option = EXCLUDED.repeat_option,
+                 day_of_month = EXCLUDED.day_of_month, weekday = EXCLUDED.weekday,
+                 month_of_year = EXCLUDED.month_of_year, time = EXCLUDED.time,
+                 start_date = EXCLUDED.start_date, next_due = EXCLUDED.next_due,
+                 last_executed = EXCLUDED.last_executed,
+                 updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
+             WHERE sync_repeat_transactions.updated_at < EXCLUDED.updated_at`,
+          [
+            rt.id, userId, rt.categoryId || null, rt.accountId || null,
+            rt.categoryName || null, rt.accountName || null,
+            rt.amount, rt.description || null, rt.categoryType || null,
+            rt.repeatOption, rt.dayOfMonth ?? null, rt.weekday ?? null,
+            rt.monthOfYear ?? null, rt.time || null,
+            rt.startDate || null, rt.nextDue, rt.lastExecuted || null,
+            rt.updated_at, rt.deleted_at || null,
+          ]
+        )
+      )
+    );
+
     res.json({ ok: true });
   } catch (err) {
     console.error("sync/push error:", err);
@@ -106,7 +139,7 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
   const since = last_sync_at ? new Date(last_sync_at) : new Date(0);
 
   try {
-    const [cats, accs, txns, userRow, lastPushRow] = await Promise.all([
+    const [cats, accs, txns, repeats, userRow, lastPushRow] = await Promise.all([
       pool.query(
         "SELECT * FROM sync_categories WHERE user_id = $1 AND updated_at > $2",
         [userId, since]
@@ -119,6 +152,10 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
         "SELECT * FROM sync_transactions WHERE user_id = $1 AND updated_at > $2",
         [userId, since]
       ),
+      pool.query(
+        "SELECT * FROM sync_repeat_transactions WHERE user_id = $1 AND updated_at > $2",
+        [userId, since]
+      ),
       pool.query("SELECT is_premium FROM users WHERE id = $1", [userId]),
       pool.query(
         `SELECT MAX(updated_at) as last_push_at FROM (
@@ -127,6 +164,8 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
           SELECT updated_at FROM sync_accounts WHERE user_id = $1
           UNION ALL
           SELECT updated_at FROM sync_transactions WHERE user_id = $1
+          UNION ALL
+          SELECT updated_at FROM sync_repeat_transactions WHERE user_id = $1
         ) t`,
         [userId]
       ),
@@ -136,6 +175,7 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
       categories: cats.rows,
       accounts: accs.rows,
       transactions: txns.rows,
+      repeatTransactions: repeats.rows,
       isPremium: userRow.rows[0]?.is_premium ?? false,
       server_time: new Date().toISOString(),
       last_push_at: lastPushRow.rows[0]?.last_push_at ?? null,

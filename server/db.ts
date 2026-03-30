@@ -54,6 +54,28 @@ export async function initDB() {
       deleted_at TIMESTAMPTZ,
       PRIMARY KEY (id, user_id)
     )`,
+    `CREATE TABLE IF NOT EXISTS sync_repeat_transactions (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      category_id TEXT,
+      account_id TEXT,
+      category_name TEXT,
+      account_name TEXT,
+      amount NUMERIC NOT NULL,
+      description TEXT,
+      category_type TEXT,
+      repeat_option TEXT NOT NULL,
+      day_of_month INTEGER,
+      weekday INTEGER,
+      month_of_year INTEGER,
+      time TEXT,
+      start_date TEXT,
+      next_due TEXT NOT NULL,
+      last_executed TEXT,
+      updated_at TIMESTAMPTZ NOT NULL,
+      deleted_at TIMESTAMPTZ,
+      PRIMARY KEY (id, user_id)
+    )`,
   ];
   for (const sql of tables) {
     await pool.query(sql);
