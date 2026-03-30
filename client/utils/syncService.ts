@@ -165,12 +165,25 @@ function mergeCategOrAccIntoLocal(
     resultMap.set(localItem.id, localItem);
   }
 
-  // Keep special items pinned at the bottom regardless of server order
+  // Order: local items first (source="local", preserve their relative order from local array)
+  // then server items sorted by sortOrder, then pinned item at the bottom.
   const bottomId = storageKey === "app_categories" ? "nocat" : "account_deleted";
   const allItems = Array.from(resultMap.values());
   const pinnedItem = allItems.find((i) => i.id === bottomId);
-  const otherItems = allItems.filter((i) => i.id !== bottomId);
-  const finalItems = pinnedItem ? [...otherItems, pinnedItem] : otherItems;
+  const localItems = local
+    .filter((i) => i.source === "local" && resultMap.has(i.id) && i.id !== bottomId)
+    .map((i) => resultMap.get(i.id)!);
+  const localIds = new Set(localItems.map((i) => i.id));
+  const syncedItems = allItems
+    .filter((i) => i.id !== bottomId && !localIds.has(i.id))
+    .sort((a, b) => {
+      const oa = a.sortOrder ?? a.sort_order ?? 999999;
+      const ob = b.sortOrder ?? b.sort_order ?? 999999;
+      return oa - ob;
+    });
+  const finalItems = pinnedItem
+    ? [...localItems, ...syncedItems, pinnedItem]
+    : [...localItems, ...syncedItems];
   localStorage.setItem(storageKey, JSON.stringify(finalItems));
   return idReplacements;
 }
@@ -211,9 +224,18 @@ export async function syncPush(token: string, force = false) {
 
   // Promote source:"local" → source:"server" before push so server gets the correct ownership
   // and subsequent pulls treat them as server-owned (no ID-rename loop).
-  for (const key of ["app_categories", "app_accounts"] as const) {
+  // Also assign sortOrder based on current display index so the server preserves ordering.
+  const pinnedCatId = "nocat";
+  const pinnedAccId = "account_deleted";
+  for (const [key, pinnedId] of [["app_categories", pinnedCatId], ["app_accounts", pinnedAccId]] as const) {
     const items: any[] = JSON.parse(localStorage.getItem(key) || "[]");
-    const promoted = items.map((i) => i.source === "local" ? { ...i, source: "server" } : i);
+    let orderIdx = 0;
+    const promoted = items.map((i) => {
+      const isPromoted = i.source === "local" ? { ...i, source: "server" } : i;
+      // Pinned items (nocat / account_deleted) don't get a sort_order
+      const sortOrder = i.id === pinnedId ? undefined : orderIdx++;
+      return { ...isPromoted, sortOrder };
+    });
     localStorage.setItem(key, JSON.stringify(promoted));
   }
 

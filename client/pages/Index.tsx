@@ -198,6 +198,7 @@ export default function Index() {
     categoryId?: string; categoryName?: string;
     accountId?: string; accountName?: string;
     amount?: number;
+    transcript?: string;
   }>({});
   const allDetectedRef = useRef(false);
   const displayScrollRef = useRef<HTMLDivElement>(null);
@@ -329,6 +330,7 @@ export default function Index() {
         next.accountName = accountsList.find((a) => a.id === voiceData.accountId)?.name;
       }
       if (voiceData.amount) next.amount = voiceData.amount;
+      next.transcript = voiceData.description;
       return next;
     });
 
@@ -704,7 +706,7 @@ export default function Index() {
                   renderItem={(category) => {
                     // Voice status widget at position 3
                     if (category.id === "__voice_status__") {
-                      const { categoryName, accountName, amount } = liveVoiceStatus;
+                      const { categoryName, accountName, amount, transcript } = liveVoiceStatus;
                       return (
                         <div key="__voice_status__" className={`w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center py-1 gap-0.5 overflow-hidden ${isIOSDevice ? "px-1" : "px-2"}`}>
                           <div className="flex items-center gap-1">
@@ -719,6 +721,11 @@ export default function Index() {
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
                           </div>
+                          {transcript && (
+                            <div className="border-t border-slate-200 mt-0.5 pt-0.5">
+                              <span className={`${isIOSDevice ? "text-[9px]" : "text-[10px]"} text-slate-400 truncate block`}>{transcript}</span>
+                            </div>
+                          )}
                         </div>
                       );
                     }

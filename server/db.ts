@@ -67,6 +67,9 @@ export async function initDB() {
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS icon_id TEXT`).catch(() => {});
   await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT '[]'`).catch(() => {});
   await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS icon_id TEXT`).catch(() => {});
+  // Migration: add sort_order to categories and accounts
+  await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS sort_order INTEGER`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS sort_order INTEGER`).catch(() => {});
   // Dev premium: premsak.c@gmail.com is always premium
   await pool.query(`UPDATE users SET is_premium = TRUE WHERE email = 'premsak.c@gmail.com'`).catch(() => {});
 }
