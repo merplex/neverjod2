@@ -33,9 +33,9 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Home page manages its own height (h-[100dvh]) — no extra padding needed.
-  // All other pages need pb-safe-content to clear the fixed bottom nav.
-  const isHome = location.pathname === "/";
+  // Pages that manage their own height (h-[100dvh]) — no extra padding needed.
+  const SELF_MANAGED_PATHS = ["/", "/repeat-transactions"];
+  const isHome = SELF_MANAGED_PATHS.includes(location.pathname);
 
   return (
     <div className="flex flex-col min-h-screen">

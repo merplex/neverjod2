@@ -135,6 +135,21 @@ export default function Index() {
   const T = useT();
   const [voiceAutoStart] = useState<boolean>(readVoiceAutoStart);
   const [currentPage, setCurrentPage] = useState<InputPage>("category");
+
+  // Seed defaults to localStorage on first launch so other pages (e.g. AddTransactionModal
+  // opened from RepeatTransactions) can read categories/accounts without visiting home first
+  useEffect(() => {
+    if (!localStorage.getItem("app_categories")) {
+      localStorage.setItem("app_categories", JSON.stringify(
+        categories.map(({ icon: _icon, ...rest }) => rest)
+      ));
+    }
+    if (!localStorage.getItem("app_accounts")) {
+      localStorage.setItem("app_accounts", JSON.stringify(
+        accounts.map(({ icon: _icon, ...rest }) => rest)
+      ));
+    }
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [categoriesList, setCategoriesList] = useState(loadCategoriesFromStorage);
