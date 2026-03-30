@@ -285,7 +285,8 @@ function updateTransactionRefs(
 
 // force=true: stamp everything with now (manual sync — user asserts their data is truth)
 // force=false: use existing timestamp or epoch (auto sync — server data wins if newer)
-export async function syncPush(token: string, force = false) {
+// isFirstSync: passed in from syncAll so pull (which sets last_sync_at) doesn't flip the flag
+export async function syncPush(token: string, force = false, isFirstSync?: boolean) {
   const now = new Date().toISOString();
 
   // On the very first sync (no last_sync_at), we do NOT know which local
@@ -294,7 +295,9 @@ export async function syncPush(token: string, force = false) {
   // stamp them with epoch (1970-01-01) so the server's ON CONFLICT rule
   // ("WHERE updated_at < EXCLUDED.updated_at") will always keep the server copy.
   // Transactions are still stamped with `now` since they are always new data.
-  const isFirstSync = !localStorage.getItem("last_sync_at");
+  // NOTE: caller (syncAll) captures this flag BEFORE pull runs, so pull setting
+  // last_sync_at doesn't accidentally flip first-sync detection.
+  if (isFirstSync === undefined) isFirstSync = !localStorage.getItem("last_sync_at");
   const catAccStamp = isFirstSync ? new Date(0).toISOString() : now;
 
   // Promote source:"local" → source:"server" before push so server gets the correct ownership
@@ -396,9 +399,13 @@ export async function syncPull(token: string) {
   return true;
 }
 
-// --- Full sync (push then pull) ---
-
+// --- Full sync (pull then push) ---
+// Pull first: get server data, resolve conflicts, set source="server" on server items.
+// Push second: promote remaining source="local" items to server.
+// isFirstSync is captured BEFORE pull so that pull setting last_sync_at doesn't
+// accidentally make push think it's a non-first sync and use `now` as timestamp.
 export async function syncAll(token: string, force = false): Promise<void> {
-  await syncPush(token, force);
+  const isFirstSync = !localStorage.getItem("last_sync_at");
   await syncPull(token);
+  await syncPush(token, force, isFirstSync);
 }
