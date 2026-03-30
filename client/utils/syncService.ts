@@ -182,16 +182,17 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
   localStorage.setItem(storageKey, JSON.stringify(Array.from(localMap.values())));
 }
 
-// Name-based merge for categories and accounts.
-// Rules for local-owned items (source="local" or no source):
+// Source-based merge for categories and accounts.
+// Rules for local-owned items (source="local"):
 //   - Always coexist with server data — never dropped
-//   - If ID collides with a server item → reassign a new unique ID (both items appear)
+//   - If name matches a server item → append "-new" so user can distinguish them
+//   - If ID collides with a server item → reassign a new unique ID
 //   - Transaction refs are updated to the new ID
-// Rules for server-owned items (source present, not "local"):
-//   1. Same ID → server version already in result
-//   2. Same name, different ID → server wins; track old local ID for tx ref update
-//   3. Different name, different ID → keep both
-// Returns a map of { oldLocalId → newId } for all ID changes (rename + server-name-wins).
+// Rules for server-owned items (source="server"):
+//   - Same ID → server version already in result (server wins)
+//   - ID not in server response → keep local copy (unchanged since last sync)
+//   - Server soft-deleted → drop
+// Returns a map of { oldLocalId → newId } for all ID changes.
 function mergeCategOrAccIntoLocal(
   storageKey: string,
   serverItems: any[]
@@ -204,7 +205,6 @@ function mergeCategOrAccIntoLocal(
   const serverById = new Map(serverLive.map((i) => [i.id, i]));
   const serverByName = new Map(serverLive.map((i) => [i.name?.toLowerCase()?.trim(), i]));
 
-  // Track all ID changes: local-item-renamed and server-name-wins
   const idReplacements = new Map<string, string>();
 
   // Start result with all live server items
@@ -213,42 +213,49 @@ function mergeCategOrAccIntoLocal(
   let renameCounter = 0;
   for (const localItem of local) {
     if (localItem.source === "local") {
-      // Local-owned (not yet pushed): must always appear.
+      // Not yet synced — must always appear.
+      let item = { ...localItem };
+
+      // If server already has an item with the same name, add "-new" to disambiguate.
+      // The server item keeps its original name; local gets the suffix so nothing is hidden.
+      const nameKey = item.name?.toLowerCase()?.trim();
+      if (nameKey && serverByName.has(nameKey)) {
+        item = { ...item, name: item.name + "-new" };
+      }
+
       // If ID collides with a server item, assign a new unique ID so both coexist.
-      if (resultMap.has(localItem.id)) {
+      if (resultMap.has(item.id)) {
         const newId = `local_${Date.now()}_${++renameCounter}`;
         idReplacements.set(localItem.id, newId);
-        resultMap.set(newId, { ...localItem, id: newId });
+        resultMap.set(newId, { ...item, id: newId });
       } else {
-        resultMap.set(localItem.id, localItem);
+        if (item.id !== localItem.id) idReplacements.set(localItem.id, item.id);
+        resultMap.set(item.id, item);
       }
       continue;
     }
 
-    if (deletedIds.has(localItem.id)) continue;   // Server soft-deleted this server-owned item
+    // Server-owned (previously synced)
+    if (deletedIds.has(localItem.id)) continue;   // Server soft-deleted this item
     if (serverById.has(localItem.id)) continue;    // Same ID → server version already in result
 
-    const nameKey = localItem.name?.toLowerCase()?.trim();
-    const serverMatch = nameKey ? serverByName.get(nameKey) : undefined;
-    if (serverMatch) {
-      // Same name, different ID → server wins; remember replacement for tx ref update
-      idReplacements.set(localItem.id, serverMatch.id);
-      continue;
-    }
-
-    // No match at all → keep local item (genuinely new/different item)
+    // Server-owned item absent from server response → unchanged since last sync, keep it
     resultMap.set(localItem.id, localItem);
   }
 
-  // Order: local items first (source="local", preserve their relative order from local array)
+  // Order: local items first (source="local", preserve their relative order)
   // then server items sorted by sortOrder, then pinned item at the bottom.
   const bottomId = storageKey === "app_categories" ? "nocat" : "account_deleted";
   const allItems = Array.from(resultMap.values());
   const pinnedItem = allItems.find((i) => i.id === bottomId);
   const localItems = local
-    .filter((i) => i.source === "local" && resultMap.has(i.id) && i.id !== bottomId)
-    .map((i) => resultMap.get(i.id)!);
-  const localIds = new Set(localItems.map((i) => i.id));
+    .filter((i) => i.source === "local" && i.id !== bottomId)
+    .map((i) => {
+      const effectiveId = idReplacements.get(i.id) ?? i.id;
+      return resultMap.get(effectiveId);
+    })
+    .filter(Boolean) as any[];
+  const localIds = new Set(localItems.map((i: any) => i.id));
   const syncedItems = allItems
     .filter((i) => i.id !== bottomId && !localIds.has(i.id))
     .sort((a, b) => {
