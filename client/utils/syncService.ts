@@ -90,6 +90,7 @@ function normalizeServerItem(item: any): any {
   return out;
 }
 
+// Merge transactions (ID-based, server wins on conflict)
 function mergeIntoLocal(storageKey: string, serverItems: any[]) {
   const local: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
   const localMap = new Map(local.map((item) => [item.id, item]));
@@ -106,19 +107,88 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
   localStorage.setItem(storageKey, JSON.stringify(Array.from(localMap.values())));
 }
 
+// Name-based merge for categories and accounts.
+// Rules:
+//   1. Same ID → server always wins (overwrite local)
+//   2. Same name, different ID → server wins; track old local ID for transaction ref update
+//   3. Different name, different ID → keep both (truly separate items)
+// Returns a map of { oldLocalId → serverItemId } for any ID replacements made.
+function mergeCategOrAccIntoLocal(
+  storageKey: string,
+  serverItems: any[]
+): Map<string, string> {
+  const local: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  const normalized = serverItems.map(normalizeServerItem);
+  const serverLive = normalized.filter((i) => !i.deleted_at);
+  const deletedIds = new Set(normalized.filter((i) => i.deleted_at).map((i) => i.id));
+
+  const serverById = new Map(serverLive.map((i) => [i.id, i]));
+  const serverByName = new Map(serverLive.map((i) => [i.name?.toLowerCase()?.trim(), i]));
+
+  // Track which local IDs were replaced by a server item with a different ID
+  const idReplacements = new Map<string, string>();
+
+  // Start result with all live server items
+  const resultMap = new Map<string, any>(serverLive.map((i) => [i.id, i]));
+
+  for (const localItem of local) {
+    if (deletedIds.has(localItem.id)) continue;   // Server soft-deleted this
+    if (serverById.has(localItem.id)) continue;    // Same ID → server version already in result
+
+    const nameKey = localItem.name?.toLowerCase()?.trim();
+    const serverMatch = nameKey ? serverByName.get(nameKey) : undefined;
+    if (serverMatch) {
+      // Same name, different ID → server wins; remember replacement for tx ref update
+      idReplacements.set(localItem.id, serverMatch.id);
+      continue;
+    }
+
+    // No match at all → keep local item (genuinely new/different item)
+    resultMap.set(localItem.id, localItem);
+  }
+
+  localStorage.setItem(storageKey, JSON.stringify(Array.from(resultMap.values())));
+  return idReplacements;
+}
+
+// After name-based merge, update transaction categoryId/accountId references
+// to point to the new (server) IDs when a local item was replaced by a server item.
+function updateTransactionRefs(
+  catIdMap: Map<string, string>,
+  accIdMap: Map<string, string>
+) {
+  if (catIdMap.size === 0 && accIdMap.size === 0) return;
+  const transactions: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+  let changed = false;
+  const updated = transactions.map((tx) => {
+    let newTx = { ...tx };
+    if (catIdMap.has(tx.categoryId)) { newTx.categoryId = catIdMap.get(tx.categoryId)!; changed = true; }
+    if (accIdMap.has(tx.accountId))  { newTx.accountId  = accIdMap.get(tx.accountId)!;  changed = true; }
+    return newTx;
+  });
+  if (changed) localStorage.setItem("app_transactions", JSON.stringify(updated));
+}
+
 // --- Push local data to server ---
 
 // force=true: stamp everything with now (manual sync — user asserts their data is truth)
 // force=false: use existing timestamp or epoch (auto sync — server data wins if newer)
 export async function syncPush(token: string, force = false) {
   const now = new Date().toISOString();
-  // Always stamp updated_at = now so local edits always win over server's old timestamp.
-  // Server upsert rule: "WHERE updated_at < EXCLUDED.updated_at" — if we send the same
-  // old timestamp the server already has, it silently rejects the update.
+
+  // On the very first sync (no last_sync_at), we do NOT know which local
+  // categories/accounts are genuinely user-created vs. fresh-install defaults.
+  // To avoid overwriting the server's existing data with local defaults,
+  // stamp them with epoch (1970-01-01) so the server's ON CONFLICT rule
+  // ("WHERE updated_at < EXCLUDED.updated_at") will always keep the server copy.
+  // Transactions are still stamped with `now` since they are always new data.
+  const isFirstSync = !localStorage.getItem("last_sync_at");
+  const catAccStamp = isFirstSync ? new Date(0).toISOString() : now;
+
   const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
-    .map((c) => ({ ...c, updated_at: now }));
+    .map((c) => ({ ...c, updated_at: catAccStamp }));
   const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
-    .map((a) => ({ ...a, updated_at: now }));
+    .map((a) => ({ ...a, updated_at: catAccStamp }));
   const transactions = (JSON.parse(localStorage.getItem("app_transactions") || "[]") as any[])
     .map((tx) => {
       const cat = categories.find((c) => c.id === tx.categoryId);
@@ -162,8 +232,16 @@ export async function syncPull(token: string) {
   if (!res.ok) throw new Error("Pull failed");
 
   const data = await res.json();
-  if (data.categories?.length) mergeIntoLocal("app_categories", data.categories);
-  if (data.accounts?.length) mergeIntoLocal("app_accounts", data.accounts);
+  // Categories and accounts: name-based merge so server wins even when IDs differ
+  const catIdMap = data.categories?.length
+    ? mergeCategOrAccIntoLocal("app_categories", data.categories)
+    : new Map<string, string>();
+  const accIdMap = data.accounts?.length
+    ? mergeCategOrAccIntoLocal("app_accounts", data.accounts)
+    : new Map<string, string>();
+  // If any local IDs were replaced by server IDs, update transaction references first
+  updateTransactionRefs(catIdMap, accIdMap);
+  // Transactions: ID-based merge (fingerprint dedup handled server-side)
   if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions);
   // Always refresh premium status from server (handles DB changes without re-login)
   if (typeof data.isPremium === "boolean") {
