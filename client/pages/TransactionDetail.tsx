@@ -199,6 +199,7 @@ export default function TransactionDetail() {
       setNumpadDisplay(prev => prev === "0" ? num.toString() : prev + num.toString());
     }
   };
+  const handleNumpadClear = () => { if (!isNumpadLocked) setNumpadDisplay("0"); };
   const handleNumpadDecimal = () => {
     if (isNumpadLocked) return;
     if (isCalcMode) {
@@ -471,40 +472,35 @@ export default function TransactionDetail() {
                 </button>
               </div>
               {/* Display */}
-              <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex justify-between items-center mb-2 flex-shrink-0">
-                <div className={`text-2xl font-bold font-mono tracking-tight ${signColor.replace("text-", "text-").replace("500", "300").replace("600", "300")}`}>
-                  {sign}฿{numpadDisplay}
+              <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
+                <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                  <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
+                    {sign}฿{numpadDisplay}
+                  </div>
                 </div>
+                <button onClick={handleNumpadClear} className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center">C</button>
                 <button onClick={() => setShowAmountPad(false)} className="p-1.5 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0">
                   <X size={22} />
                 </button>
               </div>
               {/* Numpad C+D */}
               <div className={`flex gap-2 flex-1 min-h-0 ${isRightMode ? "flex-row-reverse" : ""}`}>
-                <div className="flex flex-col gap-1.5 min-h-0" style={{ width: `${numpadSize}%` }}>
-                  <div className="grid grid-cols-3 gap-1.5 flex-1 min-h-0" style={{ gridTemplateRows: "repeat(3, 1fr)" }}>
-                    {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
-                      <button key={num} onClick={() => handleNumpadClick(num)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5 flex-shrink-0" style={{ height: 44 }}>
-                    {isRightMode ? (
-                      <>
-                        <button onClick={handleNumpadDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                        <button onClick={handleNumpadDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                        <button onClick={() => handleNumpadClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={handleNumpadSave} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
-                        <button onClick={() => handleNumpadClick(0)} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">0</button>
-                        <button onClick={handleNumpadDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
-                        <button onClick={handleNumpadDelete} className="h-full px-2 bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 text-orange-600 font-bold rounded-xl transition-all active:scale-95 shadow-sm">⌫</button>
-                      </>
-                    )}
+                <div className="flex-1 min-h-0" style={{ width: `${numpadSize}%`, flex: "none" }}>
+                  <div className="grid grid-cols-3 gap-1.5 h-full" style={{ gridTemplateRows: "repeat(4, 1fr)" }}>
+                    {(isRightMode
+                      ? [7, 8, 9, 4, 5, 6, 1, 2, 3, '.', 0, 'save'] as const
+                      : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
+                    ).map((btn) => {
+                      if (btn === 'save') return (
+                        <button key="save" onClick={handleNumpadSave} className="h-full aspect-square justify-self-center bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-full transition-all active:scale-95 flex items-center justify-center">Save</button>
+                      );
+                      if (btn === '.') return (
+                        <button key="dot" onClick={handleNumpadDecimal} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-all active:scale-95 flex items-center justify-center">.</button>
+                      );
+                      return (
+                        <button key={btn} onClick={() => handleNumpadClick(btn as number)} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-all active:scale-95 flex items-center justify-center">{btn}</button>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Section D: Calc toggle + Lock/= */}

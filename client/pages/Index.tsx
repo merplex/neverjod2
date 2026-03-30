@@ -597,23 +597,23 @@ export default function Index() {
           <div className="flex justify-between items-center mb-2">
             <span className="text-white text-sm font-semibold opacity-80">{monthlyData.periodLabel}</span>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {/* Expense ranking */}
-            <div className="bg-white/15 rounded-xl px-3 py-2">
-              <p className="text-white font-bold text-sm mb-2">{T("index.top_expenses")}</p>
+            <div className="bg-white/15 rounded-xl px-2 py-1">
+              <p className="text-white font-bold text-sm mb-1">{T("index.top_expenses")}</p>
               {monthlyData.topExpenses.length === 0 ? (
                 <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
               ) : (
-                <div className="grid grid-cols-5 gap-1">
+                <div className="grid grid-cols-5 gap-0.5">
                   {monthlyData.topExpenses.map(({ id, amount, cat }) => {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
                       <div key={id} className="flex flex-col items-center gap-0.5">
-                        <div className="w-full aspect-square bg-white/20 rounded-lg flex items-center justify-center">
+                        <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center">
                           <Icon className="text-white w-1/2 h-1/2" />
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
-                        <span className="text-[10px] font-bold text-white">
+                        <span className="text-[12px] font-bold text-white">
                           {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
                         </span>
                       </div>
@@ -623,21 +623,21 @@ export default function Index() {
               )}
             </div>
             {/* Income ranking */}
-            <div className="bg-white/15 rounded-xl px-3 py-2">
-              <p className="text-white font-bold text-sm mb-2">{T("index.top_incomes")}</p>
+            <div className="bg-white/15 rounded-xl px-2 py-1">
+              <p className="text-white font-bold text-sm mb-1">{T("index.top_incomes")}</p>
               {monthlyData.topIncomes.length === 0 ? (
                 <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
               ) : (
-                <div className="grid grid-cols-5 gap-1">
+                <div className="grid grid-cols-5 gap-0.5">
                   {monthlyData.topIncomes.map(({ id, amount, cat }) => {
                     const Icon = cat?.icon || MoreHorizontal;
                     return (
                       <div key={id} className="flex flex-col items-center gap-0.5">
-                        <div className="w-full aspect-square bg-white/20 rounded-lg flex items-center justify-center">
+                        <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center">
                           <Icon className="text-white w-1/2 h-1/2" />
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
-                        <span className="text-[10px] font-bold text-white">
+                        <span className="text-[12px] font-bold text-white">
                           {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
                         </span>
                       </div>
@@ -721,11 +721,6 @@ export default function Index() {
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
                           </div>
-                          {transcript && (
-                            <div className="border-t border-slate-200 mt-0.5 pt-0.5">
-                              <span className={`${isIOSDevice ? "text-[9px]" : "text-[10px]"} text-slate-400 truncate block`}>{transcript}</span>
-                            </div>
-                          )}
                         </div>
                       );
                     }
