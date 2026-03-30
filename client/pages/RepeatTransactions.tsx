@@ -61,9 +61,9 @@ export default function RepeatTransactions() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="h-[100dvh] flex flex-col bg-slate-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header">
+      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header flex-shrink-0">
         <div className="max-w-md mx-auto flex items-center gap-2">
           <button
             onClick={() => navigate("/settings")}
@@ -81,6 +81,7 @@ export default function RepeatTransactions() {
         </div>
       </div>
 
+      <div className="flex-1 overflow-y-auto pb-safe-content">
       <div className="max-w-md mx-auto px-4 py-4 space-y-3">
         {list.length === 0 ? (
           <div className="text-center py-16">
@@ -236,6 +237,8 @@ export default function RepeatTransactions() {
           </div>
         </div>
       )}
+
+      </div>
 
       {/* Add Modal */}
       {showAddModal && (
