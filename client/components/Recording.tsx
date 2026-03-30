@@ -95,16 +95,14 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
     setIsSupported(true);
 
-    // extended=true adds 2s extra when a number was just detected (large numbers take longer to say)
-    const resetSilenceTimer = (extended = false) => {
+    const resetSilenceTimer = () => {
       if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
-      const delay = readSilenceDelay() + (extended ? 2000 : 0);
       silenceTimeoutRef.current = setTimeout(() => {
         if (isListeningRef.current && hasSpeechStartedRef.current) {
           hasSpeechStartedRef.current = false;
           if (onVoiceEndRef.current) onVoiceEndRef.current();
         }
-      }, delay);
+      }, readSilenceDelay());
     };
 
     // ── Language ─────────────────────────────────────────────────────────────
@@ -156,7 +154,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
 
           if (isFinal) {
             console.log("[voice] iOS final:", transcriptPart);
-            resetSilenceTimer(!!merged.amount);
+            resetSilenceTimer();
           }
         } else {
           // ── Android: unchanged — process final results only ──
@@ -167,7 +165,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
           const voiceData = parseVoiceInput(transcriptPart);
           console.log("[voice] Android data:", voiceData);
           if (onVoiceInputRef.current) onVoiceInputRef.current(voiceData);
-          resetSilenceTimer(!!voiceData.amount);
+          resetSilenceTimer();
         }
       }
     };

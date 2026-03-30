@@ -157,17 +157,15 @@ export function extractNumberFromText(text: string): number | undefined {
     if (thaiResult !== undefined) return thaiResult;
   }
 
-  // Direct numeric — use + (not *) for comma-thousands so "300015" matches as one token,
-  // not split into "300" + "015" which would pick the wrong largest value.
+  // Direct numeric — comma-thousands pattern first (+ not * so "300015" stays one token),
+  // then plain integers. If all matched values are strictly descending, sum them:
+  // speech recognition often splits "แปดหมื่นสามสิบ" into ["80000", "30"] → 80,030.
   const numberMatches = t.match(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g);
   if (numberMatches && numberMatches.length > 0) {
-    let largestNumber = numberMatches[0];
-    for (const num of numberMatches) {
-      if (parseFloat(num.replace(/,/g, "")) > parseFloat(largestNumber.replace(/,/g, ""))) {
-        largestNumber = num;
-      }
-    }
-    return parseFloat(largestNumber.replace(/,/g, ""));
+    const values = numberMatches.map(n => parseFloat(n.replace(/,/g, "")));
+    const allDescending = values.length > 1 && values.every((v, i) => i === 0 || v < values[i - 1]);
+    if (allDescending) return values.reduce((s, v) => s + v, 0);
+    return Math.max(...values);
   }
 
   // Pure Thai digit words fallback (e.g. "สามร้อยสิบห้า" with no prior unit match)
