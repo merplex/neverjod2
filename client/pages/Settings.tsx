@@ -8,7 +8,7 @@ import { useT } from "../hooks/useT";
 
 const SETTINGS_KEY = "app_settings";
 
-type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky";
+type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky" | "goldenblue";
 
 interface AppSettings {
   voiceInputDelay: number;
@@ -38,7 +38,8 @@ const colorThemes: { id: ColorTheme; name: string; swatches: string[] }[] = [
   { id: "purple", name: "Purple", swatches: ["#ede9fe", "#a78bfa", "#7c3aed", "#6d28d9"] },
   { id: "rose",   name: "Rose",   swatches: ["#ffe4e6", "#fb7185", "#e11d48", "#be123c"] },
   { id: "amber",  name: "Amber",  swatches: ["#fef3c7", "#fbbf24", "#d97706", "#b45309"] },
-  { id: "sky",    name: "Sky",    swatches: ["#e0f2fe", "#38bdf8", "#0284c7", "#0369a1"] },
+  { id: "sky",       name: "Sky",        swatches: ["#e0f2fe", "#38bdf8", "#0284c7", "#0369a1"] },
+  { id: "goldenblue", name: "Gold × Blue", swatches: ["#FFF8D6", "#FFCE00", "#1B7FE4", "#0F4A8A"] },
 ];
 
 const VOICE_LANG_OPTIONS = [
