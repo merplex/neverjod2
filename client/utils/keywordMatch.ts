@@ -107,25 +107,13 @@ function getAccountsWithKeywords(): Record<string, { name: string; keywords: str
 }
 
 export function extractNumberFromText(text: string): number | undefined {
-  // Thai unit multipliers for mixed numeric+Thai (e.g. "2ล้าน5พัน", "6แสน4ร้อย5สิบ")
-  const thaiUnitMap: Record<string, number> = {
-    'ล้าน': 1000000, 'แสน': 100000, 'หมื่น': 10000, 'พัน': 1000, 'ร้อย': 100, 'สิบ': 10,
-  };
-
-  // Sum ALL digit+Thai-unit pairs to support compound numbers (e.g. "2ล้าน5พัน" → 2,005,000)
-  const hasMixedUnit = Object.keys(thaiUnitMap).some(u =>
-    new RegExp(`\\d+(?:\\.\\d+)?\\s*${u}`).test(text)
-  );
-  if (hasMixedUnit) {
-    let total = 0;
-    for (const [unit, multiplier] of Object.entries(thaiUnitMap)) {
-      const re = new RegExp(`(\\d+(?:\\.\\d+)?)\\s*${unit}`, 'g');
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(text)) !== null) {
-        total += parseFloat(m[1]) * multiplier;
-      }
-    }
-    if (total > 0) return total;
+  // If text contains Thai unit words, route to Thai parser first —
+  // direct numeric match would grab a stray digit (e.g. "2" from "2ล้าน") and return wrong value.
+  // parseThaiNumberText already handles mixed digit+Thai like "2ล้าน5พัน" → 2,005,000.
+  const thaiUnits = ['ล้าน', 'แสน', 'หมื่น', 'พัน', 'ร้อย', 'สิบ'];
+  if (thaiUnits.some(u => text.includes(u))) {
+    const thaiResult = parseThaiNumberText(text);
+    if (thaiResult !== undefined) return thaiResult;
   }
 
   // First, try to find direct numeric matches — support comma-separated thousands like "1,205,000"
@@ -142,7 +130,7 @@ export function extractNumberFromText(text: string): number | undefined {
     return parseFloat(largestNumber.replace(/,/g, ""));
   }
 
-  // Second, try Thai number words (e.g., หนึ่งล้านสองแสนห้าพัน)
+  // Second, try Thai number words (e.g., หนึ่งล้านสองแสนห้าพัน) — catches pure Thai without units above
   const thaiResult = parseThaiNumberText(text);
   if (thaiResult !== undefined) return thaiResult;
 
