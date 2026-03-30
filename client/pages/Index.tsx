@@ -276,8 +276,11 @@ export default function Index() {
   const exitCategoryReorderMode = () => {
     setIsCategoryReorderMode(false);
     setSelectedCategoryForSwap(null);
-    // Persist reordered categories to localStorage so Categories page reflects it
-    localStorage.setItem("app_categories", JSON.stringify(categoriesList));
+    // Persist reordered categories to localStorage; keep nocat pinned at bottom
+    const nocat = categoriesList.find((c) => c.id === "nocat");
+    const rest = categoriesList.filter((c) => c.id !== "nocat");
+    const toSave = nocat ? [...rest, nocat] : rest;
+    localStorage.setItem("app_categories", JSON.stringify(toSave));
   };
 
   // Calculator mode operator
@@ -463,6 +466,11 @@ export default function Index() {
   const exitAccountReorderMode = () => {
     setIsAccountPageReorderMode(false);
     setSelectedAccountForSwap(null);
+    // Persist reordered accounts to localStorage; keep account_deleted pinned at bottom
+    const deleted = accountsList.find((a) => a.id === "account_deleted");
+    const rest = accountsList.filter((a) => a.id !== "account_deleted");
+    const toSave = deleted ? [...rest, deleted] : rest;
+    localStorage.setItem("app_accounts", JSON.stringify(toSave));
   };
 
   const handleNumberClick = (num: number) => {

@@ -147,7 +147,13 @@ function mergeCategOrAccIntoLocal(
     resultMap.set(localItem.id, localItem);
   }
 
-  localStorage.setItem(storageKey, JSON.stringify(Array.from(resultMap.values())));
+  // Keep special items pinned at the bottom regardless of server order
+  const bottomId = storageKey === "app_categories" ? "nocat" : "account_deleted";
+  const allItems = Array.from(resultMap.values());
+  const pinnedItem = allItems.find((i) => i.id === bottomId);
+  const otherItems = allItems.filter((i) => i.id !== bottomId);
+  const finalItems = pinnedItem ? [...otherItems, pinnedItem] : otherItems;
+  localStorage.setItem(storageKey, JSON.stringify(finalItems));
   return idReplacements;
 }
 
