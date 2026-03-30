@@ -499,10 +499,22 @@ export default function Settings() {
             <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
               <Cloud size={18} className="text-sky-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
-              <p className="text-xs text-slate-500">{T("settings.sync_hint")}</p>
+              <p className="text-xs text-slate-500">Support multiple devices</p>
             </div>
+            <button
+              onClick={() => {
+                const next = !syncAuto;
+                setSyncAuto(next);
+                localStorage.setItem("sync_auto_enabled", next ? "true" : "false");
+              }}
+              className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 ${
+                syncAuto ? "bg-sky-500" : "bg-slate-300"
+              }`}
+            >
+              <span className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${syncAuto ? "ml-auto" : ""}`} />
+            </button>
           </div>
 
           {cloudToken ? (
@@ -520,38 +532,22 @@ export default function Settings() {
                   {T("logout")}
                 </button>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSync}
-                  disabled={syncStatus === "syncing"}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200 disabled:opacity-50"
-                >
-                  <RefreshCw size={15} className={syncStatus === "syncing" ? "animate-spin" : ""} />
-                  <span>
-                    {syncStatus === "syncing"
-                      ? T("settings.syncing")
-                      : syncStatus === "error"
-                      ? T("settings.sync_failed")
-                      : lastSyncTime
-                      ? `${T("settings.connected")} · ${lastSyncTime} · from ${syncDirection ?? "server"}`
-                      : T("settings.sync_now")}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    const next = !syncAuto;
-                    setSyncAuto(next);
-                    localStorage.setItem("sync_auto_enabled", next ? "true" : "false");
-                  }}
-                  className={`px-3 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-                    syncAuto
-                      ? "bg-sky-600 text-white border-sky-600"
-                      : "bg-white text-slate-400 border-slate-200"
-                  }`}
-                >
-                  Auto
-                </button>
-              </div>
+              <button
+                onClick={handleSync}
+                disabled={syncStatus === "syncing"}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-50 text-sky-700 text-sm font-semibold hover:bg-sky-100 transition-colors border border-sky-200 disabled:opacity-50"
+              >
+                <RefreshCw size={15} className={syncStatus === "syncing" ? "animate-spin" : ""} />
+                <span>
+                  {syncStatus === "syncing"
+                    ? T("settings.syncing")
+                    : syncStatus === "error"
+                    ? T("settings.sync_failed")
+                    : lastSyncTime
+                    ? `Sync · ${lastSyncTime} · from ${syncDirection ?? "server"}`
+                    : T("settings.sync_now")}
+                </span>
+              </button>
             </div>
           ) : showAuthForm ? (
             <div className="space-y-3">
