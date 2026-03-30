@@ -726,7 +726,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={24} />
-                        <span className="font-bold text-xs text-center truncate leading-tight w-full block">{category.name}</span>
+                        <span className="font-medium text-xs text-center truncate leading-tight w-full block">{category.name}</span>
                       </button>
                     );
                   }}
@@ -746,7 +746,7 @@ export default function Index() {
             {currentPage === "account" && (
               <div className="flex flex-col flex-1 min-h-0">
                 <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-bold text-slate-900">Select Account</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Select Account</h2>
                   <div className="flex items-center gap-2">
                     {!isAccountPageReorderMode && (
                       <button
@@ -803,7 +803,7 @@ export default function Index() {
                         }`}
                       >
                         <IconComponent size={24} />
-                        <span className="font-bold text-xs text-center truncate leading-tight w-full">{account.name}</span>
+                        <span className="font-medium text-xs text-center truncate leading-tight w-full">{account.name}</span>
                       </button>
                     );
                   }}
