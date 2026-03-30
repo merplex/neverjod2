@@ -720,7 +720,7 @@ export default function Index() {
                         className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold overflow-hidden ${
                           isCategoryReorderMode
                             ? isSelected
-                              ? "bg-theme-500 text-theme-on shadow-lg scale-105 border-2 border-theme-700"
+                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
                               : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
                             : "bg-theme-50 hover:bg-theme-200 text-theme-900"
                         }`}
@@ -797,7 +797,7 @@ export default function Index() {
                         className={`w-full h-full px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-xs font-semibold ${
                           isAccountPageReorderMode
                             ? isSelected
-                              ? "bg-theme-500 text-theme-on shadow-lg scale-105 border-2 border-theme-700"
+                              ? "bg-theme-500 text-white shadow-lg scale-105 border-2 border-theme-700"
                               : "bg-theme-50 hover:bg-theme-100 text-theme-900 border-2 border-theme-300"
                             : "bg-theme-50 hover:bg-theme-200 text-theme-900"
                         }`}
@@ -888,7 +888,7 @@ export default function Index() {
                           : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
                         ).map((btn) => {
                           if (btn === 'save') return (
-                            <button key="save" onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-theme-on font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
+                            <button key="save" onClick={handleConfirm} className="h-full px-2 bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md">Save</button>
                           );
                           if (btn === '.') return (
                             <button key="dot" onClick={handleDecimal} className="h-full px-2 bg-gradient-to-br from-theme-50 to-theme-100 hover:from-theme-100 hover:to-theme-200 text-theme-900 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm">.</button>
