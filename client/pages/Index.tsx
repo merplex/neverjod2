@@ -601,50 +601,66 @@ export default function Index() {
             {/* Expense ranking */}
             <div className="bg-white/15 rounded-xl px-2 py-1">
               <p className="text-white font-bold text-sm mb-1">{T("index.top_expenses")}</p>
-              {monthlyData.topExpenses.length === 0 ? (
-                <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
-              ) : (
-                <div className="grid grid-cols-5 gap-0.5">
-                  {monthlyData.topExpenses.map(({ id, amount, cat }) => {
-                    const Icon = cat?.icon || MoreHorizontal;
+              <div className="grid grid-cols-5 gap-0.5">
+                {Array.from({ length: 5 }, (_, i) => {
+                  const item = monthlyData.topExpenses[i];
+                  if (item) {
+                    const Icon = item.cat?.icon || MoreHorizontal;
                     return (
-                      <div key={id} className="flex flex-col items-center gap-0.5">
+                      <div key={item.id} className="flex flex-col items-center gap-0.5">
                         <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center">
                           <Icon className="text-white w-1/2 h-1/2" />
                         </div>
-                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{item.cat?.name || item.id}</span>
                         <span className="text-[12px] font-bold text-white">
-                          {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
+                          {item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
                         </span>
                       </div>
                     );
-                  })}
-                </div>
-              )}
+                  }
+                  return (
+                    <div key={`exp-empty-${i}`} className="flex flex-col items-center gap-0.5 opacity-60">
+                      <div className="w-4/5 mx-auto aspect-square border-2 border-dashed border-white/70 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">{i + 1}</span>
+                      </div>
+                      <span className="text-[9px] text-white/0 w-full text-center leading-tight">-</span>
+                      <span className="text-[12px] font-bold text-white/0">-</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             {/* Income ranking */}
             <div className="bg-white/15 rounded-xl px-2 py-1">
               <p className="text-white font-bold text-sm mb-1">{T("index.top_incomes")}</p>
-              {monthlyData.topIncomes.length === 0 ? (
-                <p className="text-white/60 text-[10px]">{T("index.no_data")}</p>
-              ) : (
-                <div className="grid grid-cols-5 gap-0.5">
-                  {monthlyData.topIncomes.map(({ id, amount, cat }) => {
-                    const Icon = cat?.icon || MoreHorizontal;
+              <div className="grid grid-cols-5 gap-0.5">
+                {Array.from({ length: 5 }, (_, i) => {
+                  const item = monthlyData.topIncomes[i];
+                  if (item) {
+                    const Icon = item.cat?.icon || MoreHorizontal;
                     return (
-                      <div key={id} className="flex flex-col items-center gap-0.5">
+                      <div key={item.id} className="flex flex-col items-center gap-0.5">
                         <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center">
                           <Icon className="text-white w-1/2 h-1/2" />
                         </div>
-                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{cat?.name || id}</span>
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{item.cat?.name || item.id}</span>
                         <span className="text-[12px] font-bold text-white">
-                          {amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString()}
+                          {item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
                         </span>
                       </div>
                     );
-                  })}
-                </div>
-              )}
+                  }
+                  return (
+                    <div key={`inc-empty-${i}`} className="flex flex-col items-center gap-0.5 opacity-60">
+                      <div className="w-4/5 mx-auto aspect-square border-2 border-dashed border-white/70 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">{i + 1}</span>
+                      </div>
+                      <span className="text-[9px] text-white/0 w-full text-center leading-tight">-</span>
+                      <span className="text-[12px] font-bold text-white/0">-</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
