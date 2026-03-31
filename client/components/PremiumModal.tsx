@@ -18,7 +18,7 @@ export default function PremiumModal({ message, onClose, onSignUp }: PremiumModa
   const [loading, setLoading] = useState<"monthly" | "yearly" | "restore" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isLoggedIn = !!localStorage.getItem("app_token");
+  const isLoggedIn = !!localStorage.getItem("cloud_token");
   const isNative = Capacitor.isNativePlatform();
 
   const handlePurchase = async (plan: "monthly" | "yearly") => {
