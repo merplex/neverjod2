@@ -129,7 +129,7 @@ export default function Stats() {
                 const balance = Number(acc.balance || 0) + acc.income - acc.expense;
                 return (
                   <div key={acc.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-slate-100" : ""}`}>
-                    <p className="font-medium text-slate-800">{acc.name}</p>
+                    <p className="font-medium text-slate-800 text-sm">{acc.name}</p>
                     <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
                       {balance >= 0 ? "+" : "-"}฿{Math.abs(balance).toLocaleString()}
                     </p>
