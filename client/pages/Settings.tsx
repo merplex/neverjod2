@@ -142,6 +142,10 @@ export default function Settings() {
       const fn = authMode === "login" ? apiLogin : apiRegister;
       const result = await fn(authEmail, authPassword);
       localStorage.setItem("app_premium", result.isPremium ? "true" : "false");
+      localStorage.setItem("cloud_token", result.token);
+      localStorage.setItem("cloud_email", result.email);
+      setCloudToken(result.token);
+      setCloudEmail(result.email);
       setShowAuthForm(false);
       setAuthEmail("");
       setAuthPassword("");
@@ -150,10 +154,6 @@ export default function Settings() {
         setShowPremiumModal(true);
         return;
       }
-      localStorage.setItem("cloud_token", result.token);
-      localStorage.setItem("cloud_email", result.email);
-      setCloudToken(result.token);
-      setCloudEmail(result.email);
       // Auto sync after login
       setSyncStatus("syncing");
       await syncAll(result.token, false);
@@ -185,6 +185,7 @@ export default function Settings() {
 
   const handleSync = async () => {
     if (!cloudToken) return;
+    if (!isPremium) { setShowPremiumModal(true); return; }
     setSyncStatus("syncing");
     try {
       await syncAll(cloudToken, true);
@@ -505,15 +506,16 @@ export default function Settings() {
             </div>
             <button
               onClick={() => {
+                if (!isPremium) { setShowPremiumModal(true); return; }
                 const next = !syncAuto;
                 setSyncAuto(next);
                 localStorage.setItem("sync_auto_enabled", next ? "true" : "false");
               }}
               className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 ${
-                syncAuto ? "bg-sky-500" : "bg-slate-300"
+                isPremium && syncAuto ? "bg-sky-500" : "bg-slate-300"
               }`}
             >
-              <span className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${syncAuto ? "ml-auto" : ""}`} />
+              <span className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${isPremium && syncAuto ? "ml-auto" : ""}`} />
             </button>
           </div>
 

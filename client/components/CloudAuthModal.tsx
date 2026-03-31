@@ -23,10 +23,8 @@ export default function CloudAuthModal({ onSuccess, onClose }: Props) {
       const fn = mode === "login" ? apiLogin : apiRegister;
       const result = await fn(email, password);
       localStorage.setItem("app_premium", result.isPremium ? "true" : "false");
-      if (result.isPremium) {
-        localStorage.setItem("cloud_token", result.token);
-        localStorage.setItem("cloud_email", result.email);
-      }
+      localStorage.setItem("cloud_token", result.token);
+      localStorage.setItem("cloud_email", result.email);
       onSuccess(result.isPremium);
     } catch (err: any) {
       setError(err.message || "เกิดข้อผิดพลาด");
