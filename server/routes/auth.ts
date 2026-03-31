@@ -32,7 +32,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
   try {
     const result = await pool.query(
-      "SELECT id, email, password_hash, is_premium FROM users WHERE email = $1",
+      "SELECT id, email, password_hash, is_premium, premium_expires_at FROM users WHERE email = $1",
       [email.toLowerCase()]
     );
     if (!result.rows.length) return res.status(401).json({ error: "Invalid email or password" });
@@ -40,6 +40,13 @@ router.post("/login", async (req: Request, res: Response) => {
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: "Invalid email or password" });
+
+    // Auto-expire premium if subscription has passed its expiry date
+    const now = new Date();
+    if (user.is_premium && user.premium_expires_at && new Date(user.premium_expires_at) < now) {
+      await pool.query("UPDATE users SET is_premium = FALSE WHERE id = $1", [user.id]);
+      user.is_premium = false;
+    }
 
     const token = jwt.sign({ userId: user.id, email: user.email, isPremium: user.is_premium }, JWT_SECRET, { expiresIn: "30d" });
     res.json({ token, email: user.email, isPremium: user.is_premium });

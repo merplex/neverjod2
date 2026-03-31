@@ -50,7 +50,16 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
       return res.status(400).json({ error: `Apple verify failed: status=${data.status}` });
     }
 
-    await pool.query("UPDATE users SET is_premium = TRUE WHERE id = $1", [req.userId]);
+    // Extract latest transaction info for expiry + linking future notifications
+    const latestInfo = data.latest_receipt_info?.[data.latest_receipt_info.length - 1];
+    const originalTxId: string | undefined = latestInfo?.original_transaction_id;
+    const expiresMs = latestInfo?.expires_date_ms ? parseInt(latestInfo.expires_date_ms) : null;
+    const expiresAt = expiresMs ? new Date(expiresMs) : null;
+
+    await pool.query(
+      `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id) WHERE id = $3`,
+      [expiresAt, originalTxId ?? null, req.userId]
+    );
     res.json({ ok: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

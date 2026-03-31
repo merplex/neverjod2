@@ -84,6 +84,10 @@ export async function initDB() {
   await pool.query(`ALTER TABLE sync_transactions ALTER COLUMN type DROP NOT NULL`).catch(() => {});
   // Migration: add is_premium column if not exists
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE`).catch(() => {});
+  // Migration: add premium_expires_at for subscription expiry tracking
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_expires_at TIMESTAMPTZ`).catch(() => {});
+  // Migration: add original_transaction_id for linking Apple notifications to users
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS original_transaction_id TEXT`).catch(() => {});
   // Migration: add keywords + icon_id to categories and accounts
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT '[]'`).catch(() => {});
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS icon_id TEXT`).catch(() => {});

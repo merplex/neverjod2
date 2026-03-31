@@ -1,0 +1,12 @@
+{
+	"appId": "com.neverjod.app",
+	"appName": "NeverJod",
+	"webDir": "dist/spa",
+	"server": {
+		"androidScheme": "https"
+	},
+	"packageClassList": [
+		"SignInWithApple",
+		"IAPPlugin"
+	]
+}

@@ -5,6 +5,7 @@ import { handleDemo } from "./routes/demo";
 import authRouter from "./routes/auth";
 import syncRouter from "./routes/sync";
 import subscriptionRouter from "./routes/subscription";
+import appleNotificationsRouter from "./routes/appleNotifications";
 import { initDB } from "./db";
 
 export function createServer() {
@@ -30,6 +31,7 @@ export function createServer() {
   app.use("/api/auth", authRouter);
   app.use("/api/sync", syncRouter);
   app.use("/api/subscription", subscriptionRouter);
+  app.use("/api/apple-notifications", appleNotificationsRouter);
 
   return app;
 }
