@@ -78,6 +78,9 @@
 /* Prevent iOS rubber-band scroll on the outer document */
 html, body {
   overscroll-behavior: none;
+  /* Antialiased rendering — prevents bold text from looking too thick on iOS WKWebView */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Prevent iOS auto-zoom on input focus (font-size < 16px triggers zoom) */
