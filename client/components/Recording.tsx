@@ -138,25 +138,13 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
           hasSpeechStartedRef.current = true;
           const voiceData = parseVoiceInput(transcriptPart);
 
-          // Accumulate description across multiple final results (iOS splits sentences on pause).
-          // Then parse amount from the FULL accumulated text so "7แสน" + "2พัน" → 702,000
-          // instead of the second result (2,000) overwriting the first (700,000).
-          const prevDesc = iosMergedRef.current.description || "";
-          let fullDesc: string;
-          if (!prevDesc || transcriptPart.includes(prevDesc)) {
-            fullDesc = transcriptPart;           // superset or first result
-          } else if (prevDesc.includes(transcriptPart)) {
-            fullDesc = prevDesc;                 // already contained — keep existing
-          } else {
-            fullDesc = prevDesc + " " + transcriptPart;  // genuinely new segment — append
-          }
-          const fullVoiceData = parseVoiceInput(fullDesc);
-
+          // Each utterance is treated independently — amount from current transcriptPart only.
+          // Falls back to previously detected amount if current utterance has no number.
           const merged: MergedVoiceData = {
-            description: fullDesc,
+            description: transcriptPart,
             accountId:   voiceData.accountId   ?? iosMergedRef.current.accountId,
             categoryId:  voiceData.categoryId  ?? iosMergedRef.current.categoryId,
-            amount:      fullVoiceData.amount  ?? iosMergedRef.current.amount,
+            amount:      voiceData.amount      ?? iosMergedRef.current.amount,
           };
           iosMergedRef.current = merged;
 
