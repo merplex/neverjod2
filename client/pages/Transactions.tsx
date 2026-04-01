@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useState } from "react";
 import { ChevronLeft, ArrowUpDown, ArrowDownUp } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -28,6 +29,7 @@ export default function Transactions() {
   const { accountId } = useParams();
   const navigate = useNavigate();
   useSwipeBack();
+  const cur = getCurrencySymbol();
   const account = accountData[accountId || ""];
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
@@ -331,7 +333,7 @@ export default function Transactions() {
                           {/* Amount */}
                           <div className="text-right flex-shrink-0">
                             <p className="font-bold text-slate-900">
-                              {transaction.type === "income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
+                              {transaction.type === "income" ? "+" : "-"}{cur}{transaction.amount.toLocaleString()}
                             </p>
                           </div>
                         </div>

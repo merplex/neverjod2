@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X } from "lucide-react";
 import { useState } from "react";
@@ -85,6 +86,7 @@ export default function TransactionDetail() {
   const { accountId, transactionId } = useParams();
   const navigate = useNavigate();
   useSwipeBack();
+  const cur = getCurrencySymbol();
 
   const transaction = transactionId ? getTransaction(transactionId) : null;
   const raw = transactionId ? getRawTransaction(transactionId) : null;
@@ -325,7 +327,7 @@ export default function TransactionDetail() {
               className="flex-1 text-left"
             >
               <span className={`text-sm font-semibold ${signColor}`}>
-                {sign}฿{parseFloat(amount).toLocaleString()}
+                {sign}{cur}{parseFloat(amount).toLocaleString()}
               </span>
             </button>
           </div>
@@ -475,7 +477,7 @@ export default function TransactionDetail() {
               <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
                 <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                   <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
-                    {sign}฿{numpadDisplay}
+                    {sign}{cur}{numpadDisplay}
                   </div>
                 </div>
                 <button onClick={handleNumpadClear} className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center">C</button>

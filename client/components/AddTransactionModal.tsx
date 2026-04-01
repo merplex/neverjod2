@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useState } from "react";
 import { X, Calculator, Lock, LockOpen, ChevronRight, ChevronDown } from "lucide-react";
 import {
@@ -81,6 +82,7 @@ interface Props {
 
 export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = false }: Props) {
   const T = useT();
+  const cur = getCurrencySymbol();
   // form state
   const [categoryId, setCategoryId] = useState("");
   const [categoryName, setCategoryName] = useState("");
@@ -339,7 +341,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20">Amount</span>
               <span className={`text-sm font-semibold ${value > 0 ? signColor : "text-slate-300"}`}>
-                {value > 0 ? `${sign}฿${value.toLocaleString()}` : (categoryId && accountId ? T("tap_to_enter") : "—")}
+                {value > 0 ? `${sign}${cur}${value.toLocaleString()}` : (categoryId && accountId ? T("tap_to_enter") : "—")}
               </span>
             </button>
           </div>
@@ -588,7 +590,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
               <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                 <div className="text-2xl font-bold font-mono tracking-tight text-white whitespace-nowrap">
-                  {sign}฿{display}
+                  {sign}{cur}{display}
                 </div>
               </div>
               <button

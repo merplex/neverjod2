@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown } from "lucide-react";
+import { CURRENCY_OPTIONS } from "../utils/currency";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
@@ -14,6 +15,7 @@ interface AppSettings {
   voiceInputDelay: number;
   voiceAutoStart: boolean;
   voiceLang: string;
+  currencySymbol: string;
   cloudBackupEnabled: boolean;
   language: "en" | "th";
   colorTheme: ColorTheme;
@@ -25,6 +27,7 @@ const defaultSettings: AppSettings = {
   voiceInputDelay: 3,
   voiceAutoStart: true,
   voiceLang: "th-TH",
+  currencySymbol: "฿",
   cloudBackupEnabled: false,
   language: "th",
   colorTheme: "teal",
@@ -85,6 +88,7 @@ export default function Settings() {
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [initialLang] = useState(() => loadSettings().language);
   const [showVoiceLangPicker, setShowVoiceLangPicker] = useState(false);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
   const isPremium = localStorage.getItem("app_premium") === "true";
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -374,6 +378,33 @@ export default function Settings() {
               <p className="text-xs text-slate-400 mt-1.5">
                 {T("settings.voice_lang_auto_hint")}
               </p>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3">
+              <span className="text-sm text-slate-600 block mb-2">{T("settings.currency")}</span>
+              <button
+                onClick={() => setShowCurrencyPicker((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white"
+              >
+                <span className="font-semibold text-slate-800">
+                  {CURRENCY_OPTIONS.find((o) => o.symbol === settings.currencySymbol)?.label ?? settings.currencySymbol}
+                </span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform ${showCurrencyPicker ? "rotate-180" : ""}`} />
+              </button>
+              {showCurrencyPicker && (
+                <div className="mt-1 border border-slate-200 rounded-xl overflow-hidden">
+                  {CURRENCY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.lang}
+                      onClick={() => { update("currencySymbol", opt.symbol); setShowCurrencyPicker(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${opt.symbol === settings.currencySymbol ? "bg-theme-50" : ""}`}
+                    >
+                      <span className={`text-sm font-semibold flex-1 text-left ${opt.symbol === settings.currencySymbol ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
+                      {opt.symbol === settings.currencySymbol && <span className="text-theme-600 text-sm">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

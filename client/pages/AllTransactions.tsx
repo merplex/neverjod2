@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
@@ -164,6 +165,7 @@ function CalendarRangePicker({
 export default function AllTransactions() {
   const navigate = useNavigate();
   useSwipeBack();
+  const cur = getCurrencySymbol();
   const [searchParams, setSearchParams] = useSearchParams();
   const accountIdFilter = searchParams.get("accountId");
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
@@ -457,11 +459,11 @@ export default function AllTransactions() {
                     </div>
                     <div className="text-right">
                       <span className={`font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-red-500"}`}>
-                        {transaction.type === "income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
+                        {transaction.type === "income" ? "+" : "-"}{cur}{transaction.amount.toLocaleString()}
                       </span>
                       {runningBalances[transaction.id] !== undefined && (
                         <p className={`text-[10px] mt-0.5 ${runningBalances[transaction.id] >= 0 ? "text-slate-400" : "text-red-400"}`}>
-                          ฿{runningBalances[transaction.id].toLocaleString()}
+                          {cur}{runningBalances[transaction.id].toLocaleString()}
                         </p>
                       )}
                     </div>

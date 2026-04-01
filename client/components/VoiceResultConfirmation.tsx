@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useState, useEffect } from "react";
 import { X, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 
@@ -100,7 +101,7 @@ export default function VoiceResultConfirmation({
               {amount && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-slate-600">Amount:</span>
-                  <span className="text-sm font-bold text-green-600">฿{amount}</span>
+                  <span className="text-sm font-bold text-green-600">{getCurrencySymbol()}{amount}</span>
                 </div>
               )}
             </div>

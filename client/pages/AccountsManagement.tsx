@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
 import CloudAuthModal from "../components/CloudAuthModal";
@@ -32,6 +33,7 @@ export default function AccountsManagement() {
   const navigate = useNavigate();
   const T = useT();
   useSwipeBack();
+  const cur = getCurrencySymbol();
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
       const stored = localStorage.getItem("app_accounts");
@@ -854,7 +856,7 @@ export default function AccountsManagement() {
                   <>
                     <span className="font-semibold text-slate-800">{transferableAccounts.find(a => a.id === transferFromId)?.name}</span>
                     <span className={`text-xs ${(transferableAccounts.find(a => a.id === transferFromId)?.currentBalance ?? 0) >= 0 ? "text-slate-500" : "text-red-500"}`}>
-                      ฿{(transferableAccounts.find(a => a.id === transferFromId)?.currentBalance ?? 0).toLocaleString()}
+                      {cur}{(transferableAccounts.find(a => a.id === transferFromId)?.currentBalance ?? 0).toLocaleString()}
                     </span>
                   </>
                 ) : (
@@ -874,7 +876,7 @@ export default function AccountsManagement() {
                   <>
                     <span className="font-semibold text-slate-800">{transferableAccounts.find(a => a.id === transferToId)?.name}</span>
                     <span className={`text-xs ${(transferableAccounts.find(a => a.id === transferToId)?.currentBalance ?? 0) >= 0 ? "text-slate-500" : "text-red-500"}`}>
-                      ฿{(transferableAccounts.find(a => a.id === transferToId)?.currentBalance ?? 0).toLocaleString()}
+                      {cur}{(transferableAccounts.find(a => a.id === transferToId)?.currentBalance ?? 0).toLocaleString()}
                     </span>
                   </>
                 ) : (
@@ -954,7 +956,7 @@ export default function AccountsManagement() {
                 >
                   <span className={`text-sm font-semibold ${acc.id === transferFromId ? "text-theme-700" : "text-slate-800"}`}>{acc.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>฿{acc.currentBalance.toLocaleString()}</span>
+                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{cur}{acc.currentBalance.toLocaleString()}</span>
                     {acc.id === transferFromId && <span className="text-theme-600 text-base">✓</span>}
                   </div>
                 </button>
@@ -982,7 +984,7 @@ export default function AccountsManagement() {
                 >
                   <span className={`text-sm font-semibold ${acc.id === transferToId ? "text-theme-700" : "text-slate-800"}`}>{acc.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>฿{acc.currentBalance.toLocaleString()}</span>
+                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{cur}{acc.currentBalance.toLocaleString()}</span>
                     {acc.id === transferToId && <span className="text-theme-600 text-base">✓</span>}
                   </div>
                 </button>

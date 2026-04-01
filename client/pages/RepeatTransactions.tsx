@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Trash2, RefreshCw, Pencil, X } from "lucide-react";
@@ -25,6 +26,7 @@ export default function RepeatTransactions() {
   const navigate = useNavigate();
   const T = useT();
   useSwipeBack();
+  const cur = getCurrencySymbol();
 
   const [list, setList] = useState<RepeatTransaction[]>(() => getRepeatTransactions());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -106,7 +108,7 @@ export default function RepeatTransactions() {
                     </div>
                     {/* Amount */}
                     <p className={`text-base font-bold ${amtColor} mb-2`}>
-                      {sign}฿{rt.amount.toLocaleString()}
+                      {sign}{cur}{rt.amount.toLocaleString()}
                     </p>
                     {/* Repeat info */}
                     <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
 import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
+import { getCurrencySymbol } from "../utils/currency";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -184,6 +185,7 @@ export default function Index() {
       ));
     }
   }, []);
+  const cur = getCurrencySymbol();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [categoriesList, setCategoriesList] = useState(loadCategoriesFromStorage);
@@ -785,7 +787,7 @@ export default function Index() {
                           </div>
                           <div className="flex items-center gap-1 min-w-0">
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
-                            <VoiceMarqueeText text={amount ? `฿${amount.toLocaleString()}` : "Amount"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
+                            <VoiceMarqueeText text={amount ? `${cur}${amount.toLocaleString()}` : "Amount"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
                           </div>
                         </div>
                       );
@@ -963,7 +965,7 @@ export default function Index() {
                       style={{ scrollbarWidth: "none" }}
                     >
                       <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
-                        {categoryType === "income" ? "+" : "-"}฿{display}
+                        {categoryType === "income" ? "+" : "-"}{cur}{display}
                       </div>
                     </div>
                     <button

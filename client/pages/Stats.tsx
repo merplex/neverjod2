@@ -1,3 +1,4 @@
+import { getCurrencySymbol } from "../utils/currency";
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ export default function Stats() {
   const navigate = useNavigate();
   useSwipeBack();
   const T = useT();
+  const cur = getCurrencySymbol();
   const [tab, setTab] = useState<TabType>("summary");
 
   const now = new Date();
@@ -131,7 +133,7 @@ export default function Stats() {
                   <div key={acc.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-slate-100" : ""}`}>
                     <p className="font-medium text-slate-800 text-sm">{acc.name}</p>
                     <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
-                      {balance >= 0 ? "+" : "-"}฿{Math.abs(balance).toLocaleString()}
+                      {balance >= 0 ? "+" : "-"}{cur}{Math.abs(balance).toLocaleString()}
                     </p>
                   </div>
                 );
@@ -142,7 +144,7 @@ export default function Stats() {
                   <div className="flex items-center justify-between px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
                     <p className="font-semibold text-slate-600 text-sm">{T("stats.total")}</p>
                     <p className={`font-bold text-sm ${total >= 0 ? "text-slate-800" : "text-red-500"}`}>
-                      {total >= 0 ? "+" : "-"}฿{Math.abs(total).toLocaleString()}
+                      {total >= 0 ? "+" : "-"}{cur}{Math.abs(total).toLocaleString()}
                     </p>
                   </div>
                 );
@@ -223,12 +225,12 @@ export default function Stats() {
                 {expenseByCat.map(([cat, total]) => (
                   <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                     <span className="text-sm text-slate-700">{cat}</span>
-                    <span className="text-sm font-semibold text-red-500">-฿{total.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-red-500">-{cur}{total.toLocaleString()}</span>
                   </div>
                 ))}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
                   <span className="text-sm font-semibold text-slate-600">{T("stats.total_expenses")}</span>
-                  <span className="text-sm font-bold text-red-500">-฿{expenseByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
+                  <span className="text-sm font-bold text-red-500">-{cur}{expenseByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
                 </div>
               </>
             )}
@@ -244,12 +246,12 @@ export default function Stats() {
                 {incomeByCat.map(([cat, total]) => (
                   <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                     <span className="text-sm text-slate-700">{cat}</span>
-                    <span className="text-sm font-semibold text-green-600">+฿{total.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-green-600">+{cur}{total.toLocaleString()}</span>
                   </div>
                 ))}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
                   <span className="text-sm font-semibold text-slate-600">{T("stats.total_incomes")}</span>
-                  <span className="text-sm font-bold text-green-600">+฿{incomeByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
+                  <span className="text-sm font-bold text-green-600">+{cur}{incomeByCat.reduce((s, [, v]) => s + v, 0).toLocaleString()}</span>
                 </div>
               </>
             )}
@@ -271,20 +273,20 @@ export default function Stats() {
                   <div key={acc.id} className="grid grid-cols-3 px-4 py-3 items-center border-b border-slate-100">
                     <span className="text-sm text-slate-700 font-medium truncate pr-2">{acc.name}</span>
                     <span className="text-sm font-semibold text-green-600 text-center">
-                      {acc.income > 0 ? `+฿${acc.income.toLocaleString()}` : "—"}
+                      {acc.income > 0 ? `+${cur}${acc.income.toLocaleString()}` : "—"}
                     </span>
                     <span className="text-sm font-semibold text-red-500 text-right">
-                      {acc.expense > 0 ? `-฿${acc.expense.toLocaleString()}` : "—"}
+                      {acc.expense > 0 ? `-${cur}${acc.expense.toLocaleString()}` : "—"}
                     </span>
                   </div>
                 ))}
                 <div className="grid grid-cols-3 px-4 py-3 items-center bg-slate-50">
                   <span className="text-sm font-semibold text-slate-600">{T("stats.total_row")}</span>
                   <span className="text-sm font-bold text-green-600 text-center">
-                    +฿{accountMonthData.reduce((s: number, a: any) => s + a.income, 0).toLocaleString()}
+                    +{cur}{accountMonthData.reduce((s: number, a: any) => s + a.income, 0).toLocaleString()}
                   </span>
                   <span className="text-sm font-bold text-red-500 text-right">
-                    -฿{accountMonthData.reduce((s: number, a: any) => s + a.expense, 0).toLocaleString()}
+                    -{cur}{accountMonthData.reduce((s: number, a: any) => s + a.expense, 0).toLocaleString()}
                   </span>
                 </div>
               </>
