@@ -5,8 +5,13 @@
 	"server": {
 		"androidScheme": "https"
 	},
+	"ios": {
+		"packageClassList": [
+			"SignInWithApple",
+			"IAPPlugin"
+		]
+	},
 	"packageClassList": [
-		"SignInWithApple",
-		"IAPPlugin"
+		"SignInWithApple"
 	]
 }

@@ -7,6 +7,9 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: "https",
   },
+  ios: {
+    packageClassList: ["SignInWithApple", "IAPPlugin"],
+  },
 };
 
 export default config;
