@@ -38,15 +38,15 @@ export default function VoiceResultConfirmation({
     if (!isSuccess || !accountName) return;
 
     const interval = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
+      setCountdown((prev) => Math.max(0, prev - 0.5));
+    }, 500);
 
     return () => clearInterval(interval);
   }, [isSuccess, accountName]);
 
   // Separate effect to handle auto-confirm when countdown reaches 0
   useEffect(() => {
-    if (isSuccess && accountName && countdown === 0) {
+    if (isSuccess && accountName && countdown <= 0) {
       onConfirm();
     }
   }, [countdown, isSuccess, accountName, onConfirm]);
