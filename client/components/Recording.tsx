@@ -108,9 +108,8 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
     };
 
     // ── Language ─────────────────────────────────────────────────────────────
-    // iOS: user can pick language in Settings (th-TH / en-US / auto)
-    // Android: always th-TH — Chrome Android handles mixed-language in a single session
-    const lang = isIOSDevice ? readVoiceLang() : "th-TH";
+    // Both iOS and Android read language from Settings
+    const lang = readVoiceLang();
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;

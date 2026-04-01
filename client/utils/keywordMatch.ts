@@ -215,7 +215,76 @@ export function extractNumberFromText(text: string): number | undefined {
   }
 
   const total = result + current;
-  return total > 0 ? total : undefined;
+  if (total > 0) return total;
+
+  // Chinese number words fallback
+  const chineseResult = parseChineseNumberText(t);
+  if (chineseResult !== undefined) return chineseResult;
+
+  return undefined;
+}
+
+function parseChineseNumberText(text: string): number | undefined {
+  const digits: Record<string, number> = {
+    '零':0,'〇':0,'一':1,'二':2,'三':3,'四':4,'五':5,
+    '六':6,'七':7,'八':8,'九':9,'两':2,'俩':2,
+  };
+  const units: Record<string, number> = {
+    '十':10,'拾':10,'百':100,'佰':100,
+    '千':1000,'仟':1000,'万':10000,'萬':10000,
+    '亿':100000000,'億':100000000,
+  };
+  // Must contain at least one Chinese digit or unit
+  const allKeys = [...Object.keys(digits), ...Object.keys(units)];
+  if (!allKeys.some(k => text.includes(k))) return undefined;
+
+  // Replace Arabic digits mixed in (e.g. "5千" → treat 5 as digit coefficient)
+  // Tokenise into [value, isUnit] pairs
+  let i = 0;
+  const tokens: Array<{ v: number; isUnit: boolean }> = [];
+  while (i < text.length) {
+    const ch = text[i];
+    if (digits[ch] !== undefined) { tokens.push({ v: digits[ch], isUnit: false }); i++; continue; }
+    if (units[ch] !== undefined) { tokens.push({ v: units[ch], isUnit: true });  i++; continue; }
+    // Arabic numeral run
+    let numStr = '';
+    while (i < text.length && /\d/.test(text[i])) { numStr += text[i++]; }
+    if (numStr) { tokens.push({ v: parseInt(numStr, 10), isUnit: false }); continue; }
+    i++;
+  }
+  if (tokens.length === 0) return undefined;
+
+  // Accumulate with 万/亿 as group boundaries
+  let result = 0;
+  let section = 0; // value within current 万/亿 group
+  let cur = 0;     // pending digit coefficient
+
+  for (const tok of tokens) {
+    if (!tok.isUnit) {
+      cur = tok.v;
+    } else {
+      const u = tok.v;
+      if (u >= 100000000) {          // 亿
+        section += cur || 1;
+        result += section * u;
+        section = 0; cur = 0;
+      } else if (u === 10000) {      // 万
+        section += cur || 1;
+        result += section * u;
+        section = 0; cur = 0;
+      } else if (u === 10 && cur === 0 && section === 0 && result === 0) {
+        // Leading 十 (e.g. "十五" = 15, not 0*10+5)
+        section += u;
+        cur = 0;
+      } else {
+        section += (cur || 1) * u;
+        cur = 0;
+      }
+    }
+  }
+  section += cur;
+  result += section;
+  return result > 0 ? result : undefined;
 }
 
 function parseThaiNumberText(text: string): number | undefined {
