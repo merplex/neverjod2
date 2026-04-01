@@ -221,6 +221,38 @@ export function extractNumberFromText(text: string): number | undefined {
   const chineseResult = parseChineseNumberText(t);
   if (chineseResult !== undefined) return chineseResult;
 
+  // Japanese number words (いち、じゅう、ひゃく、せん、まん)
+  const japaneseResult = parseJapaneseNumberText(t);
+  if (japaneseResult !== undefined) return japaneseResult;
+
+  // Korean number words (일, 이, 십, 백, 천, 만)
+  const koreanResult = parseKoreanNumberText(t);
+  if (koreanResult !== undefined) return koreanResult;
+
+  // French number words (un, deux, cent, mille, million)
+  const frenchResult = parseFrenchNumberText(t);
+  if (frenchResult !== undefined) return frenchResult;
+
+  // German number words (eins, zwei, hundert, tausend)
+  const germanResult = parseGermanNumberText(t);
+  if (germanResult !== undefined) return germanResult;
+
+  // Spanish number words (uno, dos, cien, mil, millón)
+  const spanishResult = parseSpanishNumberText(t);
+  if (spanishResult !== undefined) return spanishResult;
+
+  // Portuguese number words (um, dois, cem, mil, milhão)
+  const portugueseResult = parsePortugueseNumberText(t);
+  if (portugueseResult !== undefined) return portugueseResult;
+
+  // Vietnamese number words (một, hai, mười, trăm, nghìn, triệu)
+  const vietnameseResult = parseVietnameseNumberText(t);
+  if (vietnameseResult !== undefined) return vietnameseResult;
+
+  // Malay number words (satu, dua, sepuluh, ratus, ribu, juta)
+  const malayResult = parseMalayNumberText(t);
+  if (malayResult !== undefined) return malayResult;
+
   return undefined;
 }
 
@@ -285,6 +317,257 @@ function parseChineseNumberText(text: string): number | undefined {
   section += cur;
   result += section;
   return result > 0 ? result : undefined;
+}
+
+// ── Japanese number parser (いち、じゅう、ひゃく、せん、まん、おく) ─────────────
+function parseJapaneseNumberText(text: string): number | undefined {
+  const digits: Record<string, number> = {
+    'ぜろ':0,'れい':0,'いち':1,'に':2,'さん':3,'し':4,'よん':4,
+    'ご':5,'ろく':6,'なな':7,'しち':7,'はち':8,'きゅう':9,'く':9,
+  };
+  const units: [string, number][] = [
+    ['おく', 100000000], // 億
+    ['まん', 10000],     // 万
+    ['ぜん', 1000], ['せん', 1000], // 千
+    ['びゃく', 100], ['ぴゃく', 100], ['ひゃく', 100], // 百
+    ['じゅう', 10], ['じゅっ', 10], // 十
+  ];
+  // Also support kanji units (same as Chinese but with Japanese reading context)
+  const kanjiDigits: Record<string, number> = {
+    '零':0,'一':1,'二':2,'三':3,'四':4,'五':5,
+    '六':6,'七':7,'八':8,'九':9,
+  };
+  const kanjiUnits: [string, number][] = [
+    ['億', 100000000], ['万', 10000], ['千', 1000], ['百', 100], ['十', 10],
+  ];
+
+  // Check if text contains any Japanese number words
+  const allDigitKeys = Object.keys(digits);
+  const allUnitWords = units.map(u => u[0]);
+  const hasJapanese = [...allDigitKeys, ...allUnitWords].some(k => text.includes(k));
+  const hasKanji = [...Object.keys(kanjiDigits), ...kanjiUnits.map(u => u[0])].some(k => text.includes(k));
+  if (!hasJapanese && !hasKanji) return undefined;
+  // If kanji only, let Chinese parser handle it
+  if (hasKanji && !hasJapanese) return undefined;
+
+  // Tokenize: longest match first
+  const sortedDigits = allDigitKeys.sort((a, b) => b.length - a.length);
+  const sortedUnits = [...units].sort((a, b) => b[0].length - a[0].length);
+  const tokens: Array<{ v: number; isUnit: boolean }> = [];
+  let i = 0;
+  while (i < text.length) {
+    let matched = false;
+    for (const [w, val] of sortedUnits) {
+      if (text.startsWith(w, i)) { tokens.push({ v: val, isUnit: true }); i += w.length; matched = true; break; }
+    }
+    if (matched) continue;
+    for (const w of sortedDigits) {
+      if (text.startsWith(w, i)) { tokens.push({ v: digits[w], isUnit: false }); i += w.length; matched = true; break; }
+    }
+    if (matched) continue;
+    // Arabic digit run
+    let numStr = '';
+    while (i < text.length && /\d/.test(text[i])) { numStr += text[i++]; }
+    if (numStr) { tokens.push({ v: parseInt(numStr, 10), isUnit: false }); continue; }
+    i++;
+  }
+  if (tokens.length === 0) return undefined;
+
+  // Accumulate (same algorithm as Chinese)
+  let result = 0, section = 0, cur = 0;
+  for (const tok of tokens) {
+    if (!tok.isUnit) { cur = tok.v; }
+    else {
+      const u = tok.v;
+      if (u >= 100000000) { section += cur || 1; result += section * u; section = 0; cur = 0; }
+      else if (u === 10000) { section += cur || 1; result += section * u; section = 0; cur = 0; }
+      else { section += (cur || 1) * u; cur = 0; }
+    }
+  }
+  section += cur;
+  result += section;
+  return result > 0 ? result : undefined;
+}
+
+// ── Korean number parser (일, 이, 삼...십, 백, 천, 만, 억) ─────────────────
+function parseKoreanNumberText(text: string): number | undefined {
+  const digits: Record<string, number> = {
+    '영':0,'일':1,'이':2,'삼':3,'사':4,
+    '오':5,'육':6,'칠':7,'팔':8,'구':9,
+  };
+  const units: [string, number][] = [
+    ['억', 100000000], ['만', 10000], ['천', 1000], ['백', 100], ['십', 10],
+  ];
+  const allKeys = [...Object.keys(digits), ...units.map(u => u[0])];
+  if (!allKeys.some(k => text.includes(k))) return undefined;
+
+  const tokens: Array<{ v: number; isUnit: boolean }> = [];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (digits[ch] !== undefined) { tokens.push({ v: digits[ch], isUnit: false }); i++; continue; }
+    let unitMatched = false;
+    for (const [w, val] of units) {
+      if (text.startsWith(w, i)) { tokens.push({ v: val, isUnit: true }); i += w.length; unitMatched = true; break; }
+    }
+    if (unitMatched) continue;
+    let numStr = '';
+    while (i < text.length && /\d/.test(text[i])) { numStr += text[i++]; }
+    if (numStr) { tokens.push({ v: parseInt(numStr, 10), isUnit: false }); continue; }
+    i++;
+  }
+  if (tokens.length === 0) return undefined;
+
+  let result = 0, section = 0, cur = 0;
+  for (const tok of tokens) {
+    if (!tok.isUnit) { cur = tok.v; }
+    else {
+      const u = tok.v;
+      if (u >= 100000000) { section += cur || 1; result += section * u; section = 0; cur = 0; }
+      else if (u === 10000) { section += cur || 1; result += section * u; section = 0; cur = 0; }
+      else { section += (cur || 1) * u; cur = 0; }
+    }
+  }
+  section += cur;
+  result += section;
+  return result > 0 ? result : undefined;
+}
+
+// ── Word-based number parser for European / Latin-script languages ────────────
+// Shared helper: splits text into words, maps them to values, accumulates with multipliers.
+function parseWordBasedNumber(
+  text: string,
+  wordMap: Record<string, number>,
+  multipliers: Record<string, number>,
+): number | undefined {
+  const lc = text.toLowerCase().replace(/[-]/g, ' ');
+  const allKeys = [...Object.keys(wordMap), ...Object.keys(multipliers)];
+  if (!allKeys.some(k => lc.includes(k))) return undefined;
+
+  const words = lc.split(/[\s,]+/).filter(Boolean);
+  let result = 0;
+  let current = 0;
+
+  for (const w of words) {
+    const clean = w.replace(/[^\p{L}\p{N}]/gu, '');
+    if (multipliers[clean] !== undefined) {
+      const m = multipliers[clean];
+      if (m >= 1000000) {
+        result += (current || 1) * m;
+        current = 0;
+      } else if (m >= 1000) {
+        result += (current || 1) * m;
+        current = 0;
+      } else if (m === 100) {
+        current = (current || 1) * m;
+      }
+    } else if (wordMap[clean] !== undefined) {
+      current += wordMap[clean];
+    }
+  }
+  result += current;
+  return result > 0 ? result : undefined;
+}
+
+// ── French ────────────────────────────────────────────────────────────────────
+function parseFrenchNumberText(text: string): number | undefined {
+  const words: Record<string, number> = {
+    'zéro':0,'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,
+    'six':6,'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,
+    'treize':13,'quatorze':14,'quinze':15,'seize':16,
+    'vingt':20,'trente':30,'quarante':40,'cinquante':50,
+    'soixante':60,'septante':70,'huitante':80,'nonante':90,
+    // soixante-dix (70), quatre-vingts (80), quatre-vingt-dix (90) handled by accumulation
+  };
+  const multipliers: Record<string, number> = {
+    'cent':100,'cents':100,'mille':1000,'million':1000000,'millions':1000000,
+  };
+  return parseWordBasedNumber(text, words, multipliers);
+}
+
+// ── German ────────────────────────────────────────────────────────────────────
+function parseGermanNumberText(text: string): number | undefined {
+  const words: Record<string, number> = {
+    'null':0,'eins':1,'ein':1,'eine':1,'zwei':2,'drei':3,'vier':4,'fünf':5,'fuenf':5,
+    'sechs':6,'sieben':7,'acht':8,'neun':9,'zehn':10,'elf':11,'zwölf':12,'zwoelf':12,
+    'dreizehn':13,'vierzehn':14,'fünfzehn':15,'fuenfzehn':15,'sechzehn':16,
+    'siebzehn':17,'achtzehn':18,'neunzehn':19,
+    'zwanzig':20,'dreißig':30,'dreissig':30,'vierzig':40,'fünfzig':50,'fuenfzig':50,
+    'sechzig':60,'siebzig':70,'achtzig':80,'neunzig':90,
+  };
+  const multipliers: Record<string, number> = {
+    'hundert':100,'tausend':1000,'million':1000000,'millionen':1000000,
+  };
+  return parseWordBasedNumber(text, words, multipliers);
+}
+
+// ── Spanish ───────────────────────────────────────────────────────────────────
+function parseSpanishNumberText(text: string): number | undefined {
+  const words: Record<string, number> = {
+    'cero':0,'uno':1,'una':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,
+    'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'once':11,'doce':12,
+    'trece':13,'catorce':14,'quince':15,'dieciséis':16,'dieciseis':16,
+    'diecisiete':17,'dieciocho':18,'diecinueve':19,
+    'veinte':20,'veintiuno':21,'veintidós':22,'veintidos':22,'veintitrés':23,'veintitres':23,
+    'veinticuatro':24,'veinticinco':25,'veintiséis':26,'veintiseis':26,
+    'veintisiete':27,'veintiocho':28,'veintinueve':29,
+    'treinta':30,'cuarenta':40,'cincuenta':50,'sesenta':60,'setenta':70,'ochenta':80,'noventa':90,
+  };
+  const multipliers: Record<string, number> = {
+    'cien':100,'ciento':100,'cientos':100,'mil':1000,
+    'millón':1000000,'millon':1000000,'millones':1000000,
+  };
+  return parseWordBasedNumber(text, words, multipliers);
+}
+
+// ── Portuguese ────────────────────────────────────────────────────────────────
+function parsePortugueseNumberText(text: string): number | undefined {
+  const words: Record<string, number> = {
+    'zero':0,'um':1,'uma':1,'dois':2,'duas':2,'três':3,'tres':3,'quatro':4,'cinco':5,
+    'seis':6,'sete':7,'oito':8,'nove':9,'dez':10,'onze':11,'doze':12,
+    'treze':13,'catorze':14,'quatorze':14,'quinze':15,'dezesseis':16,'dezasseis':16,
+    'dezessete':17,'dezassete':17,'dezoito':18,'dezenove':19,'dezanove':19,
+    'vinte':20,'trinta':30,'quarenta':40,'cinquenta':50,
+    'sessenta':60,'setenta':70,'oitenta':80,'noventa':90,
+  };
+  const multipliers: Record<string, number> = {
+    'cem':100,'cento':100,'centos':100,'mil':1000,
+    'milhão':1000000,'milhao':1000000,'milhões':1000000,'milhoes':1000000,
+  };
+  return parseWordBasedNumber(text, words, multipliers);
+}
+
+// ── Vietnamese ────────────────────────────────────────────────────────────────
+function parseVietnameseNumberText(text: string): number | undefined {
+  const words: Record<string, number> = {
+    'không':0,'một':1,'mot':1,'hai':2,'ba':3,'bốn':4,'bon':4,'năm':5,'nam':5,
+    'sáu':6,'sau':6,'bảy':7,'bay':7,'tám':8,'tam':8,'chín':9,'chin':9,
+    'mười':10,'muoi':10,'mươi':10,'muoi':10,
+  };
+  const multipliers: Record<string, number> = {
+    'trăm':100,'tram':100,
+    'nghìn':1000,'nghin':1000,'ngàn':1000,'ngan':1000,
+    'triệu':1000000,'trieu':1000000,
+    'tỷ':1000000000,'ty':1000000000,
+  };
+  return parseWordBasedNumber(text, words, multipliers);
+}
+
+// ── Malay ─────────────────────────────────────────────────────────────────────
+function parseMalayNumberText(text: string): number | undefined {
+  const words: Record<string, number> = {
+    'kosong':0,'sifar':0,'satu':1,'se':1,'dua':2,'tiga':3,'empat':4,'lima':5,
+    'enam':6,'tujuh':7,'lapan':8,'sembilan':9,
+    'sepuluh':10,'sebelas':11,
+    'belas':10, // suffix: dua belas = 12
+    'puluh':10, // suffix: dua puluh = 20
+  };
+  const multipliers: Record<string, number> = {
+    'ratus':100,'seratus':100,
+    'ribu':1000,'seribu':1000,
+    'juta':1000000,'sejuta':1000000,
+  };
+  return parseWordBasedNumber(text, words, multipliers);
 }
 
 function parseThaiNumberText(text: string): number | undefined {
