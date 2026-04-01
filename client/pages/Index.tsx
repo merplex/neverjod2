@@ -348,7 +348,7 @@ export default function Index() {
             handleVoiceEnd();
           });
         });
-      }, 100);
+      }, 300);
     }
     // Smart transcript accumulation — avoids duplicates from Chrome Android's
     // progressive refinements and session restarts

@@ -20,6 +20,7 @@ export default function PremiumModal({ message, onClose, onSignUp }: PremiumModa
 
   const isLoggedIn = !!localStorage.getItem("cloud_token");
   const isNative = Capacitor.isNativePlatform();
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
   const handlePurchase = async (plan: "monthly" | "yearly") => {
     if (!isLoggedIn) {
@@ -79,24 +80,24 @@ export default function PremiumModal({ message, onClose, onSignUp }: PremiumModa
           ×
         </button>
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <Lock size={20} className="text-amber-500" />
+          <div className="w-10 h-10 bg-theme-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <Lock size={20} className="text-theme-600" />
           </div>
           <h2 className="text-lg font-bold text-slate-800">{T("premium.title")}</h2>
         </div>
         <p className="text-sm text-slate-500 mb-4 whitespace-pre-line">{message}</p>
 
-        <div className="bg-amber-50 rounded-xl p-3 mb-4 space-y-1.5">
-          <div className="flex items-center gap-2 text-xs text-amber-700">
-            <Star size={12} className="fill-amber-500 text-amber-500" />
+        <div className="bg-theme-50 rounded-xl p-3 mb-4 space-y-1.5">
+          <div className="flex items-center gap-2 text-xs text-theme-700">
+            <Star size={12} className="fill-theme-500 text-theme-500" />
             <span>{T("premium.feature_sync")}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-amber-700">
-            <Star size={12} className="fill-amber-500 text-amber-500" />
+          <div className="flex items-center gap-2 text-xs text-theme-700">
+            <Star size={12} className="fill-theme-500 text-theme-500" />
             <span>{T("premium.feature_accounts")}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-amber-700">
-            <Star size={12} className="fill-amber-500 text-amber-500" />
+          <div className="flex items-center gap-2 text-xs text-theme-700">
+            <Star size={12} className="fill-theme-500 text-theme-500" />
             <span>{T("premium.feature_keywords")}</span>
           </div>
         </div>
@@ -111,16 +112,22 @@ export default function PremiumModal({ message, onClose, onSignUp }: PremiumModa
               <button
                 onClick={() => handlePurchase("monthly")}
                 disabled={!!loading}
-                className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-1"
+                className="flex-1 py-3 rounded-xl bg-theme-500 text-white font-semibold text-sm hover:bg-theme-600 transition-colors disabled:opacity-60 flex flex-col items-center justify-center"
               >
-                {loading === "monthly" ? <Loader2 size={14} className="animate-spin" /> : "✨"} {T("premium.monthly")}
+                <span className="flex items-center gap-1">
+                  {loading === "monthly" ? <Loader2 size={14} className="animate-spin" /> : "✨"} {T("premium.monthly")}
+                </span>
+                {isIOS && <span className="text-xs font-normal opacity-80">{T("premium.monthly_price")}</span>}
               </button>
               <button
                 onClick={() => handlePurchase("yearly")}
                 disabled={!!loading}
-                className="flex-1 py-3 rounded-xl bg-amber-600 text-white font-semibold text-sm hover:bg-amber-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-1"
+                className="flex-1 py-3 rounded-xl bg-theme-700 text-white font-semibold text-sm hover:bg-theme-900 transition-colors disabled:opacity-60 flex flex-col items-center justify-center"
               >
-                {loading === "yearly" ? <Loader2 size={14} className="animate-spin" /> : "⭐"} {T("premium.yearly")}
+                <span className="flex items-center gap-1">
+                  {loading === "yearly" ? <Loader2 size={14} className="animate-spin" /> : "⭐"} {T("premium.yearly")}
+                </span>
+                {isIOS && <span className="text-xs font-normal opacity-80">{T("premium.yearly_price")} {T("premium.yearly_discount")}</span>}
               </button>
             </div>
             <div className="flex gap-2">
@@ -150,7 +157,7 @@ export default function PremiumModal({ message, onClose, onSignUp }: PremiumModa
             </button>
             <button
               onClick={handleSignUp}
-              className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors"
+              className="flex-1 py-3 rounded-xl bg-theme-500 text-white font-semibold text-sm hover:bg-theme-600 transition-colors"
             >
               ✨ {T("premium.subscribe")}
             </button>
