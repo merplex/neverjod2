@@ -51,12 +51,19 @@ function DesktopBlock() {
   );
 }
 
+const ALL_THEMES = ["teal", "blue", "purple", "rose", "amber", "sky"] as const;
+
 function ThemeProvider() {
   useEffect(() => {
     function apply() {
       try {
         const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
-        document.documentElement.setAttribute("data-theme", s.colorTheme || "blue");
+        if (!s.colorTheme) {
+          // First launch — pick a random theme and persist it
+          s.colorTheme = ALL_THEMES[Math.floor(Math.random() * ALL_THEMES.length)];
+          localStorage.setItem("app_settings", JSON.stringify(s));
+        }
+        document.documentElement.setAttribute("data-theme", s.colorTheme);
       } catch {}
     }
     apply();
