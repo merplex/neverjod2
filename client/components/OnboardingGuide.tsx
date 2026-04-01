@@ -1,23 +1,11 @@
 import { useState } from "react";
-import { X, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
-interface Slide {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-const slides: Slide[] = [
-  {
-    icon: <span className="text-5xl">👋</span>,
-    title: "สไลด์ที่ 1",
-    description: "(เนื้อหาจะเพิ่มทีหลัง)",
-  },
-  {
-    icon: <CheckCircle size={52} className="text-theme-600" />,
-    title: "สไลด์ที่ 2",
-    description: "(เนื้อหาจะเพิ่มทีหลัง)",
-  },
+const slides = [
+  "/guide-1.jpg",
+  "/guide-2.jpg",
+  "/guide-3.jpg",
+  "/guide-4.jpg",
 ];
 
 interface Props {
@@ -27,7 +15,6 @@ interface Props {
 export default function OnboardingGuide({ onClose }: Props) {
   const [index, setIndex] = useState(0);
   const isLast = index === slides.length - 1;
-  const slide = slides[index];
 
   const finish = () => {
     try { localStorage.setItem("app_onboarding_done", "1"); } catch {}
@@ -39,25 +26,24 @@ export default function OnboardingGuide({ onClose }: Props) {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden" style={{ height: "70vh" }}>
 
         {/* Close */}
-        <div className="flex justify-end px-4 pt-4">
+        <div className="flex justify-end px-4 pt-4 flex-shrink-0">
           <button onClick={finish} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400">
             <X size={18} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
-          <div className="flex items-center justify-center w-24 h-24 bg-theme-50 rounded-3xl">
-            {slide.icon}
-          </div>
-          <div className="space-y-3">
-            <h2 className="text-xl font-bold text-slate-800">{slide.title}</h2>
-            <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-line">{slide.description}</p>
-          </div>
+        {/* Image */}
+        <div className="flex-1 flex items-center justify-center px-4 pb-2 min-h-0">
+          <img
+            key={index}
+            src={slides[index]}
+            alt={`guide-${index + 1}`}
+            className="w-full h-full object-contain rounded-xl"
+          />
         </div>
 
         {/* Dots */}
-        <div className="flex justify-center gap-1.5 pb-4">
+        <div className="flex justify-center gap-1.5 py-3 flex-shrink-0">
           {slides.map((_, i) => (
             <div
               key={i}
@@ -69,7 +55,7 @@ export default function OnboardingGuide({ onClose }: Props) {
         </div>
 
         {/* Navigation */}
-        <div className="flex gap-3 px-6 pb-6">
+        <div className="flex gap-3 px-6 pb-6 flex-shrink-0">
           {index > 0 && (
             <button
               onClick={() => setIndex(index - 1)}

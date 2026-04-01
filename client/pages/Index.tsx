@@ -5,6 +5,7 @@ import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileTex
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
+import OnboardingGuide from "../components/OnboardingGuide";
 import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
 import { getCurrencySymbol } from "../utils/currency";
 
@@ -217,6 +218,9 @@ export default function Index() {
 
   // Voice result confirmation state
   const [showVoiceResult, setShowVoiceResult] = useState(false);
+  const [showGuide, setShowGuide] = useState(() => {
+    try { return !localStorage.getItem("app_onboarding_done"); } catch { return false; }
+  });
   const [voiceResultData, setVoiceResultData] = useState<{
     categoryId?: string;
     accountId?: string;
@@ -249,6 +253,12 @@ export default function Index() {
   const pendingVoiceResultRef = useRef<{ categoryId?: string; accountId?: string; amount?: number; transcript?: string }>({});
 
   useEffect(() => { showVoiceResultRef.current = showVoiceResult; }, [showVoiceResult]);
+
+  useEffect(() => {
+    const handler = () => setShowGuide(true);
+    window.addEventListener("show-guide", handler);
+    return () => window.removeEventListener("show-guide", handler);
+  }, []);
   useEffect(() => { pendingVoiceResultRef.current = voiceResultData; }, [voiceResultData]);
 
   useEffect(() => {
@@ -1056,6 +1066,11 @@ export default function Index() {
           </div>
         </div>
       </div>
+
+      {/* Onboarding Guide */}
+      {showGuide && (
+        <OnboardingGuide onClose={() => setShowGuide(false)} />
+      )}
 
       {/* Voice Result Confirmation Modal */}
       {showVoiceResult && (
