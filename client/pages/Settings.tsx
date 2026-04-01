@@ -17,7 +17,7 @@ interface AppSettings {
   voiceLang: string;
   currencySymbol: string;
   cloudBackupEnabled: boolean;
-  language: "en" | "th";
+  language: "en" | "th" | "zh";
   colorTheme: ColorTheme;
   swipeBackDirection: "right" | "left";
   monthResetDay: number;
@@ -510,6 +510,16 @@ export default function Settings() {
               }`}
             >
               🇹🇭 {T("settings.language_th")}
+            </button>
+            <button
+              onClick={() => update("language", "zh")}
+              className={`flex-1 py-3 rounded-xl text-sm font-medium border-2 transition-colors ${
+                settings.language === "zh"
+                  ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                  : "bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300"
+              }`}
+            >
+              🇨🇳 {T("settings.language_zh")}
             </button>
           </div>
         </div>

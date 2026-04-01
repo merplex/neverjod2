@@ -1,4 +1,4 @@
-export type Lang = "th" | "en";
+export type Lang = "th" | "en" | "zh";
 
 const translations: Record<Lang, Record<string, string>> = {
   th: {
@@ -57,6 +57,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "settings.display_language": "ภาษาแสดงผลในแอป",
     "settings.language_th": "ภาษาไทย",
     "settings.language_en": "English",
+    "settings.language_zh": "中文",
     "settings.user_guide": "คู่มือการใช้งานแอป",
     "settings.view_guide": "ดูคู่มือการใช้งาน",
     "settings.sync_title": "Sync / เข้าสู่ระบบ",
@@ -222,6 +223,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "settings.display_language": "Display Language",
     "settings.language_th": "ภาษาไทย",
     "settings.language_en": "English",
+    "settings.language_zh": "中文",
     "settings.user_guide": "User Guide",
     "settings.view_guide": "View User Guide",
     "settings.sync_title": "Sync / Log In",
@@ -330,12 +332,180 @@ const translations: Record<Lang, Record<string, string>> = {
     // Onboarding
     "onboarding.start": "Get Started",
   },
+
+  zh: {
+    // Common
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "confirm_delete": "确认删除",
+    "edit": "编辑",
+    "add": "添加",
+    "close": "关闭",
+    "ok": "确定",
+    "seconds": "秒",
+    "sec": "秒",
+    "of_each_month": "每月",
+    "items_in_use": "使用中",
+    "items": "项目",
+    "has": "有",
+    "note_placeholder": "添加备注...",
+    "tap_to_select": "点击选择",
+    "tap_to_enter": "点击输入",
+    "next": "下一步",
+
+    // Days
+    "day.sun": "周日",
+    "day.mon": "周一",
+    "day.tue": "周二",
+    "day.wed": "周三",
+    "day.thu": "周四",
+    "day.fri": "周五",
+    "day.sat": "周六",
+
+    // Auth
+    "login": "登录",
+    "register": "注册",
+    "register_short": "注册",
+    "logout": "退出登录",
+
+    // Settings
+    "settings.app_theme": "应用主题",
+    "settings.voice_language": "语音语言",
+    "settings.voice_lang_thai": "泰语",
+    "settings.voice_lang_auto_hint": "请选择您说话的语言，以便语音输入系统正常工作",
+    "settings.currency": "货币单位",
+    "settings.reset_day_last": "每月最后一天",
+    "settings.auto_start_on": "进入主页时自动开启麦克风",
+    "settings.auto_start_off": "需手动按麦克风按钮开始说话",
+    "settings.autosave_delay": "自动保存延迟",
+    "settings.autosave_hint": "停止说话后到自动保存的等待时间",
+    "settings.monthly_reset": "每月重置",
+    "settings.monthly_reset_hint": "每月开始新支出周期的日期",
+    "settings.reset_day": "重置日期",
+    "settings.swipe_direction": "滑动方向以进入记录页面",
+    "settings.swipe_right": "向右滑动 = 进入记录页面",
+    "settings.swipe_left": "向左滑动 = 进入记录页面",
+    "settings.display_language": "应用显示语言",
+    "settings.language_th": "ภาษาไทย",
+    "settings.language_en": "English",
+    "settings.language_zh": "中文",
+    "settings.user_guide": "使用指南",
+    "settings.view_guide": "查看使用指南",
+    "settings.sync_title": "同步 / 登录",
+    "settings.sync_hint": "支持多设备同时使用 · Premium",
+    "settings.connected": "已连接",
+    "settings.syncing": "同步中...",
+    "settings.sync_failed": "同步失败 ✗",
+    "settings.sync_now": "立即同步",
+    "settings.legal": "政策与条款",
+    "settings.repeat_hint": "创建和管理自动重复交易",
+    "settings.error": "发生错误",
+    "settings.free_plan_sync": "您正在使用免费版\n升级至 Premium 以跨设备使用云同步",
+
+    // Index
+    "index.top_expenses": "支出排名",
+    "index.top_incomes": "收入排名",
+    "index.no_data": "暂无数据",
+
+    // Stats / Report
+    "stats.total": "总计",
+    "stats.expenses": "支出",
+    "stats.no_expenses": "本期无支出",
+    "stats.total_expenses": "总支出",
+    "stats.incomes": "收入",
+    "stats.no_incomes": "本期无收入",
+    "stats.total_incomes": "总收入",
+    "stats.by_account": "按账户",
+    "stats.income_col": "收入",
+    "stats.expense_col": "支出",
+    "stats.total_row": "合计",
+    "stats.no_txn": "本期无交易记录",
+
+    // Auth modal
+    "auth.title": "登录",
+
+    // Categories
+    "cat.delete_title": "删除类别",
+    "cat.delete_warning": "确认后，所有记录将移至"无类别"，该类别将被删除",
+    "cat.keywords_label": "关键词（用逗号分隔）",
+    "cat.keywords_placeholder": "餐饮, 外卖, 咖啡",
+    "cat.free_keyword_limit": "免费版每个类别最多添加1个关键词\n升级 Premium 可无限添加关键词",
+    "cat.free_cat_limit": "免费版最多添加 {{limit}} 个类别\n升级 Premium 可无限添加",
+    "cat.free_unlock": "免费版支持 {{limit}} 个类别\n升级 Premium 以解锁所有类别",
+    "cat.keyword_duplicate": "关键词"{{kw}}"已存在于 {{name}}",
+
+    // Accounts
+    "acc.delete_title": "删除账户",
+    "acc.delete_warning": "确认后，所有记录将移至"已删除账户"，该账户将被删除",
+    "acc.keywords_label": "关键词（用逗号分隔）",
+    "acc.keywords_placeholder": "工商银行, icbc, 储蓄",
+    "acc.type_placeholder": "如：信用卡、储蓄账户",
+    "acc.free_keyword_limit": "免费版每个账户最多添加1个关键词\n升级 Premium 可无限添加关键词",
+    "acc.free_acc_limit": "免费版最多添加 {{limit}} 个账户\n升级 Premium 可无限添加",
+    "acc.free_unlock": "免费版支持 {{limit}} 个账户\n升级 Premium 以解锁所有账户",
+    "acc.keyword_duplicate": "关键词"{{kw}}"已存在于 {{name}}",
+    "acc.transfer_to": "转账至 {{name}}",
+    "acc.transfer_from": "收到来自 {{name}} 的转账",
+    "acc.transfer_title": "转账",
+    "acc.from_account": "转出账户",
+    "acc.to_account": "转入账户",
+    "acc.select_source": "选择来源账户",
+    "acc.select_dest": "选择目标账户",
+    "acc.amount": "金额",
+    "acc.date": "日期",
+    "acc.time": "时间",
+    "acc.transfer": "转账",
+
+    // Repeat Transactions
+    "repeat.empty": "暂无重复交易",
+    "repeat.empty_hint": "点击 + 创建",
+    "repeat.next_due": "下次",
+    "repeat.edit_title": "编辑重复交易",
+    "repeat.amount": "金额",
+    "repeat.note": "备注",
+    "repeat.frequency": "频率",
+    "repeat.delete_confirm": "删除此重复交易？",
+    "repeat.delete_hint": "已创建的交易不会被删除",
+
+    // Add Transaction Modal
+    "modal.category": "类别",
+    "modal.account": "账户",
+    "modal.repeat_frequency": "重复频率",
+    "modal.save_repeat": "保存重复规则",
+    "modal.save_transaction": "保存交易",
+    "modal.start_day": "开始日期",
+    "modal.every_2weeks": "每两周",
+    "modal.week": "周",
+    "modal.every_day": "每天，从指定日期和时间开始",
+    "modal.day_of_cycle": "每周期的第几天",
+
+    // Premium Modal
+    "premium.title": "需要 Premium",
+    "premium.feature_sync": "无限云同步跨设备",
+    "premium.feature_accounts": "无限账户和类别",
+    "premium.feature_keywords": "每个类别无限关键词",
+    "premium.acknowledge": "知道了",
+    "premium.monthly": "月付",
+    "premium.monthly_price": "79/月",
+    "premium.yearly": "年付",
+    "premium.yearly_price": "499/年",
+    "premium.yearly_discount": "省47%",
+    "premium.restore": "恢复购买",
+    "premium.error": "发生错误",
+    "premium.subscribe": "订阅",
+
+    // Onboarding
+    "onboarding.start": "开始使用",
+  },
 };
 
 export function getLang(): Lang {
   try {
     const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
-    return s.language === "en" ? "en" : "th";
+    if (s.language === "en") return "en";
+    if (s.language === "zh") return "zh";
+    return "th";
   } catch {
     return "th";
   }
