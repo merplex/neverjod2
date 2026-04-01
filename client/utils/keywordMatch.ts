@@ -141,7 +141,21 @@ function normalizeThaiNumber(text: string): string {
   t = t.replace(new RegExp(`${dPre}\\s*(?:sand|saen)(?![a-zA-Z])`, 'gi'), '$1แสน');
 
   // หมื่น aliases — none have common other meanings, safe globally
-  t = t.replace(/หมึ่ง|หมึง|หมึน|หมืน|มื่น/g, 'หมื่น');
+  t = t.replace(/หมึ่ง|หมึง|หมึน|หมืน|มื่น|หมุ่น|หมุน/g, 'หมื่น');
+  // หมือน = "like/similar" — gated
+  t = t.replace(new RegExp(`${dPre}\\s*หมือน`, 'g'), '$1หมื่น');
+
+  // พัน aliases — ฝัน (dream), ผัน (change) are real words → gated; พัณ safe globally
+  t = t.replace(/พัณ/g, 'พัน');
+  t = t.replace(new RegExp(`${dPre}\\s*(?:ฝัน|ผัน|พั(?!น))`, 'g'), '$1พัน');
+
+  // ร้อย aliases — รอย (mark/scar) is a real word → gated
+  t = t.replace(new RegExp(`${dPre}\\s*(?:รอย|ร้อ(?!ย)|ร้วย)`, 'g'), '$1ร้อย');
+
+  // สิบ aliases — ซิบ/ซิป/ศิบ not common words, safe globally
+  t = t.replace(/ซิบ|ซิป|ศิบ/g, 'สิบ');
+  // สิ (truncated) — gated to avoid eating real words
+  t = t.replace(new RegExp(`${dPre}\\s*สิ(?!บ|[่้๊๋็ิ])`, 'g'), '$1สิบ');
 
   return t;
 }

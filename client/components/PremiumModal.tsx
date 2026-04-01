@@ -112,27 +112,17 @@ export default function PremiumModal({ message, onClose, onSignUp }: PremiumModa
               <button
                 onClick={() => handlePurchase("monthly")}
                 disabled={!!loading}
-                className="flex-1 py-3 rounded-xl bg-theme-500 text-white font-semibold text-sm hover:bg-theme-600 transition-colors disabled:opacity-60 flex flex-col items-center justify-center"
+                className="flex-1 py-3 rounded-xl bg-theme-500 text-white font-semibold text-sm hover:bg-theme-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-1"
               >
-                <span className="flex items-center gap-1">
-                  {loading === "monthly" ? <Loader2 size={14} className="animate-spin" /> : "✨"} {T("premium.monthly")}
-                </span>
-                {isIOS && <span className="text-xs font-normal opacity-80">{T("premium.monthly_price")}</span>}
+                {loading === "monthly" ? <Loader2 size={14} className="animate-spin" /> : "✨"} {T("premium.monthly")}
               </button>
               <button
                 onClick={() => handlePurchase("yearly")}
                 disabled={!!loading}
-                className="flex-1 py-3 rounded-xl bg-theme-700 text-white font-semibold text-sm hover:bg-theme-900 transition-colors disabled:opacity-60 flex flex-col items-center justify-center"
+                className="relative flex-1 py-3 rounded-xl bg-theme-700 text-white font-semibold text-sm hover:bg-theme-900 transition-colors disabled:opacity-60 flex items-center justify-center gap-1"
               >
-                <span className="flex items-center gap-1">
-                  {loading === "yearly" ? <Loader2 size={14} className="animate-spin" /> : "⭐"} {T("premium.yearly")}
-                </span>
-                {isIOS && (
-                  <span className="text-xs font-normal opacity-80">
-                    {T("premium.yearly_price")}{" "}
-                    <span className="bg-white/25 rounded px-1 py-px font-semibold">{T("premium.yearly_discount")}</span>
-                  </span>
-                )}
+                <span className="absolute -top-2 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">-47%</span>
+                {loading === "yearly" ? <Loader2 size={14} className="animate-spin" /> : "⭐"} {T("premium.yearly")}
               </button>
             </div>
             <div className="flex gap-2">

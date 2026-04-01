@@ -5,7 +5,7 @@ import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileTex
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
-import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList, extractNumberFromText } from "../utils/keywordMatch";
+import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -161,27 +161,6 @@ function VoiceMarqueeText({ text, className }: { text: string; className?: strin
   );
 }
 
-// ── Voice operator + operand detection ───────────────────────────────────────
-function extractOperatorAndOperand(text: string): { op: '+' | '-' | '*' | '/'; operand: number } | undefined {
-  const operators: Array<{ words: string[]; op: '+' | '-' | '*' | '/' }> = [
-    { words: ['บวก', 'plus'],    op: '+' },
-    { words: ['ลบ', 'minus'],    op: '-' },
-    { words: ['คูณ', 'times'],   op: '*' },
-    { words: ['หาร', 'divide'],  op: '/' },
-  ];
-  const lc = text.toLowerCase();
-  for (const { words, op } of operators) {
-    for (const word of words) {
-      const idx = lc.indexOf(word);
-      if (idx !== -1) {
-        const afterOp = text.slice(idx + word.length).trim();
-        const operand = extractNumberFromText(afterOp);
-        if (operand !== undefined && operand > 0) return { op, operand };
-      }
-    }
-  }
-  return undefined;
-}
 
 export default function Index() {
   const navigate = useNavigate();
@@ -260,7 +239,6 @@ export default function Index() {
     categoryId?: string;
     accountId?: string;
     amount?: number;
-    baseAmount?: number; // last "committed" amount — used as base for math ops
     transcript?: string;
   }>({});
 
@@ -370,24 +348,7 @@ export default function Index() {
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
 
-    // Amount: during 500ms delay (allDetected) — freeze; otherwise apply math ops if any
-    let effectiveAmount = voiceData.amount;
-    if (voiceData.amount && !allDetectedRef.current) {
-      const mathExpr = extractOperatorAndOperand(voiceData.description);
-      const base = voiceAccumulatorRef.current.baseAmount ?? voiceAccumulatorRef.current.amount;
-      if (mathExpr && base !== undefined) {
-        let result: number;
-        if (mathExpr.op === '+') result = base + mathExpr.operand;
-        else if (mathExpr.op === '-') result = Math.max(0, base - mathExpr.operand);
-        else if (mathExpr.op === '*') result = base * mathExpr.operand;
-        else result = mathExpr.operand !== 0 ? base / mathExpr.operand : base;
-        effectiveAmount = Math.round(result);
-      } else {
-        effectiveAmount = voiceData.amount;
-      }
-      voiceAccumulatorRef.current.amount = effectiveAmount;
-      voiceAccumulatorRef.current.baseAmount = effectiveAmount;
-    }
+    if (voiceData.amount) voiceAccumulatorRef.current.amount = voiceData.amount;
 
     // Update live status for the status widget
     setLiveVoiceStatus(prev => {
@@ -400,7 +361,7 @@ export default function Index() {
         next.accountId = voiceData.accountId;
         next.accountName = accountsList.find((a) => a.id === voiceData.accountId)?.name;
       }
-      if (effectiveAmount) next.amount = effectiveAmount;
+      if (voiceData.amount) next.amount = voiceData.amount;
       next.transcript = voiceData.description;
       return next;
     });
@@ -455,6 +416,12 @@ export default function Index() {
     // If not all 3 detected — keep listening (voice will auto-restart), don't show popup
     if (!categoryId || !accountId || !amount) {
       allDetectedRef.current = false;
+      // Commit current amount as new base for next session (enables chaining)
+      if (voiceAccumulatorRef.current.amount) {
+        voiceAccumulatorRef.current.baseAmount = voiceAccumulatorRef.current.amount;
+        voiceAccumulatorRef.current.lastOp = undefined;
+        voiceAccumulatorRef.current.lastOperand = undefined;
+      }
       return;
     }
 
