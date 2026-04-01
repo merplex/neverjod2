@@ -63,7 +63,8 @@ function loadSettings(): AppSettings {
       const parsed = JSON.parse(saved);
       // Migrate old data that stored voiceInputDelay in milliseconds
       if (typeof parsed.voiceInputDelay === "number" && parsed.voiceInputDelay > 10) {
-        parsed.voiceInputDelay = Math.min(5, Math.max(1, Math.round(parsed.voiceInputDelay / 1000)));
+        // Round to nearest 0.5s step, clamp 1–5
+        parsed.voiceInputDelay = Math.min(5, Math.max(1, Math.round((parsed.voiceInputDelay / 1000) * 2) / 2));
       } else if (typeof parsed.voiceInputDelay === "number" && parsed.voiceInputDelay > 5) {
         parsed.voiceInputDelay = 5;
       }
@@ -329,6 +330,7 @@ export default function Settings() {
                 step={0.5}
                 value={settings.voiceInputDelay}
                 onChange={(e) => update("voiceInputDelay", Number(e.target.value))}
+                onTouchEnd={(e) => update("voiceInputDelay", Number((e.target as HTMLInputElement).value))}
                 className="w-full accent-theme-600"
               />
               <div className="flex justify-between text-xs text-slate-400">
@@ -391,23 +393,27 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600">{T("settings.reset_day")}</span>
               <span className="text-sm font-semibold text-theme-600">
-                {settings.monthResetDay} {T("of_each_month")}
+                {settings.monthResetDay === 31
+                  ? T("settings.reset_day_last")
+                  : `${settings.monthResetDay} ${T("of_each_month")}`}
               </span>
             </div>
             <input
               type="range"
               min={1}
-              max={28}
+              max={31}
               step={1}
               value={settings.monthResetDay}
               onChange={(e) => update("monthResetDay", Number(e.target.value))}
+              onTouchEnd={(e) => update("monthResetDay", Number((e.target as HTMLInputElement).value))}
               className="w-full accent-theme-600"
             />
             <div className="flex justify-between text-xs text-slate-400">
               <span>1</span>
               <span>10</span>
               <span>20</span>
-              <span>28</span>
+              <span>30</span>
+              <span>31★</span>
             </div>
           </div>
         </div>

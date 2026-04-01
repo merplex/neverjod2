@@ -592,12 +592,24 @@ export default function Index() {
   const monthlyData = useMemo(() => {
     try {
       const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
-      const resetDay: number = typeof s.monthResetDay === "number" ? s.monthResetDay : 1;
+      const resetDayCfg: number = typeof s.monthResetDay === "number" ? s.monthResetDay : 1;
       const today = new Date();
       const d = today.getDate();
+      // Resolve actual reset day for a given year/month
+      // 31 = always last day of month; 30 (or any day) = clamp to last day if month is shorter
+      const resolveDay = (year: number, month: number) => {
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        return resetDayCfg === 31 ? lastDay : Math.min(resetDayCfg, lastDay);
+      };
+      const resetDay = resolveDay(today.getFullYear(), today.getMonth());
       const periodStart = d >= resetDay
         ? new Date(today.getFullYear(), today.getMonth(), resetDay)
-        : new Date(today.getFullYear(), today.getMonth() - 1, resetDay);
+        : (() => {
+            const pm = today.getMonth() - 1;
+            const py = pm < 0 ? today.getFullYear() - 1 : today.getFullYear();
+            const pmAdj = pm < 0 ? 11 : pm;
+            return new Date(py, pmAdj, resolveDay(py, pmAdj));
+          })();
 
       const dateLocale = s.language === "en" ? "en-GB" : "th-TH";
       const startStr = periodStart.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
