@@ -127,7 +127,12 @@ export default function PremiumModal({ message, onClose, onSignUp }: PremiumModa
                 <span className="flex items-center gap-1">
                   {loading === "yearly" ? <Loader2 size={14} className="animate-spin" /> : "⭐"} {T("premium.yearly")}
                 </span>
-                {isIOS && <span className="text-xs font-normal opacity-80">{T("premium.yearly_price")} {T("premium.yearly_discount")}</span>}
+                {isIOS && (
+                  <span className="text-xs font-normal opacity-80">
+                    {T("premium.yearly_price")}{" "}
+                    <span className="bg-white/25 rounded px-1 py-px font-semibold">{T("premium.yearly_discount")}</span>
+                  </span>
+                )}
               </button>
             </div>
             <div className="flex gap-2">
