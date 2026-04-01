@@ -18,13 +18,13 @@ function readSilenceDelay(): number {
   } catch { return 3500; }
 }
 
-// iOS only — reads user's chosen language from Settings
+// Reads user's chosen voice language from Settings (used on both iOS and Android)
 function readVoiceLang(): string {
   try {
     const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
     const lang = s.voiceLang;
-    if (lang === "en-US") return "en-US";
     if (lang === "auto") return navigator.language || "th-TH";
+    if (typeof lang === "string" && lang.length > 0) return lang;
     return "th-TH";
   } catch { return "th-TH"; }
 }
