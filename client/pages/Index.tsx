@@ -380,7 +380,7 @@ export default function Index() {
             handleVoiceEnd();
           });
         });
-      }, 500);
+      }, 1000);
     }
     // Smart transcript accumulation — avoids duplicates from Chrome Android's
     // progressive refinements and session restarts
