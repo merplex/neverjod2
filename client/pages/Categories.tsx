@@ -76,16 +76,6 @@ export default function Categories() {
           })
           .filter((cat: any) => cat !== null);
       }
-      // Ensure salary (default income) always exists
-      if (!list.find((c) => c.id === "salary")) {
-        const salaryDefault = defaultCategories.find((c) => c.id === "salary")!;
-        const nocatIdx = list.findIndex((c) => c.id === "nocat");
-        if (nocatIdx >= 0) {
-          list = [...list.slice(0, nocatIdx), salaryDefault, ...list.slice(nocatIdx)];
-        } else {
-          list = [...list, salaryDefault];
-        }
-      }
       // Ensure nocat always exists
       if (!list.find((c) => c.id === "nocat")) {
         const nocatDefault = defaultCategories.find((c) => c.id === "nocat")!;

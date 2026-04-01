@@ -5,7 +5,7 @@ import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileTex
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
-import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
+import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList, extractNumberFromText } from "../utils/keywordMatch";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -131,6 +131,58 @@ function readVoiceAutoStart(): boolean {
   } catch { return true; }
 }
 
+// ── Marquee text for voice status widget ─────────────────────────────────────
+function VoiceMarqueeText({ text, className }: { text: string; className?: string }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    const outer = outerRef.current;
+    const measure = measureRef.current;
+    if (outer && measure) setAnimate(measure.scrollWidth > outer.clientWidth);
+  }, [text]);
+
+  const sep = "\u00A0\u00A0"; // 2 non-breaking spaces between loops
+  const dur = `${Math.max(3, Math.round(text.length * 0.22))}s`;
+
+  return (
+    <div ref={outerRef} className={`overflow-hidden relative ${className ?? ""}`}>
+      {/* Hidden span to measure actual text width */}
+      <span ref={measureRef} className="absolute invisible whitespace-nowrap" aria-hidden="true"
+        style={{ wordBreak: "normal", overflowWrap: "normal" }}>{text}</span>
+      {/* Visible: animated loop or static */}
+      <span className="whitespace-nowrap inline-block"
+        style={{ wordBreak: "normal", overflowWrap: "normal",
+          ...(animate ? { animation: `voice-marquee ${dur} linear infinite` } : {}) }}>
+        {animate ? `${text}${sep}${text}${sep}` : text}
+      </span>
+    </div>
+  );
+}
+
+// ── Voice operator + operand detection ───────────────────────────────────────
+function extractOperatorAndOperand(text: string): { op: '+' | '-' | '*' | '/'; operand: number } | undefined {
+  const operators: Array<{ words: string[]; op: '+' | '-' | '*' | '/' }> = [
+    { words: ['บวก', 'plus'],    op: '+' },
+    { words: ['ลบ', 'minus'],    op: '-' },
+    { words: ['คูณ', 'times'],   op: '*' },
+    { words: ['หาร', 'divide'],  op: '/' },
+  ];
+  const lc = text.toLowerCase();
+  for (const { words, op } of operators) {
+    for (const word of words) {
+      const idx = lc.indexOf(word);
+      if (idx !== -1) {
+        const afterOp = text.slice(idx + word.length).trim();
+        const operand = extractNumberFromText(afterOp);
+        if (operand !== undefined && operand > 0) return { op, operand };
+      }
+    }
+  }
+  return undefined;
+}
+
 export default function Index() {
   const navigate = useNavigate();
   const T = useT();
@@ -208,6 +260,7 @@ export default function Index() {
     categoryId?: string;
     accountId?: string;
     amount?: number;
+    baseAmount?: number; // last "committed" amount — used as base for math ops
     transcript?: string;
   }>({});
 
@@ -316,7 +369,25 @@ export default function Index() {
     // Accumulate voice data
     if (voiceData.categoryId) voiceAccumulatorRef.current.categoryId = voiceData.categoryId;
     if (voiceData.accountId) voiceAccumulatorRef.current.accountId = voiceData.accountId;
-    if (voiceData.amount) voiceAccumulatorRef.current.amount = voiceData.amount;
+
+    // Amount: during 500ms delay (allDetected) — freeze; otherwise apply math ops if any
+    let effectiveAmount = voiceData.amount;
+    if (voiceData.amount && !allDetectedRef.current) {
+      const mathExpr = extractOperatorAndOperand(voiceData.description);
+      const base = voiceAccumulatorRef.current.baseAmount ?? voiceAccumulatorRef.current.amount;
+      if (mathExpr && base !== undefined) {
+        let result: number;
+        if (mathExpr.op === '+') result = base + mathExpr.operand;
+        else if (mathExpr.op === '-') result = Math.max(0, base - mathExpr.operand);
+        else if (mathExpr.op === '*') result = base * mathExpr.operand;
+        else result = mathExpr.operand !== 0 ? base / mathExpr.operand : base;
+        effectiveAmount = Math.round(result);
+      } else {
+        effectiveAmount = voiceData.amount;
+      }
+      voiceAccumulatorRef.current.amount = effectiveAmount;
+      voiceAccumulatorRef.current.baseAmount = effectiveAmount;
+    }
 
     // Update live status for the status widget
     setLiveVoiceStatus(prev => {
@@ -329,7 +400,7 @@ export default function Index() {
         next.accountId = voiceData.accountId;
         next.accountName = accountsList.find((a) => a.id === voiceData.accountId)?.name;
       }
-      if (voiceData.amount) next.amount = voiceData.amount;
+      if (effectiveAmount) next.amount = effectiveAmount;
       next.transcript = voiceData.description;
       return next;
     });
@@ -725,17 +796,17 @@ export default function Index() {
                       const { categoryName, accountName, amount, transcript } = liveVoiceStatus;
                       return (
                         <div key="__voice_status__" className={`w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center py-1 gap-0.5 overflow-hidden ${isIOSDevice ? "px-1" : "px-2"}`}>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 min-w-0">
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
-                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{categoryName || "Category"}</span>
+                            <VoiceMarqueeText text={categoryName || "Category"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 min-w-0">
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
-                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{accountName || "Account"}</span>
+                            <VoiceMarqueeText text={accountName || "Account"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 min-w-0">
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
-                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 truncate`}>{amount ? `฿${amount.toLocaleString()}` : "Amount"}</span>
+                            <VoiceMarqueeText text={amount ? `฿${amount.toLocaleString()}` : "Amount"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
                           </div>
                         </div>
                       );

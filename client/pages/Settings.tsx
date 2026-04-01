@@ -63,7 +63,9 @@ function loadSettings(): AppSettings {
       const parsed = JSON.parse(saved);
       // Migrate old data that stored voiceInputDelay in milliseconds
       if (typeof parsed.voiceInputDelay === "number" && parsed.voiceInputDelay > 10) {
-        parsed.voiceInputDelay = Math.min(10, Math.max(1, Math.round(parsed.voiceInputDelay / 1000)));
+        parsed.voiceInputDelay = Math.min(5, Math.max(1, Math.round(parsed.voiceInputDelay / 1000)));
+      } else if (typeof parsed.voiceInputDelay === "number" && parsed.voiceInputDelay > 5) {
+        parsed.voiceInputDelay = 5;
       }
       return { ...defaultSettings, ...parsed };
     }
@@ -323,16 +325,16 @@ export default function Settings() {
               <input
                 type="range"
                 min={1}
-                max={10}
-                step={1}
+                max={5}
+                step={0.5}
                 value={settings.voiceInputDelay}
                 onChange={(e) => update("voiceInputDelay", Number(e.target.value))}
                 className="w-full accent-theme-600"
               />
               <div className="flex justify-between text-xs text-slate-400">
                 <span>1 {T("sec")}</span>
+                <span>3 {T("sec")}</span>
                 <span>5 {T("sec")}</span>
-                <span>10 {T("sec")}</span>
               </div>
             </div>
 

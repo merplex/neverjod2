@@ -236,3 +236,9 @@ input, textarea, select {
     -moz-appearance: textfield;
   }
 }
+
+/* Voice widget marquee */
+@keyframes voice-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
