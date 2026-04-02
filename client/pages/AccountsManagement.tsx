@@ -427,6 +427,7 @@ export default function AccountsManagement() {
     const now = Date.now();
 
     const txns: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+    const transferRef = `transfer_${now}`;
     txns.unshift({
       id: `${now}_transfer_out`,
       categoryId: "transfer_out",
@@ -436,6 +437,7 @@ export default function AccountsManagement() {
       date: txDate.toISOString(),
       time: timeStr,
       isTransfer: true,
+      transferRef,
     });
     txns.unshift({
       id: `${now + 1}_transfer_in`,
@@ -446,6 +448,7 @@ export default function AccountsManagement() {
       date: txDate.toISOString(),
       time: timeStr,
       isTransfer: true,
+      transferRef,
     });
     localStorage.setItem("app_transactions", JSON.stringify(txns));
 

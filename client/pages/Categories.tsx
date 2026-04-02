@@ -371,7 +371,7 @@ export default function Categories() {
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
-            Expense
+            {T("tab.expense")}
           </button>
           <button
             onClick={() => setCategoryType("income")}
@@ -381,7 +381,7 @@ export default function Categories() {
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
-            Income
+            {T("tab.income")}
           </button>
         </div>
       </div>
@@ -527,7 +527,7 @@ export default function Categories() {
                           {isOverLimitCat(category.id) && <Lock size={11} className="text-amber-500" />}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {category.type === "income" ? "Income" : "Expense"}
+                          {category.type === "income" ? T("tab.income") : T("tab.expense")}
                         </p>
                         {category.keywords && category.keywords.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1">

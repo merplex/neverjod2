@@ -39,8 +39,14 @@ function deleteLocalTransaction(id: string) {
   try {
     const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
     const tx = txns.find((t: any) => t.id === id);
-    if (tx) markDeleted("transaction", tx);
-    localStorage.setItem("app_transactions", JSON.stringify(txns.filter((t: any) => t.id !== id)));
+    if (!tx) return;
+    // If transfer — delete both legs
+    const idsToDelete = new Set<string>([id]);
+    if (tx.transferRef) {
+      txns.filter((t: any) => t.transferRef === tx.transferRef).forEach((t: any) => idsToDelete.add(t.id));
+    }
+    txns.filter((t: any) => idsToDelete.has(t.id)).forEach((t: any) => markDeleted("transaction", t));
+    localStorage.setItem("app_transactions", JSON.stringify(txns.filter((t: any) => !idsToDelete.has(t.id))));
   } catch {}
 }
 
