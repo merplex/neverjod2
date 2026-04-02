@@ -195,6 +195,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       // transfer_in — goes to the destination ledger (same or cross)
       const toTxnsKey = isCrossLedger ? lk("app_transactions", toLedgerId) : lk("app_transactions");
       const txnsIn: any[] = JSON.parse(localStorage.getItem(toTxnsKey) || "[]");
+      const fromLedgerName = ledgers.find((l) => l.id === activeLedgerId)?.name || "";
       txnsIn.unshift({
         id: `${now + 1}_transfer_in`,
         categoryId: "transfer_in",
@@ -205,6 +206,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
         time: timeStr,
         isTransfer: true,
         transferRef,
+        ...(isCrossLedger ? { ledgerName: fromLedgerName } : {}),
       });
       localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
       window.dispatchEvent(new CustomEvent("app-data-updated"));

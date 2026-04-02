@@ -1,6 +1,13 @@
 export type Lang = "th" | "en" | "zh";
 import { lk } from "./ledgerStorage";
 
+/** Map app language code → JS Intl locale string for date/number formatting */
+export const LANG_LOCALE: Record<Lang, string> = {
+  th: "th-TH",
+  en: "en-GB",
+  zh: "zh-CN",
+};
+
 const translations: Record<Lang, Record<string, string>> = {
   th: {
     // Common

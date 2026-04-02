@@ -9,6 +9,7 @@ import OnboardingGuide from "../components/OnboardingGuide";
 import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
 import { getCurrencySymbol } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
+import { LANG_LOCALE } from "../utils/i18n";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -624,7 +625,7 @@ export default function Index() {
             return new Date(py, pmAdj, resolveDay(py, pmAdj));
           })();
 
-      const dateLocale = s.language === "en" ? "en-GB" : "th-TH";
+      const dateLocale = LANG_LOCALE[s.language as keyof typeof LANG_LOCALE] ?? "th-TH";
       const startStr = periodStart.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
       const endStr = today.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
       const periodLabel = `${startStr} – ${endStr}`;

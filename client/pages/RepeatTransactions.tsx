@@ -108,9 +108,14 @@ export default function RepeatTransactions() {
                     {/* Category + Account (or Transfer From→To) */}
                     <div className="flex items-center gap-2 mb-1">
                       {isTransfer ? (
-                        <span className="text-sm font-semibold text-slate-800 truncate">
-                          {rt.fromAccountName || rt.accountName} → {rt.toAccountName}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-sm font-semibold text-slate-800">
+                            {rt.fromAccountName || rt.accountName} → {rt.toAccountName}
+                          </span>
+                          {rt.toLedgerName && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 leading-none flex-shrink-0">{rt.toLedgerName}</span>
+                          )}
+                        </div>
                       ) : (
                         <>
                           <span className="text-sm font-semibold text-slate-800 truncate">{rt.categoryName}</span>

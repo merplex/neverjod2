@@ -52,7 +52,7 @@ export interface RepeatTransaction {
   toLedgerName?: string;  // cross-ledger target name (future)
 }
 
-import { lk } from "./ledgerStorage";
+import { lk, getActiveLedgerId } from "./ledgerStorage";
 
 export function getRepeatTransactions(): RepeatTransaction[] {
   try { return JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]"); } catch { return []; }
@@ -235,6 +235,7 @@ export function checkAndExecuteRepeats(): boolean {
 
       if (rt.isTransfer) {
         const transferRef = `transfer_${id}`;
+        // transfer_out → current (from) ledger
         txns.unshift({
           id: `${id}_out`,
           categoryId: "transfer_out",
@@ -249,7 +250,15 @@ export function checkAndExecuteRepeats(): boolean {
           transferRef,
           ...(rt.toLedgerName ? { ledgerName: rt.toLedgerName } : {}),
         });
-        txns.unshift({
+        localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
+        // transfer_in → destination ledger (same or cross)
+        const toTxnsKey = rt.toLedgerId ? lk("app_transactions", rt.toLedgerId) : lk("app_transactions");
+        const txnsIn = toTxnsKey !== lk("app_transactions")
+          ? JSON.parse(localStorage.getItem(toTxnsKey) || "[]")
+          : txns;
+        const fromLedgerList = JSON.parse(localStorage.getItem("app_ledgers") || "null") || [{ id: "main", name: "Main" }];
+        const fromLedgerName = fromLedgerList.find((l: any) => l.id === getActiveLedgerId())?.name || "";
+        txnsIn.unshift({
           id: `${id}_in`,
           categoryId: "transfer_in",
           accountId: rt.toAccountId || "",
@@ -261,7 +270,9 @@ export function checkAndExecuteRepeats(): boolean {
           isRepeat: true,
           repeatId: rt.id,
           transferRef,
+          ...(rt.toLedgerId ? { ledgerName: fromLedgerName } : {}),
         });
+        localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
       } else {
         txns.unshift({
           id,
@@ -274,8 +285,8 @@ export function checkAndExecuteRepeats(): boolean {
           repeatId: rt.id,
           isRepeat: true,
         });
+        localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
       }
-      localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
 
       rt.lastExecuted = nextDue.toISOString();
       nextDue = calcNextDue(rt, nextDue);

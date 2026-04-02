@@ -248,6 +248,11 @@ export default function Settings() {
     setLedgerLoading(true);
     try {
       const created = await apiCreateLedger(cloudToken, name);
+      // Copy current settings (theme/language/voice/resetDay) to new ledger
+      const currentSettings = localStorage.getItem(lk("app_settings"));
+      if (currentSettings) {
+        localStorage.setItem(lk("app_settings", created.id), currentSettings);
+      }
       const updated = [...ledgers, { id: created.id, name: created.name }];
       saveLedgerList(updated);
       setNewLedgerName("");
