@@ -106,6 +106,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "auth.title": "เข้าสู่ระบบ",
 
     // Categories
+    "cat.name_label": "ชื่อหมวดหมู่",
+    "cat.delete_btn": "ลบหมวดหมู่นี้",
     "cat.delete_title": "ลบ Category",
     "cat.delete_warning": "ถ้ายืนยัน รายการทั้งหมดจะย้ายไปอยู่ใน No Category และลบ category นี้ออก",
     "cat.keywords_label": "Keywords (คั่นด้วย ,)",
@@ -116,6 +118,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "cat.keyword_duplicate": "Keyword \"{{kw}}\" ซ้ำกับที่มีอยู่ใน {{name}}",
 
     // Accounts
+    "acc.name_label": "ชื่อบัญชี",
+    "acc.type_label": "ประเภทบัญชี",
+    "acc.start_balance_label": "ยอดเงินเริ่มต้น",
+    "acc.delete_btn": "ลบบัญชีนี้",
+    "acc.transfer_money_title": "โอนเงิน",
+    "acc.deleted_name": "บัญชีที่ลบแล้ว",
     "acc.delete_title": "ลบ Account",
     "acc.delete_warning": "ถ้ายืนยัน รายการทั้งหมดจะย้ายไปอยู่ใน Account Deleted และลบ account นี้ออก",
     "acc.keywords_label": "Keywords (คั่นด้วย ,)",
@@ -174,6 +182,69 @@ const translations: Record<Lang, Record<string, string>> = {
     "premium.restore": "Restore",
     "premium.error": "เกิดข้อผิดพลาด",
     "premium.subscribe": "สมัคร",
+
+    // Navigation
+    "nav.transactions": "รายการ",
+    "nav.stats": "สถิติ",
+    "nav.categories": "หมวดหมู่",
+    "nav.accounts": "บัญชี",
+    "nav.settings": "ตั้งค่า",
+
+    // Tabs / Buttons
+    "tab.expense": "รายจ่าย",
+    "tab.income": "รายรับ",
+    "btn.reorder": "เรียงลำดับ",
+    "btn.done_reorder": "เสร็จสิ้น",
+    "btn.save": "บันทึก",
+    "btn.right": "ขวา",
+    "btn.calc": "คำนวณ",
+
+    // Filter chips / voice status
+    "filter.category": "หมวดหมู่",
+    "filter.account": "บัญชี",
+    "filter.amount": "จำนวนเงิน",
+    "filter.custom": "กำหนดเอง",
+    "filter.month": "เดือน",
+    "filter.all": "ทั้งหมด",
+
+    // Sort
+    "sort.descending": "มากไปน้อย",
+    "sort.ascending": "น้อยไปมาก",
+
+    // Account picker
+    "acc.select_account": "เลือกบัญชี",
+    "acc.all_accounts": "ทุกบัญชี",
+
+    // Settings section titles
+    "settings.repeat_title": "รายการซ้ำ",
+    "settings.color_theme_title": "ธีมสี",
+    "settings.voice_title": "ป้อนด้วยเสียง",
+    "settings.auto_start": "เริ่มอัตโนมัติ",
+    "settings.guide_title": "คู่มือ",
+    "settings.cloud_sync_title": "ซิงค์ Cloud",
+    "settings.cloud_sync_subtitle": "รองรับหลายอุปกรณ์",
+    "settings.legal_title": "กฎหมาย",
+    "settings.swipe_nav_title": "การนำทางด้วยการปัด",
+    "settings.language_title": "ภาษา",
+
+    // Stats page
+    "stats.report_title": "รายงาน",
+    "stats.tab_summary": "สรุป",
+    "stats.tab_stats": "สถิติ",
+
+    // Month names
+    "month.jan": "ม.ค.",
+    "month.feb": "ก.พ.",
+    "month.mar": "มี.ค.",
+    "month.apr": "เม.ย.",
+    "month.may": "พ.ค.",
+    "month.jun": "มิ.ย.",
+    "month.jul": "ก.ค.",
+    "month.aug": "ส.ค.",
+    "month.sep": "ก.ย.",
+    "month.oct": "ต.ค.",
+    "month.nov": "พ.ย.",
+    "month.dec": "ธ.ค.",
 
     // Onboarding
     "onboarding.start": "เริ่มใช้งาน",
@@ -284,6 +355,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "auth.title": "Sign In",
 
     // Categories
+    "cat.name_label": "Category Name",
+    "cat.delete_btn": "Delete Category",
     "cat.delete_title": "Delete Category",
     "cat.delete_warning": "If confirmed, all items will be moved to No Category and this category will be deleted.",
     "cat.keywords_label": "Keywords (comma-separated)",
@@ -294,6 +367,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "cat.keyword_duplicate": "Keyword \"{{kw}}\" already exists in {{name}}",
 
     // Accounts
+    "acc.name_label": "Account Name",
+    "acc.type_label": "Account Type",
+    "acc.start_balance_label": "Start Balance",
+    "acc.delete_btn": "Delete Account",
+    "acc.transfer_money_title": "Transfer Money",
+    "acc.deleted_name": "Account Deleted",
     "acc.delete_title": "Delete Account",
     "acc.delete_warning": "If confirmed, all items will be moved to Account Deleted and this account will be deleted.",
     "acc.keywords_label": "Keywords (comma-separated)",
@@ -352,6 +431,69 @@ const translations: Record<Lang, Record<string, string>> = {
     "premium.restore": "Restore",
     "premium.error": "An error occurred",
     "premium.subscribe": "Subscribe",
+
+    // Navigation
+    "nav.transactions": "Transactions",
+    "nav.stats": "Stats",
+    "nav.categories": "Categories",
+    "nav.accounts": "Accounts",
+    "nav.settings": "Settings",
+
+    // Tabs / Buttons
+    "tab.expense": "Expense",
+    "tab.income": "Income",
+    "btn.reorder": "Reorder",
+    "btn.done_reorder": "Done Reordering",
+    "btn.save": "Save",
+    "btn.right": "Right",
+    "btn.calc": "Calc",
+
+    // Filter chips / voice status
+    "filter.category": "Category",
+    "filter.account": "Account",
+    "filter.amount": "Amount",
+    "filter.custom": "Custom",
+    "filter.month": "Month",
+    "filter.all": "All",
+
+    // Sort
+    "sort.descending": "Descending",
+    "sort.ascending": "Ascending",
+
+    // Account picker
+    "acc.select_account": "Select Account",
+    "acc.all_accounts": "All Accounts",
+
+    // Settings section titles
+    "settings.repeat_title": "Repeat Transactions",
+    "settings.color_theme_title": "Color Theme",
+    "settings.voice_title": "Voice Input",
+    "settings.auto_start": "Auto Start",
+    "settings.guide_title": "Guide",
+    "settings.cloud_sync_title": "Cloud Sync",
+    "settings.cloud_sync_subtitle": "Support multiple devices",
+    "settings.legal_title": "Legal",
+    "settings.swipe_nav_title": "Swipe Navigation",
+    "settings.language_title": "Language",
+
+    // Stats page
+    "stats.report_title": "Report",
+    "stats.tab_summary": "Summary",
+    "stats.tab_stats": "Stats",
+
+    // Month names
+    "month.jan": "Jan",
+    "month.feb": "Feb",
+    "month.mar": "Mar",
+    "month.apr": "Apr",
+    "month.may": "May",
+    "month.jun": "Jun",
+    "month.jul": "Jul",
+    "month.aug": "Aug",
+    "month.sep": "Sep",
+    "month.oct": "Oct",
+    "month.nov": "Nov",
+    "month.dec": "Dec",
 
     // Onboarding
     "onboarding.start": "Get Started",
@@ -462,6 +604,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "auth.title": "登录",
 
     // Categories
+    "cat.name_label": "类别名称",
+    "cat.delete_btn": "删除类别",
     "cat.delete_title": "删除类别",
     "cat.delete_warning": "确认后，所有记录将移至'无类别'，该类别将被删除",
     "cat.keywords_label": "关键词（用逗号分隔）",
@@ -472,6 +616,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "cat.keyword_duplicate": "关键词 '{{kw}}' 已存在于 {{name}}",
 
     // Accounts
+    "acc.name_label": "账户名称",
+    "acc.type_label": "账户类型",
+    "acc.start_balance_label": "初始余额",
+    "acc.delete_btn": "删除账户",
+    "acc.transfer_money_title": "转账",
+    "acc.deleted_name": "已删除账户",
     "acc.delete_title": "删除账户",
     "acc.delete_warning": "确认后，所有记录将移至'已删除账户'，该账户将被删除",
     "acc.keywords_label": "关键词（用逗号分隔）",
@@ -530,6 +680,69 @@ const translations: Record<Lang, Record<string, string>> = {
     "premium.restore": "恢复购买",
     "premium.error": "发生错误",
     "premium.subscribe": "订阅",
+
+    // Navigation
+    "nav.transactions": "交易",
+    "nav.stats": "统计",
+    "nav.categories": "分类",
+    "nav.accounts": "账户",
+    "nav.settings": "设置",
+
+    // Tabs / Buttons
+    "tab.expense": "支出",
+    "tab.income": "收入",
+    "btn.reorder": "排序",
+    "btn.done_reorder": "完成排序",
+    "btn.save": "保存",
+    "btn.right": "右",
+    "btn.calc": "计算器",
+
+    // Filter chips / voice status
+    "filter.category": "分类",
+    "filter.account": "账户",
+    "filter.amount": "金额",
+    "filter.custom": "自定义",
+    "filter.month": "月",
+    "filter.all": "全部",
+
+    // Sort
+    "sort.descending": "降序",
+    "sort.ascending": "升序",
+
+    // Account picker
+    "acc.select_account": "选择账户",
+    "acc.all_accounts": "所有账户",
+
+    // Settings section titles
+    "settings.repeat_title": "重复交易",
+    "settings.color_theme_title": "颜色主题",
+    "settings.voice_title": "语音输入",
+    "settings.auto_start": "自动启动",
+    "settings.guide_title": "指南",
+    "settings.cloud_sync_title": "云同步",
+    "settings.cloud_sync_subtitle": "支持多设备",
+    "settings.legal_title": "法律",
+    "settings.swipe_nav_title": "滑动导航",
+    "settings.language_title": "语言",
+
+    // Stats page
+    "stats.report_title": "报告",
+    "stats.tab_summary": "汇总",
+    "stats.tab_stats": "统计",
+
+    // Month names
+    "month.jan": "1月",
+    "month.feb": "2月",
+    "month.mar": "3月",
+    "month.apr": "4月",
+    "month.may": "5月",
+    "month.jun": "6月",
+    "month.jul": "7月",
+    "month.aug": "8月",
+    "month.sep": "9月",
+    "month.oct": "10月",
+    "month.nov": "11月",
+    "month.dec": "12月",
 
     // Onboarding
     "onboarding.start": "开始使用",

@@ -464,7 +464,7 @@ export default function AccountsManagement() {
             >
               <ChevronLeft size={24} />
             </button>
-            <h1 className="text-xl font-bold">Accounts</h1>
+            <h1 className="text-xl font-bold">{T("nav.accounts")}</h1>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -485,9 +485,9 @@ export default function AccountsManagement() {
             <button
               onClick={openTransferModal}
               className="flex items-center gap-2 px-3 py-2 hover:bg-theme-500 rounded-lg transition-colors text-sm font-semibold"
-              title="Transfer between accounts"
+              title={T("acc.transfer")}
             >
-              <span>Transfer</span>
+              <span>{T("acc.transfer")}</span>
               <ArrowRightLeft size={20} />
             </button>
           </div>
@@ -518,7 +518,7 @@ export default function AccountsManagement() {
                 {isEditing ? (
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Account Name</label>
+                      <label className="text-xs font-semibold text-slate-600">{T("acc.name_label")}</label>
                       <div className="flex items-center gap-2 mt-1">
                         <input
                           type="text"
@@ -556,7 +556,7 @@ export default function AccountsManagement() {
                       )}
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Account Type</label>
+                      <label className="text-xs font-semibold text-slate-600">{T("acc.type_label")}</label>
                       <input
                         type="text"
                         value={editType}
@@ -566,7 +566,7 @@ export default function AccountsManagement() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-600">Start Balance</label>
+                      <label className="text-xs font-semibold text-slate-600">{T("acc.start_balance_label")}</label>
                       <input
                         type="number"
                         value={editBalance}
@@ -590,13 +590,13 @@ export default function AccountsManagement() {
                         onClick={saveEdit}
                         className="flex-1 px-3 py-2 bg-theme-600 text-white rounded-lg text-sm font-semibold hover:bg-theme-700 transition-colors"
                       >
-                        Save
+                        {T("save")}
                       </button>
                       <button
                         onClick={cancelEdit}
                         className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
                       >
-                        Cancel
+                        {T("cancel")}
                       </button>
                     </div>
                     {account.id !== "account_deleted" && (
@@ -605,7 +605,7 @@ export default function AccountsManagement() {
                         className="w-full px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
                       >
                         <Trash2 size={15} />
-                        Delete Account
+                        {T("acc.delete_btn")}
                       </button>
                     )}
                   </div>
@@ -690,7 +690,7 @@ export default function AccountsManagement() {
           <div className="bg-white rounded-t-2xl shadow-xl w-full max-w-sm flex flex-col" style={{ maxHeight: "60vh" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
-              <h2 className="text-base font-bold text-slate-900">Add Account</h2>
+              <h2 className="text-base font-bold text-slate-900">{T("add")} {T("nav.accounts").replace(/s$/, "")}</h2>
               <button onClick={() => setShowAddForm(false)} className="p-1 hover:bg-slate-100 rounded">
                 <X size={20} />
               </button>
@@ -698,7 +698,7 @@ export default function AccountsManagement() {
             {/* Scrollable content */}
             <div className="overflow-y-auto px-5 pb-2 space-y-4 flex-1">
               <div>
-                <label className="text-xs font-semibold text-slate-600">Account Name</label>
+                <label className="text-xs font-semibold text-slate-600">{T("acc.name_label")}</label>
                 <input
                   type="text"
                   value={newAccName}
@@ -709,7 +709,7 @@ export default function AccountsManagement() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Account Type</label>
+                <label className="text-xs font-semibold text-slate-600">{T("acc.type_label")}</label>
                 <input
                   type="text"
                   value={newAccType}
@@ -719,7 +719,7 @@ export default function AccountsManagement() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Start Balance</label>
+                <label className="text-xs font-semibold text-slate-600">{T("acc.start_balance_label")}</label>
                 <input
                   type="number"
                   value={newAccBalance}
@@ -728,7 +728,7 @@ export default function AccountsManagement() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                <label className="text-xs font-semibold text-slate-600">{T("acc.keywords_label")}</label>
                 <input
                   type="text"
                   value={newAccKeywords}
@@ -767,13 +767,13 @@ export default function AccountsManagement() {
                 disabled={!newAccName.trim()}
                 className="flex-1 px-3 py-2.5 bg-theme-600 text-white rounded-xl text-sm font-semibold hover:bg-theme-700 transition-colors disabled:opacity-50"
               >
-                Add
+                {T("add")}
               </button>
               <button
                 onClick={() => setShowAddForm(false)}
                 className="flex-1 px-3 py-2.5 bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-300 transition-colors"
               >
-                Cancel
+                {T("cancel")}
               </button>
             </div>
           </div>
@@ -843,7 +843,7 @@ export default function AccountsManagement() {
       {showTransferModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-5 space-y-4">
-            <h2 className="text-base font-bold text-slate-900">Transfer Money</h2>
+            <h2 className="text-base font-bold text-slate-900">{T("acc.transfer_money_title")}</h2>
 
             {/* From Account */}
             <div>

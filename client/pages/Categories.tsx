@@ -339,7 +339,7 @@ export default function Categories() {
             >
               <ChevronLeft size={24} />
             </button>
-            <h1 className="text-xl font-bold">Categories</h1>
+            <h1 className="text-xl font-bold">{T("nav.categories")}</h1>
           </div>
           <button
             onClick={() => {
@@ -412,7 +412,7 @@ export default function Categories() {
                   <div className="space-y-3">
                     <div>
                       <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-                        Category Name
+                        {T("cat.name_label")}
                         {isProtected(category.id) && <Lock size={12} className="text-slate-400" />}
                       </label>
                       <div className="flex items-center gap-2 mt-1">
@@ -470,13 +470,13 @@ export default function Categories() {
                         onClick={saveEdit}
                         className="flex-1 px-3 py-2 bg-theme-600 text-white rounded-lg text-sm font-semibold hover:bg-theme-700 transition-colors"
                       >
-                        Save
+                        {T("save")}
                       </button>
                       <button
                         onClick={cancelEdit}
                         className="flex-1 px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-colors"
                       >
-                        Cancel
+                        {T("cancel")}
                       </button>
                     </div>
                     {!isProtected(category.id) && (
@@ -485,7 +485,7 @@ export default function Categories() {
                         className="w-full px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
                       >
                         <Trash2 size={15} />
-                        Delete Category
+                        {T("cat.delete_btn")}
                       </button>
                     )}
                   </div>
@@ -575,7 +575,7 @@ export default function Categories() {
           <div className="bg-white rounded-t-2xl shadow-xl w-full max-w-sm flex flex-col" style={{ maxHeight: "60vh" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
-              <h2 className="text-base font-bold text-slate-900">Add {categoryType === "income" ? "Income" : "Expense"} Category</h2>
+              <h2 className="text-base font-bold text-slate-900">{T("add")} {categoryType === "income" ? T("tab.income") : T("tab.expense")} {T("nav.categories").replace(/s$/, "")}</h2>
               <button onClick={() => setShowAddForm(false)} className="p-1 hover:bg-slate-100 rounded">
                 <X size={20} />
               </button>
@@ -583,7 +583,7 @@ export default function Categories() {
             {/* Scrollable content */}
             <div className="overflow-y-auto px-5 pb-2 space-y-4 flex-1">
               <div>
-                <label className="text-xs font-semibold text-slate-600">Category Name</label>
+                <label className="text-xs font-semibold text-slate-600">{T("cat.name_label")}</label>
                 <input
                   type="text"
                   value={newName}
@@ -594,7 +594,7 @@ export default function Categories() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Keywords <span className="font-normal text-slate-400">(คั่นด้วย ,)</span></label>
+                <label className="text-xs font-semibold text-slate-600">{T("cat.keywords_label")}</label>
                 <input
                   type="text"
                   value={newKeywords}
@@ -633,13 +633,13 @@ export default function Categories() {
                 disabled={!newName.trim()}
                 className="flex-1 px-3 py-2.5 bg-theme-600 text-white rounded-xl text-sm font-semibold hover:bg-theme-700 transition-colors disabled:opacity-50"
               >
-                Add
+                {T("add")}
               </button>
               <button
                 onClick={() => setShowAddForm(false)}
                 className="flex-1 px-3 py-2.5 bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-300 transition-colors"
               >
-                Cancel
+                {T("cancel")}
               </button>
             </div>
           </div>

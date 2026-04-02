@@ -215,7 +215,7 @@ export default function Settings() {
         >
           <ChevronLeft size={20} className="text-slate-600" />
         </button>
-        <h1 className="text-lg font-semibold text-slate-800">Settings</h1>
+        <h1 className="text-lg font-semibold text-slate-800">{T("nav.settings")}</h1>
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-4">
@@ -229,7 +229,7 @@ export default function Settings() {
             <Repeat size={18} className="text-theme-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-semibold text-slate-800">Repeat Transactions</h2>
+            <h2 className="text-sm font-semibold text-slate-800">{T("settings.repeat_title")}</h2>
             <p className="text-xs text-slate-500">{T("settings.repeat_hint")}</p>
           </div>
           <ChevronLeft size={16} className="text-slate-300 rotate-180 flex-shrink-0" />
@@ -242,7 +242,7 @@ export default function Settings() {
               <Palette size={18} className="text-theme-600" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">Color Theme</h2>
+              <h2 className="text-sm font-semibold text-slate-800">{T("settings.color_theme_title")}</h2>
               <p className="text-xs text-slate-500">{T("settings.app_theme")}</p>
             </div>
           </div>
@@ -282,7 +282,7 @@ export default function Settings() {
               <Mic size={18} className="text-theme-600" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">Voice Input</h2>
+              <h2 className="text-sm font-semibold text-slate-800">{T("settings.voice_title")}</h2>
               <p className="text-xs text-slate-500">{T("settings.autosave_hint")}</p>
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function Settings() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-slate-700 font-medium">Auto Start</span>
+                <span className="text-sm text-slate-700 font-medium">{T("settings.auto_start")}</span>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {settings.voiceAutoStart ? T("settings.auto_start_on") : T("settings.auto_start_off")}
                 </p>
@@ -516,7 +516,7 @@ export default function Settings() {
               <BookOpen size={18} className="text-theme-600" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">Guide</h2>
+              <h2 className="text-sm font-semibold text-slate-800">{T("settings.guide_title")}</h2>
               <p className="text-xs text-slate-500">{T("settings.user_guide")}</p>
             </div>
           </div>
@@ -535,8 +535,8 @@ export default function Settings() {
               <Cloud size={18} className="text-sky-600" />
             </div>
             <div className="flex-1">
-              <h2 className="text-sm font-semibold text-slate-800">Cloud Sync</h2>
-              <p className="text-xs text-slate-500">Support multiple devices</p>
+              <h2 className="text-sm font-semibold text-slate-800">{T("settings.cloud_sync_title")}</h2>
+              <p className="text-xs text-slate-500">{T("settings.cloud_sync_subtitle")}</p>
             </div>
             <button
               onClick={() => {
@@ -603,7 +603,7 @@ export default function Settings() {
               <Shield size={18} className="text-slate-500" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">Legal</h2>
+              <h2 className="text-sm font-semibold text-slate-800">{T("settings.legal_title")}</h2>
               <p className="text-xs text-slate-500">{T("settings.legal")}</p>
             </div>
           </div>
