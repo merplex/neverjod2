@@ -1,4 +1,3 @@
-import { getCurrencySymbol } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
@@ -8,7 +7,7 @@ import { markDeleted, syncPush } from "../utils/syncService";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { useT } from "../hooks/useT";
-import TimePicker from "../components/TimePicker";
+import TransferModal from "../components/TransferModal";
 import { CreditCard, Wallet, Banknote, TrendingUp, Smartphone, MoreHorizontal, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Plane, ShoppingBag, Dumbbell, Gift, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 
 interface Account {
@@ -34,7 +33,6 @@ export default function AccountsManagement() {
   const navigate = useNavigate();
   const T = useT();
   useSwipeBack();
-  const cur = getCurrencySymbol();
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
       const stored = localStorage.getItem(lk("app_accounts"));
@@ -209,14 +207,6 @@ export default function AccountsManagement() {
   };
 
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [showFromPicker, setShowFromPicker] = useState(false);
-  const [showToPicker, setShowToPicker] = useState(false);
-  const [transferFromId, setTransferFromId] = useState<string | null>(null);
-  const [transferToId, setTransferToId] = useState<string | null>(null);
-  const [transferAmount, setTransferAmount] = useState("");
-  const [transferDate, setTransferDate] = useState(new Date().toISOString().split("T")[0]);
-  const [transferTime, setTransferTime] = useState(new Date());
 
   const startEditing = (account: Account & { iconId?: string }) => {
     setEditingId(account.id);
@@ -368,93 +358,6 @@ export default function AccountsManagement() {
     setDragOverId(null);
   };
 
-  const openTransferModal = () => {
-    setShowTransferModal(true);
-    setTransferFromId(null);
-    setTransferToId(null);
-    setTransferAmount("");
-    setTransferDate(new Date().toISOString().split("T")[0]);
-  };
-
-  const closeTransferModal = () => {
-    setShowTransferModal(false);
-    setShowTimePicker(false);
-    setShowFromPicker(false);
-    setShowToPicker(false);
-    setTransferFromId(null);
-    setTransferToId(null);
-    setTransferAmount("");
-  };
-
-  const getAccountCurrentBalance = (accountId: string, startBalance: number): number => {
-    try {
-      const txns: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
-      const cats: any[] = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
-      const catTypeMap: Record<string, string> = {};
-      cats.forEach((c: any) => { catTypeMap[c.id] = c.type; });
-      const incomeIds = new Set(["salary","bonus","freelance","investment","rental","transfer_in"]);
-      return txns
-        .filter((t: any) => t.accountId === accountId)
-        .reduce((sum: number, t: any) => {
-          const type = catTypeMap[t.categoryId] || (incomeIds.has(t.categoryId) ? "income" : "expense");
-          return type === "income" ? sum + Number(t.amount) : sum - Number(t.amount);
-        }, startBalance);
-    } catch {
-      return startBalance;
-    }
-  };
-
-  const transferableAccounts = accounts
-    .filter((a) => a.id !== "account_deleted")
-    .map((a) => ({ ...a, currentBalance: getAccountCurrentBalance(a.id, Number(a.balance) || 0) }));
-
-  const handleTransfer = () => {
-    if (!transferFromId || !transferToId || !transferAmount || transferFromId === transferToId) {
-      alert("Please select different accounts and enter amount");
-      return;
-    }
-
-    const amount = parseFloat(transferAmount);
-    if (amount <= 0) {
-      alert("Amount must be greater than 0");
-      return;
-    }
-
-    const fromAcc = transferableAccounts.find((a) => a.id === transferFromId);
-    const toAcc = transferableAccounts.find((a) => a.id === transferToId);
-    const txDate = new Date(transferDate);
-    txDate.setHours(transferTime.getHours(), transferTime.getMinutes(), 0, 0);
-    const timeStr = `${String(txDate.getHours()).padStart(2, "0")}:${String(txDate.getMinutes()).padStart(2, "0")}`;
-    const now = Date.now();
-
-    const txns: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
-    const transferRef = `transfer_${now}`;
-    txns.unshift({
-      id: `${now}_transfer_out`,
-      categoryId: "transfer_out",
-      accountId: transferFromId,
-      amount,
-      description: T("acc.transfer_to", { name: toAcc?.name || transferToId }),
-      date: txDate.toISOString(),
-      time: timeStr,
-      isTransfer: true,
-      transferRef,
-    });
-    txns.unshift({
-      id: `${now + 1}_transfer_in`,
-      categoryId: "transfer_in",
-      accountId: transferToId,
-      amount,
-      description: T("acc.transfer_from", { name: fromAcc?.name || transferFromId }),
-      date: txDate.toISOString(),
-      time: timeStr,
-      isTransfer: true,
-      transferRef,
-    });
-    localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
-
-    closeTransferModal();
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -487,7 +390,7 @@ export default function AccountsManagement() {
               <Plus size={24} />
             </button>
             <button
-              onClick={openTransferModal}
+              onClick={() => setShowTransferModal(true)}
               className="flex items-center gap-2 px-3 py-2 hover:bg-theme-500 rounded-lg transition-colors text-sm font-semibold"
               title={T("acc.transfer")}
             >
@@ -845,165 +748,9 @@ export default function AccountsManagement() {
 
       {/* Transfer Modal */}
       {showTransferModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-5 space-y-4">
-            <h2 className="text-base font-bold text-slate-900">{T("acc.transfer_money_title")}</h2>
-
-            {/* From Account */}
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.from_account")}</label>
-              <button
-                onClick={() => { setShowFromPicker(true); setShowToPicker(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 border rounded-xl text-sm transition-colors ${transferFromId ? "border-theme-400 bg-theme-50" : "border-slate-200 hover:bg-slate-50"}`}
-              >
-                {transferFromId ? (
-                  <>
-                    <span className="font-semibold text-slate-800">{transferableAccounts.find(a => a.id === transferFromId)?.name}</span>
-                    <span className={`text-xs ${(transferableAccounts.find(a => a.id === transferFromId)?.currentBalance ?? 0) >= 0 ? "text-slate-500" : "text-red-500"}`}>
-                      {cur}{(transferableAccounts.find(a => a.id === transferFromId)?.currentBalance ?? 0).toLocaleString()}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-slate-400 text-xs">{T("acc.select_source")}</span>
-                )}
-              </button>
-            </div>
-
-            {/* To Account */}
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.to_account")}</label>
-              <button
-                onClick={() => { setShowToPicker(true); setShowFromPicker(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 border rounded-xl text-sm transition-colors ${transferToId ? "border-theme-400 bg-theme-50" : "border-slate-200 hover:bg-slate-50"}`}
-              >
-                {transferToId ? (
-                  <>
-                    <span className="font-semibold text-slate-800">{transferableAccounts.find(a => a.id === transferToId)?.name}</span>
-                    <span className={`text-xs ${(transferableAccounts.find(a => a.id === transferToId)?.currentBalance ?? 0) >= 0 ? "text-slate-500" : "text-red-500"}`}>
-                      {cur}{(transferableAccounts.find(a => a.id === transferToId)?.currentBalance ?? 0).toLocaleString()}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-slate-400 text-xs">{T("acc.select_dest")}</span>
-                )}
-              </button>
-            </div>
-
-            {/* Amount */}
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.amount")}</label>
-              <input
-                type="number"
-                value={transferAmount}
-                onChange={(e) => setTransferAmount(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                placeholder="0"
-              />
-            </div>
-
-            {/* Date + Time */}
-            <div className="flex gap-2">
-              <div className="flex-[2] min-w-0">
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.date")}</label>
-                <input
-                  type="date"
-                  value={transferDate}
-                  onChange={(e) => setTransferDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white appearance-none"
-                />
-              </div>
-              <div className="flex-[1]">
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">{T("acc.time")}</label>
-                <button
-                  onClick={() => setShowTimePicker(true)}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:bg-slate-50 transition-colors whitespace-nowrap"
-                >
-                  {transferTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleTransfer}
-                className="flex-1 py-2.5 bg-theme-600 text-white rounded-xl text-sm font-semibold hover:bg-theme-700 transition-colors"
-              >
-                {T("acc.transfer")}
-              </button>
-              <button
-                onClick={closeTransferModal}
-                className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
-              >
-                {T("cancel")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Account Picker — From */}
-      {showFromPicker && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowFromPicker(false)} />
-          <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-800">{T("acc.select_source")}</h3>
-              <button onClick={() => setShowFromPicker(false)}><X size={18} className="text-slate-400" /></button>
-            </div>
-            <div className="overflow-y-auto">
-              {transferableAccounts.map((acc) => (
-                <button
-                  key={acc.id}
-                  onClick={() => { setTransferFromId(acc.id); setShowFromPicker(false); }}
-                  className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${acc.id === transferFromId ? "bg-theme-50" : ""}`}
-                >
-                  <span className={`text-sm font-semibold ${acc.id === transferFromId ? "text-theme-700" : "text-slate-800"}`}>{acc.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{cur}{acc.currentBalance.toLocaleString()}</span>
-                    {acc.id === transferFromId && <span className="text-theme-600 text-base">✓</span>}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Account Picker — To */}
-      {showToPicker && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowToPicker(false)} />
-          <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-800">{T("acc.select_dest")}</h3>
-              <button onClick={() => setShowToPicker(false)}><X size={18} className="text-slate-400" /></button>
-            </div>
-            <div className="overflow-y-auto">
-              {transferableAccounts.map((acc) => (
-                <button
-                  key={acc.id}
-                  onClick={() => { setTransferToId(acc.id); setShowToPicker(false); }}
-                  className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${acc.id === transferToId ? "bg-theme-50" : ""}`}
-                >
-                  <span className={`text-sm font-semibold ${acc.id === transferToId ? "text-theme-700" : "text-slate-800"}`}>{acc.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{cur}{acc.currentBalance.toLocaleString()}</span>
-                    {acc.id === transferToId && <span className="text-theme-600 text-base">✓</span>}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Time Picker Modal */}
-      {showTimePicker && (
-        <TimePicker
-          value={transferTime}
-          onChange={setTransferTime}
-          onClose={() => setShowTimePicker(false)}
+        <TransferModal
+          onClose={() => setShowTransferModal(false)}
+          onSaved={() => {}}
         />
       )}
     </div>

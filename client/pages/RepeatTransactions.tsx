@@ -9,6 +9,7 @@ import {
   REPEAT_OPTIONS, RepeatTransaction, RepeatOption,
 } from "../utils/repeatTransactionService";
 import AddTransactionModal from "../components/AddTransactionModal";
+import TransferModal from "../components/TransferModal";
 import { getLang } from "../utils/i18n";
 
 function repeatLabel(rt: RepeatTransaction): string {
@@ -31,6 +32,7 @@ export default function RepeatTransactions() {
   const [list, setList] = useState<RepeatTransaction[]>(() => getRepeatTransactions());
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [editTransferId, setEditTransferId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -93,22 +95,33 @@ export default function RepeatTransactions() {
           </div>
         ) : (
           list.map((rt) => {
+            const isTransfer = !!rt.isTransfer;
             const sign = rt.categoryType === "income" ? "+" : "-";
-            const amtColor = rt.categoryType === "income" ? "text-green-600" : "text-red-500";
+            const amtColor = isTransfer
+              ? "text-blue-600"
+              : rt.categoryType === "income" ? "text-green-600" : "text-red-500";
 
             return (
               <div key={rt.id} className="bg-white rounded-xl border border-slate-200 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    {/* Category + Account */}
+                    {/* Category + Account (or Transfer From→To) */}
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-slate-800 truncate">{rt.categoryName}</span>
-                      <span className="text-xs text-slate-400">·</span>
-                      <span className="text-xs text-slate-500 truncate">{rt.accountName}</span>
+                      {isTransfer ? (
+                        <span className="text-sm font-semibold text-slate-800 truncate">
+                          {rt.fromAccountName || rt.accountName} → {rt.toAccountName}
+                        </span>
+                      ) : (
+                        <>
+                          <span className="text-sm font-semibold text-slate-800 truncate">{rt.categoryName}</span>
+                          <span className="text-xs text-slate-400">·</span>
+                          <span className="text-xs text-slate-500 truncate">{rt.accountName}</span>
+                        </>
+                      )}
                     </div>
                     {/* Amount */}
                     <p className={`text-base font-bold ${amtColor} mb-2`}>
-                      {sign}{cur}{rt.amount.toLocaleString()}
+                      {isTransfer ? "" : sign}{cur}{rt.amount.toLocaleString()}
                     </p>
                     {/* Repeat info */}
                     <div className="flex items-center gap-2">
@@ -129,7 +142,7 @@ export default function RepeatTransactions() {
                   {/* Edit + Delete */}
                   <div className="flex gap-1">
                     <button
-                      onClick={() => openEdit(rt)}
+                      onClick={() => isTransfer ? setEditTransferId(rt.id) : openEdit(rt)}
                       className="p-2 text-slate-300 hover:text-theme-500 transition-colors flex-shrink-0"
                     >
                       <Pencil size={18} />
@@ -248,6 +261,15 @@ export default function RepeatTransactions() {
           isRepeatMode
           onClose={() => setShowAddModal(false)}
           onSaved={() => { refresh(); }}
+        />
+      )}
+
+      {/* Edit Transfer Repeat Modal */}
+      {editTransferId && (
+        <TransferModal
+          editRepeatId={editTransferId}
+          onClose={() => setEditTransferId(null)}
+          onSaved={() => { setEditTransferId(null); refresh(); }}
         />
       )}
     </div>

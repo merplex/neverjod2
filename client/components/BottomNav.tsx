@@ -1,16 +1,18 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { FileText, BarChart3, Grid3x3, User, Settings } from "lucide-react";
+import { useT } from "../hooks/useT";
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const T = useT();
 
   const navItems = [
-    { path: "/transactions", label: "Transaction", icon: FileText },
-    { path: "/stats", label: "Report", icon: BarChart3 },
-    { path: "/categories", label: "Category", icon: Grid3x3 },
-    { path: "/accounts", label: "Account", icon: User },
-    { path: "/settings", label: "Setting", icon: Settings },
+    { path: "/transactions", label: T("nav.transactions"), icon: FileText },
+    { path: "/stats", label: T("nav.stats"), icon: BarChart3 },
+    { path: "/categories", label: T("nav.categories"), icon: Grid3x3 },
+    { path: "/accounts", label: T("nav.accounts"), icon: User },
+    { path: "/settings", label: T("nav.settings"), icon: Settings },
   ];
 
   const isActive = (path: string) => location.pathname === path;

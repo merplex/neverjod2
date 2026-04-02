@@ -10,6 +10,7 @@ export interface Transaction {
   type: "income" | "expense";
   isRepeat?: boolean;
   isTransfer?: boolean;
+  ledgerName?: string;  // cross-ledger transfer: name of the destination ledger
 }
 
 const categories = [
@@ -222,6 +223,7 @@ export const getRealTransactionsList = (): Transaction[] => {
         type: catType,
         isRepeat: t.isRepeat || false,
         isTransfer: t.isTransfer || t.categoryId === "transfer_out" || t.categoryId === "transfer_in",
+        ledgerName: t.ledgerName,
       };
     });
   } catch (e) {

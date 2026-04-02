@@ -41,6 +41,15 @@ export interface RepeatTransaction {
   nextDue: string;       // ISO — next scheduled execution
   lastExecuted?: string;
   source?: "local" | "server";  // "local" = not yet synced; "server" = synced
+
+  // Transfer-specific fields
+  isTransfer?: boolean;
+  fromAccountId?: string;
+  fromAccountName?: string;
+  toAccountId?: string;
+  toAccountName?: string;
+  toLedgerId?: string;    // cross-ledger target (future)
+  toLedgerName?: string;  // cross-ledger target name (future)
 }
 
 import { lk } from "./ledgerStorage";
@@ -77,6 +86,43 @@ export function updateRepeatTransaction(id: string, updates: Partial<Pick<Repeat
   if (updates.repeatOption) {
     list[idx].nextDue = buildInitialNextDue(list[idx]);
   }
+  saveRepeatTransactions(list);
+}
+
+export function updateRepeatTransfer(
+  id: string,
+  updates: {
+    fromAccountId: string;
+    fromAccountName: string;
+    toAccountId: string;
+    toAccountName: string;
+    amount: number;
+    repeatOption: RepeatOption;
+    date: Date;
+    time: string;
+  }
+) {
+  const list = getRepeatTransactions();
+  const idx = list.findIndex((r) => r.id === id);
+  if (idx === -1) return;
+  list[idx] = {
+    ...list[idx],
+    fromAccountId: updates.fromAccountId,
+    fromAccountName: updates.fromAccountName,
+    toAccountId: updates.toAccountId,
+    toAccountName: updates.toAccountName,
+    accountId: updates.fromAccountId,
+    accountName: updates.fromAccountName,
+    categoryName: updates.toAccountName,
+    amount: updates.amount,
+    repeatOption: updates.repeatOption,
+    dayOfMonth: updates.date.getDate(),
+    weekday: updates.date.getDay(),
+    monthOfYear: updates.date.getMonth(),
+    time: updates.time,
+    startDate: updates.date.toISOString(),
+  };
+  list[idx].nextDue = buildInitialNextDue(list[idx]);
   saveRepeatTransactions(list);
 }
 
@@ -180,20 +226,52 @@ export function checkAndExecuteRepeats(): boolean {
     while (nextDueDay <= todayStart && safety < 400) {
       safety++;
 
-      // create the transaction
+      // create the transaction(s)
       const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
       const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      txns.unshift({
-        id,
-        categoryId: rt.categoryId,
-        accountId: rt.accountId,
-        amount: rt.amount,
-        description: rt.description || "",
-        date: nextDue.toISOString(),
-        time: rt.time,
-        repeatId: rt.id,
-        isRepeat: true,
-      });
+
+      if (rt.isTransfer) {
+        const transferRef = `transfer_${id}`;
+        txns.unshift({
+          id: `${id}_out`,
+          categoryId: "transfer_out",
+          accountId: rt.fromAccountId || rt.accountId,
+          amount: rt.amount,
+          description: `→ ${rt.toAccountName}`,
+          date: nextDue.toISOString(),
+          time: rt.time,
+          isTransfer: true,
+          isRepeat: true,
+          repeatId: rt.id,
+          transferRef,
+          ...(rt.toLedgerName ? { ledgerName: rt.toLedgerName } : {}),
+        });
+        txns.unshift({
+          id: `${id}_in`,
+          categoryId: "transfer_in",
+          accountId: rt.toAccountId || "",
+          amount: rt.amount,
+          description: `← ${rt.fromAccountName || rt.accountName}`,
+          date: nextDue.toISOString(),
+          time: rt.time,
+          isTransfer: true,
+          isRepeat: true,
+          repeatId: rt.id,
+          transferRef,
+        });
+      } else {
+        txns.unshift({
+          id,
+          categoryId: rt.categoryId,
+          accountId: rt.accountId,
+          amount: rt.amount,
+          description: rt.description || "",
+          date: nextDue.toISOString(),
+          time: rt.time,
+          repeatId: rt.id,
+          isRepeat: true,
+        });
+      }
       localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
 
       rt.lastExecuted = nextDue.toISOString();

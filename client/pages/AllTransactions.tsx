@@ -451,12 +451,20 @@ export default function AllTransactions() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
                         <span className="text-xs font-medium text-slate-600">{transaction.accountName}</span>
-                        <span className="text-xs font-semibold text-theme-600">{transaction.category}</span>
-                        {transaction.isRepeat && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-theme-100 text-theme-600 leading-none flex-shrink-0">repeat</span>}
-                        {transaction.isTransfer && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-500 leading-none flex-shrink-0">transfer</span>}
+                        {transaction.isTransfer ? (
+                          <span className="text-xs text-slate-500">transfer</span>
+                        ) : (
+                          <span className="text-xs font-semibold text-theme-600">{transaction.category}</span>
+                        )}
+                        {transaction.ledgerName && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 leading-none flex-shrink-0">{transaction.ledgerName}</span>
+                        )}
+                        {transaction.isRepeat && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-theme-100 text-theme-600 leading-none flex-shrink-0">repeat</span>
+                        )}
                       </div>
                       <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>
