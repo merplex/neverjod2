@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { lk } from "../utils/ledgerStorage";
 import { Mic } from "lucide-react";
 import { parseVoiceInput } from "../utils/keywordMatch";
 
@@ -13,7 +14,7 @@ interface RecordingProps {
 
 function readSilenceDelay(): number {
   try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
     return typeof s.voiceInputDelay === "number" ? s.voiceInputDelay * 1000 : 3500;
   } catch { return 3500; }
 }
@@ -21,7 +22,7 @@ function readSilenceDelay(): number {
 // Reads user's chosen voice language from Settings (used on both iOS and Android)
 function readVoiceLang(): string {
   try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
     const lang = s.voiceLang;
     if (lang === "auto") return navigator.language || "th-TH";
     if (typeof lang === "string" && lang.length > 0) return lang;

@@ -1,3 +1,5 @@
+import { lk } from "./ledgerStorage";
+
 // Currency options — order mirrors VOICE_LANG_OPTIONS in Settings.tsx
 export const CURRENCY_OPTIONS = [
   { lang: "th-TH", symbol: "฿",  label: "฿  Thai Baht" },
@@ -15,7 +17,7 @@ export const CURRENCY_OPTIONS = [
 
 export function getCurrencySymbol(): string {
   try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
     return typeof s.currencySymbol === "string" && s.currencySymbol.length > 0
       ? s.currencySymbol
       : "฿";

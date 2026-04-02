@@ -190,15 +190,17 @@ const defaultAccountNames: Record<string, string> = {
   revolut: "Revolut", wise: "Wise", stripe: "Stripe", paypal: "PayPal",
 };
 
+import { lk } from "./ledgerStorage";
+
 // Read real transactions saved by the user from localStorage
 export const getRealTransactionsList = (): Transaction[] => {
   try {
-    const stored = localStorage.getItem("app_transactions");
+    const stored = localStorage.getItem(lk("app_transactions"));
     if (!stored) return [];
 
     const raw: any[] = JSON.parse(stored);
-    const storedCats: any[] = JSON.parse(localStorage.getItem("app_categories") || "[]");
-    const storedAccs: any[] = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+    const storedCats: any[] = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
+    const storedAccs: any[] = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
 
     return raw.map((t): Transaction => {
       const cat = storedCats.find((c) => c.id === t.categoryId) || defaultCategoryNames[t.categoryId];

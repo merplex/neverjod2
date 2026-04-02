@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown, BookText, Plus, Pencil, ChevronRight } from "lucide-react";
 import { CURRENCY_OPTIONS } from "../utils/currency";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { syncAll } from "../utils/syncService";
+import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger } from "../utils/syncService";
+import { lk, getActiveLedgerId, setActiveLedgerId } from "../utils/ledgerStorage";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
 import { useT } from "../hooks/useT";
 
-const SETTINGS_KEY = "app_settings";
+const SETTINGS_KEY = () => lk("app_settings");
 
 type ColorTheme = "teal" | "blue" | "purple" | "rose" | "amber" | "sky";
 
@@ -62,7 +63,7 @@ const VOICE_LANG_OPTIONS = [
 
 function loadSettings(): AppSettings {
   try {
-    const saved = localStorage.getItem(SETTINGS_KEY);
+    const saved = localStorage.getItem(SETTINGS_KEY());
     if (saved) {
       const parsed = JSON.parse(saved);
       // Migrate old data that stored voiceInputDelay in milliseconds
@@ -79,7 +80,7 @@ function loadSettings(): AppSettings {
 }
 
 function saveSettings(settings: AppSettings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  localStorage.setItem(SETTINGS_KEY(), JSON.stringify(settings));
 }
 
 export default function Settings() {
@@ -94,6 +95,19 @@ export default function Settings() {
   const isPremium = localStorage.getItem("app_premium") === "true";
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
+  // Ledger management state
+  type LedgerItem = { id: string; name: string };
+  const [ledgers, setLedgers] = useState<LedgerItem[]>(() => {
+    try { return JSON.parse(localStorage.getItem("app_ledgers") || "null") || [{ id: "main", name: T("ledger.main_name") }]; }
+    catch { return [{ id: "main", name: T("ledger.main_name") }]; }
+  });
+  const [activeLedger, setActiveLedger] = useState<string>(getActiveLedgerId);
+  const [showLedgerCreate, setShowLedgerCreate] = useState(false);
+  const [newLedgerName, setNewLedgerName] = useState("");
+  const [renamingLedger, setRenamingLedger] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+
   // Cloud Backup state
   const [cloudToken, setCloudToken] = useState<string>(() => localStorage.getItem("cloud_token") || "");
   const [cloudEmail, setCloudEmail] = useState<string>(() => localStorage.getItem("cloud_email") || "");
@@ -107,7 +121,7 @@ export default function Settings() {
     const direction = localStorage.getItem("sync_direction");
     const t = direction === "client"
       ? localStorage.getItem("last_client_sync_at")
-      : localStorage.getItem("last_push_at");
+      : localStorage.getItem(lk("last_push_at"));
     if (!t) return "";
     try { return new Date(t).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
     catch { return ""; }
@@ -127,12 +141,23 @@ export default function Settings() {
     const onSyncUpdated = () => {
       const d = localStorage.getItem("sync_direction");
       setSyncDirection(d === "server" || d === "client" ? d : null);
-      const t = localStorage.getItem("last_client_sync_at") || localStorage.getItem("last_push_at");
+      const t = localStorage.getItem("last_client_sync_at") || localStorage.getItem(lk("last_push_at"));
       if (t) setLastSyncTime(formatTime(t));
     };
     window.addEventListener("sync-updated", onSyncUpdated);
     return () => window.removeEventListener("sync-updated", onSyncUpdated);
   }, []);
+
+  // Sync ledger list from server when logged in
+  useEffect(() => {
+    if (!cloudToken) return;
+    apiListLedgers(cloudToken).then((list) => {
+      if (list.length > 0) {
+        const mapped = list.map((l) => ({ id: l.id, name: l.name }));
+        saveLedgerList(mapped);
+      }
+    }).catch(() => {});
+  }, [cloudToken]);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -170,7 +195,7 @@ export default function Settings() {
   const refreshLastSyncTime = (useLocalTime = false) => {
     const t = useLocalTime
       ? localStorage.getItem("last_client_sync_at")
-      : (localStorage.getItem("last_push_at") || localStorage.getItem("last_sync_at"));
+      : (localStorage.getItem(lk("last_push_at")) || localStorage.getItem(lk("last_sync_at")));
     if (!t) return;
     setLastSyncTime(formatTime(t));
   };
@@ -195,7 +220,7 @@ export default function Settings() {
   const handleLogout = () => {
     localStorage.removeItem("cloud_token");
     localStorage.removeItem("cloud_email");
-    localStorage.removeItem("last_sync_at");
+    localStorage.removeItem(lk("last_sync_at"));
     localStorage.removeItem("sync_direction");
     localStorage.removeItem("last_client_sync_at");
     setCloudToken("");
@@ -203,6 +228,51 @@ export default function Settings() {
     setSyncStatus("idle");
     setSyncDirection(null);
     setLastSyncTime("");
+  };
+
+  const saveLedgerList = (list: LedgerItem[]) => {
+    localStorage.setItem("app_ledgers", JSON.stringify(list));
+    setLedgers(list);
+  };
+
+  const handleSwitchLedger = (id: string) => {
+    if (id === activeLedger) return;
+    setActiveLedgerId(id);
+    window.location.reload();
+  };
+
+  const handleCreateLedger = async () => {
+    const name = newLedgerName.trim();
+    if (!name || !cloudToken) return;
+    setLedgerLoading(true);
+    try {
+      const created = await apiCreateLedger(cloudToken, name);
+      const updated = [...ledgers, { id: created.id, name: created.name }];
+      saveLedgerList(updated);
+      setNewLedgerName("");
+      setShowLedgerCreate(false);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setLedgerLoading(false);
+    }
+  };
+
+  const handleRenameLedger = async (id: string) => {
+    const name = renameValue.trim();
+    if (!name || !cloudToken) return;
+    setLedgerLoading(true);
+    try {
+      await apiRenameLedger(cloudToken, id, name);
+      const updated = ledgers.map((l) => l.id === id ? { ...l, name } : l);
+      saveLedgerList(updated);
+      setRenamingLedger(null);
+      setRenameValue("");
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setLedgerLoading(false);
+    }
   };
 
   return (
@@ -219,6 +289,84 @@ export default function Settings() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+
+        {/* Ledger Books */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-theme-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <BookText size={18} className="text-theme-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-sm font-semibold text-slate-800">{T("ledger.title")}</h2>
+              <p className="text-xs text-slate-500">{T("ledger.subtitle")}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {ledgers.map((l) => (
+              <div key={l.id} className="flex items-center gap-2">
+                {renamingLedger === l.id ? (
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") handleRenameLedger(l.id); if (e.key === "Escape") { setRenamingLedger(null); } }}
+                    />
+                    <button onClick={() => handleRenameLedger(l.id)} disabled={ledgerLoading} className="px-3 py-1.5 bg-theme-600 text-white text-xs rounded-lg disabled:opacity-50">{T("btn.save")}</button>
+                    <button onClick={() => setRenamingLedger(null)} className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs rounded-lg">{T("btn.cancel")}</button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleSwitchLedger(l.id)}
+                      className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${activeLedger === l.id ? "bg-theme-100 text-theme-700" : "bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
+                    >
+                      {activeLedger === l.id && <Check size={14} className="text-theme-600 flex-shrink-0" />}
+                      <span className="truncate">{l.name}</span>
+                    </button>
+                    {cloudToken && l.id !== "main" && (
+                      <button onClick={() => { setRenamingLedger(l.id); setRenameValue(l.name); }} className="p-2 text-slate-400 hover:text-slate-600">
+                        <Pencil size={14} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Create new ledger */}
+          {cloudToken ? (
+            isPremium ? (
+              showLedgerCreate ? (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={newLedgerName}
+                    onChange={(e) => setNewLedgerName(e.target.value)}
+                    placeholder={T("ledger.name_placeholder")}
+                    className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") handleCreateLedger(); if (e.key === "Escape") setShowLedgerCreate(false); }}
+                  />
+                  <button onClick={handleCreateLedger} disabled={ledgerLoading || !newLedgerName.trim()} className="px-3 py-2 bg-theme-600 text-white text-sm rounded-lg disabled:opacity-50">{T("btn.save")}</button>
+                  <button onClick={() => setShowLedgerCreate(false)} className="px-3 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg">{T("btn.cancel")}</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowLedgerCreate(true)} className="mt-3 w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500 hover:border-theme-300 hover:text-theme-600 transition-colors">
+                  <Plus size={16} />
+                  {T("ledger.add")}
+                </button>
+              )
+            ) : (
+              <button onClick={() => setShowPremiumModal(true)} className="mt-3 w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-400 hover:bg-slate-50 transition-colors">
+                <Lock size={14} />
+                {T("ledger.add")}
+              </button>
+            )
+          ) : null}
+        </div>
 
         {/* Repeat Transactions — first item */}
         <button

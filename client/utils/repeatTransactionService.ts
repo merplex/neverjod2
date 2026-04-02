@@ -43,13 +43,13 @@ export interface RepeatTransaction {
   source?: "local" | "server";  // "local" = not yet synced; "server" = synced
 }
 
-const KEY = "app_repeat_transactions";
+import { lk } from "./ledgerStorage";
 
 export function getRepeatTransactions(): RepeatTransaction[] {
-  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
+  try { return JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]"); } catch { return []; }
 }
 export function saveRepeatTransactions(list: RepeatTransaction[]) {
-  localStorage.setItem(KEY, JSON.stringify(list));
+  localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(list));
 }
 export function addRepeatTransaction(rt: RepeatTransaction) {
   const list = getRepeatTransactions();
@@ -61,10 +61,10 @@ export function deleteRepeatTransaction(id: string) {
   const item = list.find((r) => r.id === id);
   // If already synced to server, record tombstone (full item) so next push can DELETE on server
   if (item && item.source !== "local") {
-    const pending: any[] = JSON.parse(localStorage.getItem("app_pending_deletes_repeats") || "[]");
+    const pending: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats")) || "[]");
     if (!pending.find((p: any) => p.id === id)) {
       pending.push({ ...item, deleted_at: new Date().toISOString() });
-      localStorage.setItem("app_pending_deletes_repeats", JSON.stringify(pending));
+      localStorage.setItem(lk("app_pending_deletes_repeats"), JSON.stringify(pending));
     }
   }
   saveRepeatTransactions(list.filter((r) => r.id !== id));
@@ -181,7 +181,7 @@ export function checkAndExecuteRepeats(): boolean {
       safety++;
 
       // create the transaction
-      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
       const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       txns.unshift({
         id,
@@ -194,7 +194,7 @@ export function checkAndExecuteRepeats(): boolean {
         repeatId: rt.id,
         isRepeat: true,
       });
-      localStorage.setItem("app_transactions", JSON.stringify(txns));
+      localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
 
       rt.lastExecuted = nextDue.toISOString();
       nextDue = calcNextDue(rt, nextDue);

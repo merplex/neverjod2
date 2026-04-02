@@ -1,4 +1,5 @@
 export type Lang = "th" | "en" | "zh";
+import { lk } from "./ledgerStorage";
 
 const translations: Record<Lang, Record<string, string>> = {
   th: {
@@ -189,6 +190,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.categories": "หมวดหมู่",
     "nav.accounts": "บัญชี",
     "nav.settings": "ตั้งค่า",
+    "ledger.title": "สมุดบัญชี",
+    "ledger.subtitle": "แยกข้อมูลแต่ละสมุดอิสระ",
+    "ledger.add": "เพิ่มสมุดบัญชี",
+    "ledger.name_placeholder": "ชื่อสมุดบัญชี",
+    "ledger.rename": "เปลี่ยนชื่อ",
+    "ledger.switch_reload": "สลับสมุดบัญชีและโหลดใหม่",
+    "ledger.main_name": "สมุดหลัก",
+    "ledger.premium_required": "ต้องการ Premium เพื่อสร้างสมุดบัญชีใหม่",
 
     // Tabs / Buttons
     "tab.expense": "รายจ่าย",
@@ -196,6 +205,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "btn.reorder": "เรียงลำดับ",
     "btn.done_reorder": "เสร็จสิ้น",
     "btn.save": "บันทึก",
+    "btn.cancel": "ยกเลิก",
     "btn.right": "ขวา",
     "btn.calc": "คำนวณ",
 
@@ -438,6 +448,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.categories": "Categories",
     "nav.accounts": "Accounts",
     "nav.settings": "Settings",
+    "ledger.title": "Ledger Books",
+    "ledger.subtitle": "Each ledger has its own data",
+    "ledger.add": "Add Ledger",
+    "ledger.name_placeholder": "Ledger name",
+    "ledger.rename": "Rename",
+    "ledger.switch_reload": "Switch ledger and reload",
+    "ledger.main_name": "Main",
+    "ledger.premium_required": "Premium required to create new ledgers",
 
     // Tabs / Buttons
     "tab.expense": "Expense",
@@ -445,6 +463,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "btn.reorder": "Reorder",
     "btn.done_reorder": "Done Reordering",
     "btn.save": "Save",
+    "btn.cancel": "Cancel",
     "btn.right": "Right",
     "btn.calc": "Calc",
 
@@ -687,6 +706,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.categories": "分类",
     "nav.accounts": "账户",
     "nav.settings": "设置",
+    "ledger.title": "账本",
+    "ledger.subtitle": "每个账本数据独立",
+    "ledger.add": "添加账本",
+    "ledger.name_placeholder": "账本名称",
+    "ledger.rename": "重命名",
+    "ledger.switch_reload": "切换账本并刷新",
+    "ledger.main_name": "主账本",
+    "ledger.premium_required": "需要 Premium 才能创建新账本",
 
     // Tabs / Buttons
     "tab.expense": "支出",
@@ -694,6 +721,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "btn.reorder": "排序",
     "btn.done_reorder": "完成排序",
     "btn.save": "保存",
+    "btn.cancel": "取消",
     "btn.right": "右",
     "btn.calc": "计算器",
 
@@ -751,7 +779,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
 export function getLang(): Lang {
   try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
     if (s.language === "en") return "en";
     if (s.language === "zh") return "zh";
     return "th";

@@ -1,4 +1,5 @@
 import { getCurrencySymbol } from "../utils/currency";
+import { lk } from "../utils/ledgerStorage";
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
 import CloudAuthModal from "../components/CloudAuthModal";
@@ -36,7 +37,7 @@ export default function AccountsManagement() {
   const cur = getCurrencySymbol();
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
-      const stored = localStorage.getItem("app_accounts");
+      const stored = localStorage.getItem(lk("app_accounts"));
       let list: Account[] = defaultAccounts;
       if (stored) {
         const storedAccounts = JSON.parse(stored);
@@ -142,7 +143,7 @@ export default function AccountsManagement() {
     const now = new Date().toISOString();
     const stripped = accounts.map((a) => ({ ...a, keywords: (a.keywords || []).slice(0, 1), updated_at: now }));
     setAccounts(stripped);
-    localStorage.setItem("app_accounts", JSON.stringify(stripped));
+    localStorage.setItem(lk("app_accounts"), JSON.stringify(stripped));
     const token = localStorage.getItem("cloud_token");
     if (token) syncPush(token).catch(() => {});
   }, []);
@@ -169,7 +170,7 @@ export default function AccountsManagement() {
     }
 
     // Validate: keywords must not already exist in other accounts or categories
-    const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
+    const storedCategories = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
     for (const kw of keywords) {
       const dupAcc = accounts.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
@@ -185,7 +186,7 @@ export default function AccountsManagement() {
 
     const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[accIconOptions.length - 1];
     const newId = `custom_acc_${Date.now()}`;
-    const isPreSync = !localStorage.getItem("last_sync_at");
+    const isPreSync = !localStorage.getItem(lk("last_sync_at"));
     const newAcc: Account & { iconId?: string; source?: string } = {
       id: newId,
       name: newAccName.trim(),
@@ -201,7 +202,7 @@ export default function AccountsManagement() {
     const rest = accounts.filter((a) => a.id !== "account_deleted");
     const updated = deletedAcc ? [...rest, newAcc, deletedAcc] : [...rest, newAcc];
     setAccounts(updated);
-    localStorage.setItem("app_accounts", JSON.stringify(updated));
+    localStorage.setItem(lk("app_accounts"), JSON.stringify(updated));
     setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other");
     setNewAccKeywords(""); setNewAccKeywordError("");
     setShowAddForm(false);
@@ -242,7 +243,7 @@ export default function AccountsManagement() {
 
     // Validate: keywords must not already exist in other accounts or any category
     const otherAccs = accounts.filter((a) => a.id !== editingId);
-    const storedCategories = JSON.parse(localStorage.getItem("app_categories") || "[]");
+    const storedCategories = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
 
     for (const kw of keywords) {
       const dupAcc = otherAccs.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
@@ -266,7 +267,7 @@ export default function AccountsManagement() {
     );
 
     setAccounts(updatedAccounts);
-    localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+    localStorage.setItem(lk("app_accounts"), JSON.stringify(updatedAccounts));
     setEditingId(null);
   };
 
@@ -283,7 +284,7 @@ export default function AccountsManagement() {
 
   const deleteTransactionCount = (accountId: string): number => {
     try {
-      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
       return txns.filter((t: any) => t.accountId === accountId).length;
     } catch { return 0; }
   };
@@ -291,18 +292,18 @@ export default function AccountsManagement() {
   const confirmDelete = (accountId: string) => {
     // Move all transactions to account_deleted
     try {
-      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
       const updated = txns.map((t: any) =>
         t.accountId === accountId ? { ...t, accountId: "account_deleted" } : t
       );
-      localStorage.setItem("app_transactions", JSON.stringify(updated));
+      localStorage.setItem(lk("app_transactions"), JSON.stringify(updated));
     } catch {}
     // Remove account from list
     const deletedAcc = accounts.find((a) => a.id === accountId);
     if (deletedAcc) markDeleted("account", deletedAcc);
     const updatedAccounts = accounts.filter((a) => a.id !== accountId);
     setAccounts(updatedAccounts);
-    localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+    localStorage.setItem(lk("app_accounts"), JSON.stringify(updatedAccounts));
     setDeleteConfirmId(null);
     setEditingId(null);
   };
@@ -360,7 +361,7 @@ export default function AccountsManagement() {
         newList.splice(toIdx, 0, removed);
         const finalList = deletedAccount ? [...newList, deletedAccount] : newList;
         setAccounts(finalList);
-        localStorage.setItem("app_accounts", JSON.stringify(finalList));
+        localStorage.setItem(lk("app_accounts"), JSON.stringify(finalList));
       }
     }
     setDraggingId(null);
@@ -387,8 +388,8 @@ export default function AccountsManagement() {
 
   const getAccountCurrentBalance = (accountId: string, startBalance: number): number => {
     try {
-      const txns: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
-      const cats: any[] = JSON.parse(localStorage.getItem("app_categories") || "[]");
+      const txns: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
+      const cats: any[] = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
       const catTypeMap: Record<string, string> = {};
       cats.forEach((c: any) => { catTypeMap[c.id] = c.type; });
       const incomeIds = new Set(["salary","bonus","freelance","investment","rental","transfer_in"]);
@@ -426,7 +427,7 @@ export default function AccountsManagement() {
     const timeStr = `${String(txDate.getHours()).padStart(2, "0")}:${String(txDate.getMinutes()).padStart(2, "0")}`;
     const now = Date.now();
 
-    const txns: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+    const txns: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
     const transferRef = `transfer_${now}`;
     txns.unshift({
       id: `${now}_transfer_out`,
@@ -450,7 +451,7 @@ export default function AccountsManagement() {
       isTransfer: true,
       transferRef,
     });
-    localStorage.setItem("app_transactions", JSON.stringify(txns));
+    localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
 
     closeTransferModal();
   };

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { lk } from "../utils/ledgerStorage";
 import { ChevronLeft, Edit2, Plus, X, Lock, Trash2, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useT } from "../hooks/useT";
@@ -49,7 +50,7 @@ export default function Categories() {
   useSwipeBack();
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
-      const stored = localStorage.getItem("app_categories");
+      const stored = localStorage.getItem(lk("app_categories"));
       let list: Category[] = defaultCategories;
       if (stored) {
         const storedCategories = JSON.parse(stored);
@@ -127,7 +128,7 @@ export default function Categories() {
     const now = new Date().toISOString();
     const stripped = categories.map((c) => ({ ...c, keywords: (c.keywords || []).slice(0, 1), updated_at: now }));
     setCategories(stripped);
-    localStorage.setItem("app_categories", JSON.stringify(stripped));
+    localStorage.setItem(lk("app_categories"), JSON.stringify(stripped));
     const token = localStorage.getItem("cloud_token");
     if (token) syncPush(token).catch(() => {});
   }, []);
@@ -154,7 +155,7 @@ export default function Categories() {
     }
 
     // Validate: keywords must not already exist in other categories or accounts
-    const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+    const storedAccounts = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
     for (const kw of keywords) {
       const dupCat = categories.find((c) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
@@ -170,11 +171,11 @@ export default function Categories() {
 
     const iconEntry = iconOptions.find((o) => o.id === newIconId) || iconOptions[iconOptions.length - 1];
     const newId = `custom_${Date.now()}`;
-    const isPreSync = !localStorage.getItem("last_sync_at");
+    const isPreSync = !localStorage.getItem(lk("last_sync_at"));
     const newCat: Category & { iconId?: string; source?: string } = { id: newId, name: newName.trim(), type: categoryType, icon: iconEntry.icon, iconId: newIconId, keywords, updated_at: new Date().toISOString(), ...(isPreSync ? { source: "local" } : {}) };
     const updated = [...categories.filter((c) => c.id !== "nocat"), newCat, ...categories.filter((c) => c.id === "nocat")];
     setCategories(updated);
-    localStorage.setItem("app_categories", JSON.stringify(updated));
+    localStorage.setItem(lk("app_categories"), JSON.stringify(updated));
     setNewName(""); setNewIconId("other"); setNewKeywords(""); setNewKeywordError(""); setShowAddForm(false);
   };
 
@@ -203,7 +204,7 @@ export default function Categories() {
 
     // Validate: keywords must not already exist in other categories or any account
     const otherCats = categories.filter((c) => c.id !== editingId);
-    const storedAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+    const storedAccounts = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
 
     for (const kw of keywords) {
       const dupCat = otherCats.find((c) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
@@ -227,7 +228,7 @@ export default function Categories() {
     );
 
     setCategories(updatedCategories);
-    localStorage.setItem("app_categories", JSON.stringify(updatedCategories));
+    localStorage.setItem(lk("app_categories"), JSON.stringify(updatedCategories));
     setEditingId(null);
   };
 
@@ -242,24 +243,24 @@ export default function Categories() {
 
   const deleteTransactionCount = (catId: string): number => {
     try {
-      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
       return txns.filter((t: any) => t.categoryId === catId).length;
     } catch { return 0; }
   };
 
   const confirmDelete = (catId: string) => {
     try {
-      const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
       const updated = txns.map((t: any) =>
         t.categoryId === catId ? { ...t, categoryId: "nocat" } : t
       );
-      localStorage.setItem("app_transactions", JSON.stringify(updated));
+      localStorage.setItem(lk("app_transactions"), JSON.stringify(updated));
     } catch {}
     const deletedCat = categories.find((c) => c.id === catId);
     if (deletedCat) markDeleted("category", deletedCat);
     const updatedCats = categories.filter((c) => c.id !== catId);
     setCategories(updatedCats);
-    localStorage.setItem("app_categories", JSON.stringify(updatedCats));
+    localStorage.setItem(lk("app_categories"), JSON.stringify(updatedCats));
     setDeleteConfirmId(null);
     setEditingId(null);
   };
@@ -318,7 +319,7 @@ export default function Categories() {
         newList.splice(toIdx, 0, removed);
         const finalList = nocatItem ? [...newList, nocatItem] : newList;
         setCategories(finalList);
-        localStorage.setItem("app_categories", JSON.stringify(finalList));
+        localStorage.setItem(lk("app_categories"), JSON.stringify(finalList));
       }
     }
     setDraggingId(null);

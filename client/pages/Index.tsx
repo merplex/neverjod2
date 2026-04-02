@@ -8,6 +8,7 @@ import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
 import OnboardingGuide from "../components/OnboardingGuide";
 import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
 import { getCurrencySymbol } from "../utils/currency";
+import { lk } from "../utils/ledgerStorage";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -22,9 +23,9 @@ function saveTransaction(categoryId: string, accountId: string, amount: number, 
     description: description.trim(),
     date: new Date().toISOString(),
   };
-  const existing = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+  const existing = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
   existing.unshift(transaction);
-  localStorage.setItem("app_transactions", JSON.stringify(existing));
+  localStorage.setItem(lk("app_transactions"), JSON.stringify(existing));
 }
 
 const categories = [
@@ -44,7 +45,7 @@ const accounts = [
 
 function loadCategoriesFromStorage() {
   try {
-    const stored = localStorage.getItem("app_categories");
+    const stored = localStorage.getItem(lk("app_categories"));
     if (stored) {
       const storedCategories = JSON.parse(stored);
       const catIconMap: Record<string, React.ComponentType<any>> = {
@@ -85,7 +86,7 @@ function loadCategoriesFromStorage() {
 
 function loadAccountsFromStorage() {
   try {
-    const stored = localStorage.getItem("app_accounts");
+    const stored = localStorage.getItem(lk("app_accounts"));
     if (stored) {
       const storedAccounts = JSON.parse(stored);
       const iconMap: Record<string, React.ComponentType<any>> = {
@@ -128,7 +129,7 @@ function loadAccountsFromStorage() {
 
 function readVoiceAutoStart(): boolean {
   try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
     return s.voiceAutoStart !== false; // default true
   } catch { return true; }
 }
@@ -175,13 +176,13 @@ export default function Index() {
   // Skip if user has cloud token — their data comes from sync, not defaults.
   useEffect(() => {
     if (localStorage.getItem("cloud_token")) return;
-    if (!localStorage.getItem("app_categories")) {
-      localStorage.setItem("app_categories", JSON.stringify(
+    if (!localStorage.getItem(lk("app_categories"))) {
+      localStorage.setItem(lk("app_categories"), JSON.stringify(
         categories.map(({ icon: _icon, ...rest }) => ({ ...rest, source: "local" }))
       ));
     }
-    if (!localStorage.getItem("app_accounts")) {
-      localStorage.setItem("app_accounts", JSON.stringify(
+    if (!localStorage.getItem(lk("app_accounts"))) {
+      localStorage.setItem(lk("app_accounts"), JSON.stringify(
         accounts.map(({ icon: _icon, ...rest }) => ({ ...rest, source: "local" }))
       ));
     }
@@ -329,7 +330,7 @@ export default function Index() {
     const nocat = categoriesList.find((c) => c.id === "nocat");
     const rest = categoriesList.filter((c) => c.id !== "nocat");
     const toSave = nocat ? [...rest, nocat] : rest;
-    localStorage.setItem("app_categories", JSON.stringify(toSave));
+    localStorage.setItem(lk("app_categories"), JSON.stringify(toSave));
   };
 
   // Calculator mode operator
@@ -527,7 +528,7 @@ export default function Index() {
     const deleted = accountsList.find((a) => a.id === "account_deleted");
     const rest = accountsList.filter((a) => a.id !== "account_deleted");
     const toSave = deleted ? [...rest, deleted] : rest;
-    localStorage.setItem("app_accounts", JSON.stringify(toSave));
+    localStorage.setItem(lk("app_accounts"), JSON.stringify(toSave));
   };
 
   const handleNumberClick = (num: number) => {
@@ -603,7 +604,7 @@ export default function Index() {
   // ── Monthly period helpers ────────────────────────────────────────────────
   const monthlyData = useMemo(() => {
     try {
-      const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+      const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
       const resetDayCfg: number = typeof s.monthResetDay === "number" ? s.monthResetDay : 1;
       const today = new Date();
       const d = today.getDate();
@@ -628,7 +629,7 @@ export default function Index() {
       const endStr = today.toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
       const periodLabel = `${startStr} – ${endStr}`;
 
-      const raw: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+      const raw: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
       const expTotals: Record<string, number> = {};
       const incTotals: Record<string, number> = {};
 
@@ -744,7 +745,7 @@ export default function Index() {
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
-                      Expense
+                      {T("tab.expense")}
                     </button>
                     <button
                       onClick={() => setCategoryType("income")}
@@ -754,7 +755,7 @@ export default function Index() {
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
-                      Income
+                      {T("tab.income")}
                     </button>
                   </div>
                   <div className="flex items-center gap-2 relative z-10">
@@ -763,7 +764,7 @@ export default function Index() {
                         onClick={() => setIsCategoryReorderMode(true)}
                         className="px-3 py-1 text-xs bg-theme-100 text-theme-700 rounded font-semibold hover:bg-theme-200 transition-colors"
                       >
-                        Reorder
+                        {T("btn.reorder")}
                       </button>
                     )}
                     <Recording onVoiceInput={handleVoiceInput} onVoiceEnd={handleVoiceEnd} startTrigger={voiceStartTrigger} stopTrigger={voiceStopTrigger} autoRestart={voiceAutoStart} />
@@ -789,15 +790,15 @@ export default function Index() {
                         <div key="__voice_status__" className={`w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center py-1 gap-0.5 overflow-hidden ${isIOSDevice ? "px-1" : "px-2"}`}>
                           <div className="flex items-center gap-1 min-w-0">
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
-                            <VoiceMarqueeText text={categoryName || "Category"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
+                            <VoiceMarqueeText text={categoryName || T("filter.category")} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
                           </div>
                           <div className="flex items-center gap-1 min-w-0">
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
-                            <VoiceMarqueeText text={accountName || "Account"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
+                            <VoiceMarqueeText text={accountName || T("filter.account")} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
                           </div>
                           <div className="flex items-center gap-1 min-w-0">
                             <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
-                            <VoiceMarqueeText text={amount ? `${cur}${amount.toLocaleString()}` : "Amount"} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
+                            <VoiceMarqueeText text={amount ? `${cur}${amount.toLocaleString()}` : T("filter.amount")} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
                           </div>
                         </div>
                       );
@@ -848,7 +849,7 @@ export default function Index() {
                     onClick={exitCategoryReorderMode}
                     className="mt-3 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors text-sm"
                   >
-                    Done Reordering
+                    {T("btn.done_reorder")}
                   </button>
                 )}
               </div>
@@ -858,14 +859,14 @@ export default function Index() {
             {currentPage === "account" && (
               <div className="flex flex-col flex-1 min-h-0">
                 <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-semibold text-slate-900">Select Account</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">{T("acc.select_account")}</h2>
                   <div className="flex items-center gap-2">
                     {!isAccountPageReorderMode && (
                       <button
                         onClick={() => setIsAccountPageReorderMode(true)}
                         className="px-3 py-1 text-xs bg-theme-100 text-theme-700 rounded font-semibold hover:bg-theme-200 transition-colors"
                       >
-                        Reorder
+                        {T("btn.reorder")}
                       </button>
                     )}
                     <button
@@ -927,7 +928,7 @@ export default function Index() {
                     onClick={exitAccountReorderMode}
                     className="mt-3 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors text-sm"
                   >
-                    Done Reordering
+                    {T("btn.done_reorder")}
                   </button>
                 )}
               </div>
@@ -961,7 +962,7 @@ export default function Index() {
                         : isLocked ? "bg-slate-100 text-slate-300 cursor-not-allowed" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
-                    Right
+                    {T("btn.right")}
                   </button>
                 </div>
 
@@ -1002,7 +1003,7 @@ export default function Index() {
                           : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
                         ).map((btn) => {
                           if (btn === 'save') return (
-                            <button key="save" onClick={handleConfirm} className="h-full aspect-square justify-self-center bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-full transition-all active:scale-95 flex items-center justify-center">Save</button>
+                            <button key="save" onClick={handleConfirm} className="h-full aspect-square justify-self-center bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-full transition-all active:scale-95 flex items-center justify-center">{T("btn.save")}</button>
                           );
                           if (btn === '.') return (
                             <button key="dot" onClick={handleDecimal} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-all active:scale-95 flex items-center justify-center">.</button>

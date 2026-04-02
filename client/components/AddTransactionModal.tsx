@@ -1,4 +1,5 @@
 import { getCurrencySymbol } from "../utils/currency";
+import { lk } from "../utils/ledgerStorage";
 import { useState } from "react";
 import { X, Calculator, Lock, LockOpen, ChevronRight, ChevronDown } from "lucide-react";
 import {
@@ -59,9 +60,9 @@ function saveNewTransaction(
     date: date.toISOString(),
     time: timeStr,
   };
-  const existing = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+  const existing = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
   existing.unshift(txn);
-  localStorage.setItem("app_transactions", JSON.stringify(existing));
+  localStorage.setItem(lk("app_transactions"), JSON.stringify(existing));
 }
 
 // ---- format helpers ----
@@ -117,13 +118,13 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   // data from localStorage
   const [categoriesList] = useState<any[]>(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("app_categories") || "[]");
+      const stored = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
       return stored.length ? stored : [];
     } catch { return []; }
   });
   const [accountsList] = useState<any[]>(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+      const stored = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
       return stored.filter((a: any) => a.id !== "account_deleted");
     } catch { return []; }
   });

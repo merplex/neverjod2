@@ -1,10 +1,12 @@
 import { getCurrencySymbol } from "../utils/currency";
+import { lk } from "../utils/ledgerStorage";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight } from "lucide-react";
 import { getRealTransactionsList } from "../utils/transactionData";
 import AddTransactionModal from "../components/AddTransactionModal";
+import { useT } from "../hooks/useT";
 
 type TimeRange = "custom" | "month" | "all";
 type SortOrder = "asc" | "desc";
@@ -165,6 +167,7 @@ function CalendarRangePicker({
 export default function AllTransactions() {
   const navigate = useNavigate();
   useSwipeBack();
+  const T = useT();
   const cur = getCurrencySymbol();
   const [searchParams, setSearchParams] = useSearchParams();
   const accountIdFilter = searchParams.get("accountId");
@@ -187,7 +190,7 @@ export default function AllTransactions() {
   }, []);
 
   const storedAccounts = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]"); } catch { return []; }
   }, []);
 
   useEffect(() => {
@@ -211,7 +214,7 @@ export default function AllTransactions() {
   }, [allTransactions, storedAccounts]);
 
   const selectedAccountName = useMemo(() => {
-    if (!accountIdFilter) return "All Accounts";
+    if (!accountIdFilter) return T("acc.all_accounts");
     const acc = storedAccounts.find((a: any) => a.id === accountIdFilter);
     if (acc) return acc.name;
     const found = allTransactions.find((t) => t.accountId === accountIdFilter);
@@ -352,7 +355,7 @@ export default function AllTransactions() {
                   !accountIdFilter ? "bg-white text-theme-700" : "bg-theme-500/60 text-theme-100 hover:bg-theme-500"
                 }`}
               >
-                All Accounts
+                {T("acc.all_accounts")}
               </button>
               {storedAccounts.map((acc: any) => (
                 <button
@@ -380,7 +383,7 @@ export default function AllTransactions() {
               className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
             >
               <ArrowUpDown size={16} />
-              {sortOrder === "desc" ? "Descending" : "Ascending"}
+              {sortOrder === "desc" ? T("sort.descending") : T("sort.ascending")}
             </button>
             <div className="flex gap-2">
               {/* Custom range button */}
@@ -404,7 +407,7 @@ export default function AllTransactions() {
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
-                  {range === "month" ? "Month" : "All"}
+                  {range === "month" ? T("filter.month") : T("filter.all")}
                 </button>
               ))}
             </div>

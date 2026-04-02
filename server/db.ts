@@ -11,6 +11,13 @@ export const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
 export async function initDB() {
   const tables = [
+    `CREATE TABLE IF NOT EXISTS ledgers (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (id, user_id)
+    )`,
     `CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -104,6 +111,22 @@ export async function initDB() {
   // Migration: add sort_order to categories and accounts
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS sort_order INTEGER`).catch(() => {});
   await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS sort_order INTEGER`).catch(() => {});
+  // Migration: add ledger_id to all sync tables
+  await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_repeat_transactions ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
+  // Migration: add cross_ledger_ref for cross-ledger transfers
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS cross_ledger_ref TEXT`).catch(() => {});
+  // Migration: create "main" ledger for all existing users that don't have one
+  await pool.query(`
+    INSERT INTO ledgers (id, user_id, name)
+    SELECT 'main', id, 'Main'
+    FROM users
+    WHERE NOT EXISTS (
+      SELECT 1 FROM ledgers WHERE ledgers.user_id = users.id AND ledgers.id = 'main'
+    )
+  `).catch(() => {});
   // Dev premium: premsak.c@gmail.com is always premium
   await pool.query(`UPDATE users SET is_premium = TRUE WHERE email = 'premsak.c@gmail.com'`).catch(() => {});
 }

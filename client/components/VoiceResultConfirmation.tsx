@@ -1,4 +1,5 @@
 import { getCurrencySymbol } from "../utils/currency";
+import { lk } from "../utils/ledgerStorage";
 import { useState, useEffect } from "react";
 import { X, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 
@@ -16,7 +17,7 @@ interface VoiceResultConfirmationProps {
 
 function readConfirmDelay(): number {
   try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
     return typeof s.voiceInputDelay === "number" ? s.voiceInputDelay : 5;
   } catch { return 5; }
 }

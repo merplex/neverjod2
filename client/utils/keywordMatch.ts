@@ -1,4 +1,5 @@
 import { getTransactionsList } from "./transactionData";
+import { lk } from "./ledgerStorage";
 
 export interface MatchResult {
   categoryId?: string;
@@ -63,7 +64,7 @@ const FREE_ACC_LIMIT = 3;
 // Get categories from localStorage or use defaults, filtering over-limit items for free tier
 function getCategoriesWithKeywords(): Record<string, { name: string; keywords: string[] }> {
   try {
-    const stored = localStorage.getItem("app_categories");
+    const stored = localStorage.getItem(lk("app_categories"));
     if (stored) {
       const isPremium = localStorage.getItem("app_premium") === "true";
       const categories = JSON.parse(stored);
@@ -86,7 +87,7 @@ function getCategoriesWithKeywords(): Record<string, { name: string; keywords: s
 // Get accounts from localStorage or use defaults, filtering over-limit items for free tier
 function getAccountsWithKeywords(): Record<string, { name: string; keywords: string[] }> {
   try {
-    const stored = localStorage.getItem("app_accounts");
+    const stored = localStorage.getItem(lk("app_accounts"));
     if (stored) {
       const isPremium = localStorage.getItem("app_premium") === "true";
       const accounts = JSON.parse(stored);

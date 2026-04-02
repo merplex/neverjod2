@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
+import { lk } from "../utils/ledgerStorage";
 import { useNavigate } from "react-router-dom";
 
 function getSwipeBackDirection(): "right" | "left" {
   try {
-    const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+    const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
     return s.swipeBackDirection ?? "right";
   } catch {
     return "right";

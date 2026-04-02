@@ -1,4 +1,5 @@
 import { getCurrencySymbol } from "../utils/currency";
+import { lk } from "../utils/ledgerStorage";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X } from "lucide-react";
 import { useState } from "react";
@@ -19,25 +20,25 @@ import {
 
 function getRawTransaction(id: string): any {
   try {
-    const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+    const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
     return txns.find((t: any) => t.id === id) || null;
   } catch { return null; }
 }
 
 function updateLocalTransaction(id: string, updates: any) {
   try {
-    const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+    const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
     const idx = txns.findIndex((t: any) => t.id === id);
     if (idx !== -1) {
       txns[idx] = { ...txns[idx], ...updates };
-      localStorage.setItem("app_transactions", JSON.stringify(txns));
+      localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
     }
   } catch {}
 }
 
 function deleteLocalTransaction(id: string) {
   try {
-    const txns = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+    const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
     const tx = txns.find((t: any) => t.id === id);
     if (!tx) return;
     // If transfer — delete both legs
@@ -46,7 +47,7 @@ function deleteLocalTransaction(id: string) {
       txns.filter((t: any) => t.transferRef === tx.transferRef).forEach((t: any) => idsToDelete.add(t.id));
     }
     txns.filter((t: any) => idsToDelete.has(t.id)).forEach((t: any) => markDeleted("transaction", t));
-    localStorage.setItem("app_transactions", JSON.stringify(txns.filter((t: any) => !idsToDelete.has(t.id))));
+    localStorage.setItem(lk("app_transactions"), JSON.stringify(txns.filter((t: any) => !idsToDelete.has(t.id))));
   } catch {}
 }
 
@@ -124,14 +125,14 @@ export default function TransactionDetail() {
   // Load from localStorage
   const [categoriesList] = useState<any[]>(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("app_categories") || "[]");
+      const stored = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
       return stored.length ? stored : [];
     } catch { return []; }
   });
 
   const [accountsList] = useState<any[]>(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("app_accounts") || "[]");
+      const stored = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
       return stored.filter((a: any) => a.id !== "account_deleted");
     } catch { return []; }
   });

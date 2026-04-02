@@ -1,5 +1,7 @@
 const API_BASE = (import.meta.env.VITE_API_URL ?? "") + "/api";
 
+import { getActiveLedgerId, lk } from "./ledgerStorage";
+
 // --- Auth ---
 
 export async function apiRegister(email: string, password: string) {
@@ -62,7 +64,7 @@ export async function apiVerifyPurchase(receipt: string) {
 // --- Soft-delete tombstone helpers ---
 
 export function markDeleted(type: "category" | "account" | "transaction", item: any) {
-  const key = "app_pending_deletes";
+  const key = lk("app_pending_deletes");
   const pending: any[] = JSON.parse(localStorage.getItem(key) || "[]");
   if (!pending.find((p) => p._type === type && p.id === item.id)) {
     pending.push({ ...item, _type: type, deleted_at: new Date().toISOString() });
@@ -71,12 +73,12 @@ export function markDeleted(type: "category" | "account" | "transaction", item: 
 }
 
 function flushPendingDeletes() {
-  localStorage.removeItem("app_pending_deletes");
-  localStorage.removeItem("app_pending_deletes_repeats");
+  localStorage.removeItem(lk("app_pending_deletes"));
+  localStorage.removeItem(lk("app_pending_deletes_repeats"));
 }
 
 function getPendingDeletes(): { categories: any[]; accounts: any[]; transactions: any[] } {
-  const pending: any[] = JSON.parse(localStorage.getItem("app_pending_deletes") || "[]");
+  const pending: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes")) || "[]");
   return {
     categories: pending.filter((p) => p._type === "category"),
     accounts: pending.filter((p) => p._type === "account"),
@@ -137,7 +139,7 @@ function normalizeRepeatItem(raw: any): any {
 // Same ID-collision rule as cat/acc: if a source="local" item clashes with a server item,
 // reassign the local item a new unique ID so BOTH coexist — nothing is silently dropped.
 function mergeRepeatTransIntoLocal(serverItems: any[]) {
-  const local: any[] = JSON.parse(localStorage.getItem("app_repeat_transactions") || "[]");
+  const local: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]");
   const serverById = new Map<string, any>();
   const deletedIds = new Set<string>();
 
@@ -184,12 +186,12 @@ function mergeRepeatTransIntoLocal(serverItems: any[]) {
     if (!seenIds.has(id)) result.push(item);
   }
 
-  localStorage.setItem("app_repeat_transactions", JSON.stringify(result));
+  localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(result));
 }
 
 // Merge transactions (ID-based, server wins on conflict)
 function mergeIntoLocal(storageKey: string, serverItems: any[]) {
-  const local: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey)) || "[]");
   const localMap = new Map(local.map((item) => [item.id, item]));
   for (const raw of serverItems) {
     const serverItem = normalizeServerItem(raw);
@@ -201,7 +203,7 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
       localMap.set(serverItem.id, { ...(existing || {}), ...serverItem });
     }
   }
-  localStorage.setItem(storageKey, JSON.stringify(Array.from(localMap.values())));
+  localStorage.setItem(lk(storageKey), JSON.stringify(Array.from(localMap.values())));
 }
 
 // Source-based merge for categories and accounts.
@@ -219,7 +221,7 @@ function mergeCategOrAccIntoLocal(
   storageKey: string,
   serverItems: any[]
 ): Map<string, string> {
-  const local: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey)) || "[]");
   const normalized = serverItems.map(normalizeServerItem);
   const serverLive = normalized.filter((i) => !i.deleted_at);
   const deletedIds = new Set(normalized.filter((i) => i.deleted_at).map((i) => i.id));
@@ -288,7 +290,7 @@ function mergeCategOrAccIntoLocal(
   const finalItems = pinnedItem
     ? [...localItems, ...syncedItems, pinnedItem]
     : [...localItems, ...syncedItems];
-  localStorage.setItem(storageKey, JSON.stringify(finalItems));
+  localStorage.setItem(lk(storageKey), JSON.stringify(finalItems));
   return idReplacements;
 }
 
@@ -299,7 +301,7 @@ function updateTransactionRefs(
   accIdMap: Map<string, string>
 ) {
   if (catIdMap.size === 0 && accIdMap.size === 0) return;
-  const transactions: any[] = JSON.parse(localStorage.getItem("app_transactions") || "[]");
+  const transactions: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
   let changed = false;
   const updated = transactions.map((tx) => {
     let newTx = { ...tx };
@@ -307,7 +309,7 @@ function updateTransactionRefs(
     if (accIdMap.has(tx.accountId))  { newTx.accountId  = accIdMap.get(tx.accountId)!;  changed = true; }
     return newTx;
   });
-  if (changed) localStorage.setItem("app_transactions", JSON.stringify(updated));
+  if (changed) localStorage.setItem(lk("app_transactions"), JSON.stringify(updated));
 }
 
 // --- Push local data to server ---
@@ -326,16 +328,18 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   // Transactions are still stamped with `now` since they are always new data.
   // NOTE: caller (syncAll) captures this flag BEFORE pull runs, so pull setting
   // last_sync_at doesn't accidentally flip first-sync detection.
-  if (isFirstSync === undefined) isFirstSync = !localStorage.getItem("last_sync_at");
+  if (isFirstSync === undefined) isFirstSync = !localStorage.getItem(lk("last_sync_at"));
   const catAccStamp = isFirstSync ? new Date(0).toISOString() : now;
 
   // Promote source:"local" → source:"server" before push so server gets the correct ownership
   // and subsequent pulls treat them as server-owned (no ID-rename loop).
   // Also assign sortOrder based on current display index so the server preserves ordering.
+  const ledgerId = getActiveLedgerId();
   const pinnedCatId = "nocat";
   const pinnedAccId = "account_deleted";
   for (const [key, pinnedId] of [["app_categories", pinnedCatId], ["app_accounts", pinnedAccId]] as const) {
-    const items: any[] = JSON.parse(localStorage.getItem(key) || "[]");
+    const storageKey = lk(key);
+    const items: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
     let orderIdx = 0;
     const promoted = items.map((i) => {
       const isPromoted = i.source === "local" ? { ...i, source: "server" } : i;
@@ -343,21 +347,21 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
       const sortOrder = i.id === pinnedId ? undefined : orderIdx++;
       return { ...isPromoted, sortOrder };
     });
-    localStorage.setItem(key, JSON.stringify(promoted));
+    localStorage.setItem(storageKey, JSON.stringify(promoted));
   }
 
   // Promote repeat transactions source:"local" → "server"
   {
-    const repeats: any[] = JSON.parse(localStorage.getItem("app_repeat_transactions") || "[]");
+    const repeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]");
     const promoted = repeats.map((r) => r.source === "local" ? { ...r, source: "server" } : r);
-    localStorage.setItem("app_repeat_transactions", JSON.stringify(promoted));
+    localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(promoted));
   }
 
-  const categories = (JSON.parse(localStorage.getItem("app_categories") || "[]") as any[])
+  const categories = (JSON.parse(localStorage.getItem(lk("app_categories")) || "[]") as any[])
     .map((c) => ({ ...c, updated_at: catAccStamp }));
-  const accounts = (JSON.parse(localStorage.getItem("app_accounts") || "[]") as any[])
+  const accounts = (JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]") as any[])
     .map((a) => ({ ...a, updated_at: catAccStamp }));
-  const transactions = (JSON.parse(localStorage.getItem("app_transactions") || "[]") as any[])
+  const transactions = (JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]") as any[])
     .map((tx) => {
       const cat = categories.find((c) => c.id === tx.categoryId);
       const type = tx.type || cat?.type || "expense";
@@ -371,15 +375,15 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   const allTransactions = mergeWithTombstones(transactions, pending.transactions, now);
 
   // Repeat transactions: merge with repeat tombstones
-  const repeatTransactions = (JSON.parse(localStorage.getItem("app_repeat_transactions") || "[]") as any[])
+  const repeatTransactions = (JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]") as any[])
     .map((r) => ({ ...r, updated_at: catAccStamp }));
-  const pendingRepeats: any[] = JSON.parse(localStorage.getItem("app_pending_deletes_repeats") || "[]");
+  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats")) || "[]");
   const allRepeatTransactions = mergeWithTombstones(repeatTransactions, pendingRepeats, now);
 
   const res = await fetch(`${API_BASE}/sync/push`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions }),
+    body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions, ledger_id: ledgerId }),
   });
   if (!res.ok) throw new Error("Push failed");
   flushPendingDeletes();
@@ -397,11 +401,12 @@ function mergeWithTombstones(live: any[], tombstones: any[], now: string): any[]
 // --- Pull server data to local ---
 
 export async function syncPull(token: string) {
-  const lastSync = localStorage.getItem("last_sync_at") || null;
+  const ledgerId = getActiveLedgerId();
+  const lastSync = localStorage.getItem(lk("last_sync_at")) || null;
   const res = await fetch(`${API_BASE}/sync/pull`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ last_sync_at: lastSync }),
+    body: JSON.stringify({ last_sync_at: lastSync, ledger_id: ledgerId }),
   });
   if (!res.ok) throw new Error("Pull failed");
 
@@ -423,9 +428,41 @@ export async function syncPull(token: string) {
   if (typeof data.isPremium === "boolean") {
     localStorage.setItem("app_premium", data.isPremium ? "true" : "false");
   }
-  localStorage.setItem("last_sync_at", data.server_time);
-  if (data.last_push_at) localStorage.setItem("last_push_at", data.last_push_at);
+  localStorage.setItem(lk("last_sync_at"), data.server_time);
+  if (data.last_push_at) localStorage.setItem(lk("last_push_at"), data.last_push_at);
   return true;
+}
+
+// --- Ledger API ---
+
+export async function apiListLedgers(token: string): Promise<{ id: string; name: string; created_at: string }[]> {
+  const res = await fetch(`${API_BASE}/ledgers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed");
+  return data.ledgers;
+}
+
+export async function apiCreateLedger(token: string, name: string): Promise<{ id: string; name: string }> {
+  const res = await fetch(`${API_BASE}/ledgers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ name }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed");
+  return data;
+}
+
+export async function apiRenameLedger(token: string, id: string, name: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/ledgers/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ name }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed");
 }
 
 // --- Full sync (pull then push) ---
@@ -434,7 +471,7 @@ export async function syncPull(token: string) {
 // isFirstSync is captured BEFORE pull so that pull setting last_sync_at doesn't
 // accidentally make push think it's a non-first sync and use `now` as timestamp.
 export async function syncAll(token: string, force = false): Promise<void> {
-  const isFirstSync = !localStorage.getItem("last_sync_at");
+  const isFirstSync = !localStorage.getItem(lk("last_sync_at"));
   await syncPull(token);
   await syncPush(token, force, isFirstSync);
 }

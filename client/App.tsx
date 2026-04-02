@@ -2,6 +2,7 @@ import "./global.css";
 
 import { useEffect, useState } from "react";
 import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
+import { lk } from "./utils/ledgerStorage";
 import { syncAll } from "./utils/syncService";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -57,11 +58,11 @@ function ThemeProvider() {
   useEffect(() => {
     function apply() {
       try {
-        const s = JSON.parse(localStorage.getItem("app_settings") || "{}");
+        const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
         if (!s.colorTheme) {
           // First launch — pick a random theme and persist it
           s.colorTheme = ALL_THEMES[Math.floor(Math.random() * ALL_THEMES.length)];
-          localStorage.setItem("app_settings", JSON.stringify(s));
+          localStorage.setItem(lk("app_settings"), JSON.stringify(s));
         }
         document.documentElement.setAttribute("data-theme", s.colorTheme);
       } catch {}

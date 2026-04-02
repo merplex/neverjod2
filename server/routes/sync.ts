@@ -22,37 +22,37 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
 // Client sends local data; server upserts with last-write-wins
 router.post("/push", authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const { categories = [], accounts = [], transactions = [], repeatTransactions = [] } = req.body;
+  const { categories = [], accounts = [], transactions = [], repeatTransactions = [], ledger_id = "main" } = req.body;
 
   try {
     // Categories + Accounts in parallel
     await Promise.all([
       ...categories.map((cat: any) =>
         pool.query(
-          `INSERT INTO sync_categories (id, user_id, name, type, icon, icon_id, keywords, sort_order, updated_at, deleted_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+          `INSERT INTO sync_categories (id, user_id, name, type, icon, icon_id, keywords, sort_order, ledger_id, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
            ON CONFLICT (id, user_id) DO UPDATE
              SET name = EXCLUDED.name, type = EXCLUDED.type, icon = EXCLUDED.icon,
                  icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
-                 sort_order = EXCLUDED.sort_order,
+                 sort_order = EXCLUDED.sort_order, ledger_id = EXCLUDED.ledger_id,
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
              WHERE sync_categories.updated_at < EXCLUDED.updated_at`,
           [cat.id, userId, cat.name, cat.type, null, cat.iconId || null,
-           JSON.stringify(cat.keywords || []), cat.sortOrder ?? null, cat.updated_at, cat.deleted_at || null]
+           JSON.stringify(cat.keywords || []), cat.sortOrder ?? null, ledger_id, cat.updated_at, cat.deleted_at || null]
         )
       ),
       ...accounts.map((acc: any) =>
         pool.query(
-          `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, icon_id, keywords, sort_order, updated_at, deleted_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+          `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, icon_id, keywords, sort_order, ledger_id, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
            ON CONFLICT (id, user_id) DO UPDATE
              SET name = EXCLUDED.name, type = EXCLUDED.type, start_balance = EXCLUDED.start_balance,
                  icon = EXCLUDED.icon, icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
-                 sort_order = EXCLUDED.sort_order,
+                 sort_order = EXCLUDED.sort_order, ledger_id = EXCLUDED.ledger_id,
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
              WHERE sync_accounts.updated_at < EXCLUDED.updated_at`,
           [acc.id, userId, acc.name, acc.type || null, acc.startBalance || acc.balance || 0,
-           null, acc.iconId || null, JSON.stringify(acc.keywords || []), acc.sortOrder ?? null, acc.updated_at, acc.deleted_at || null]
+           null, acc.iconId || null, JSON.stringify(acc.keywords || []), acc.sortOrder ?? null, ledger_id, acc.updated_at, acc.deleted_at || null]
         )
       ),
     ]);
@@ -61,7 +61,7 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
     const txnsWithFingerprint = transactions.filter((tx: any) => tx.fingerprint);
     const fingerprintResults = await Promise.all(
       txnsWithFingerprint.map((tx: any) =>
-        pool.query("SELECT id FROM sync_transactions WHERE fingerprint = $1 AND user_id = $2", [tx.fingerprint, userId])
+        pool.query("SELECT id FROM sync_transactions WHERE fingerprint = $1 AND user_id = $2 AND ledger_id = $3", [tx.fingerprint, userId, ledger_id])
       )
     );
     const dupIds = new Set(
@@ -75,17 +75,19 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
         .map((tx: any) =>
           pool.query(
             `INSERT INTO sync_transactions
-               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, updated_at, deleted_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, updated_at, deleted_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
              ON CONFLICT (id, user_id) DO UPDATE
                SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                    amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
-                   date = EXCLUDED.date, time = EXCLUDED.time, updated_at = EXCLUDED.updated_at,
-                   deleted_at = EXCLUDED.deleted_at
+                   date = EXCLUDED.date, time = EXCLUDED.time, ledger_id = EXCLUDED.ledger_id,
+                   cross_ledger_ref = EXCLUDED.cross_ledger_ref,
+                   updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
                WHERE sync_transactions.updated_at < EXCLUDED.updated_at`,
             [tx.id, userId, tx.categoryId || null, tx.accountId || null,
              tx.amount, tx.type, tx.description || null,
              tx.date, tx.time || null, tx.fingerprint || null,
+             ledger_id, tx.crossLedgerRef || null,
              tx.updated_at, tx.deleted_at || null]
           )
         )
@@ -98,8 +100,8 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
           `INSERT INTO sync_repeat_transactions
              (id, user_id, category_id, account_id, category_name, account_name, amount, description,
               category_type, repeat_option, day_of_month, weekday, month_of_year, time,
-              start_date, next_due, last_executed, updated_at, deleted_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+              start_date, next_due, last_executed, ledger_id, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
            ON CONFLICT (id, user_id) DO UPDATE
              SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                  category_name = EXCLUDED.category_name, account_name = EXCLUDED.account_name,
@@ -108,7 +110,7 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
                  day_of_month = EXCLUDED.day_of_month, weekday = EXCLUDED.weekday,
                  month_of_year = EXCLUDED.month_of_year, time = EXCLUDED.time,
                  start_date = EXCLUDED.start_date, next_due = EXCLUDED.next_due,
-                 last_executed = EXCLUDED.last_executed,
+                 last_executed = EXCLUDED.last_executed, ledger_id = EXCLUDED.ledger_id,
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
              WHERE sync_repeat_transactions.updated_at < EXCLUDED.updated_at`,
           [
@@ -118,7 +120,7 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
             rt.repeatOption, rt.dayOfMonth ?? null, rt.weekday ?? null,
             rt.monthOfYear ?? null, rt.time || null,
             rt.startDate || null, rt.nextDue, rt.lastExecuted || null,
-            rt.updated_at, rt.deleted_at || null,
+            ledger_id, rt.updated_at, rt.deleted_at || null,
           ]
         )
       )
@@ -135,39 +137,39 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
 // Client sends last_sync_at; server returns everything newer
 router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const { last_sync_at } = req.body;
+  const { last_sync_at, ledger_id = "main" } = req.body;
   const since = last_sync_at ? new Date(last_sync_at) : new Date(0);
 
   try {
     const [cats, accs, txns, repeats, userRow, lastPushRow] = await Promise.all([
       pool.query(
-        "SELECT * FROM sync_categories WHERE user_id = $1 AND updated_at > $2",
-        [userId, since]
+        "SELECT * FROM sync_categories WHERE user_id = $1 AND ledger_id = $2 AND updated_at > $3",
+        [userId, ledger_id, since]
       ),
       pool.query(
-        "SELECT * FROM sync_accounts WHERE user_id = $1 AND updated_at > $2",
-        [userId, since]
+        "SELECT * FROM sync_accounts WHERE user_id = $1 AND ledger_id = $2 AND updated_at > $3",
+        [userId, ledger_id, since]
       ),
       pool.query(
-        "SELECT * FROM sync_transactions WHERE user_id = $1 AND updated_at > $2",
-        [userId, since]
+        "SELECT * FROM sync_transactions WHERE user_id = $1 AND ledger_id = $2 AND updated_at > $3",
+        [userId, ledger_id, since]
       ),
       pool.query(
-        "SELECT * FROM sync_repeat_transactions WHERE user_id = $1 AND updated_at > $2",
-        [userId, since]
+        "SELECT * FROM sync_repeat_transactions WHERE user_id = $1 AND ledger_id = $2 AND updated_at > $3",
+        [userId, ledger_id, since]
       ),
       pool.query("SELECT is_premium FROM users WHERE id = $1", [userId]),
       pool.query(
         `SELECT MAX(updated_at) as last_push_at FROM (
-          SELECT updated_at FROM sync_categories WHERE user_id = $1
+          SELECT updated_at FROM sync_categories WHERE user_id = $1 AND ledger_id = $2
           UNION ALL
-          SELECT updated_at FROM sync_accounts WHERE user_id = $1
+          SELECT updated_at FROM sync_accounts WHERE user_id = $1 AND ledger_id = $2
           UNION ALL
-          SELECT updated_at FROM sync_transactions WHERE user_id = $1
+          SELECT updated_at FROM sync_transactions WHERE user_id = $1 AND ledger_id = $2
           UNION ALL
-          SELECT updated_at FROM sync_repeat_transactions WHERE user_id = $1
+          SELECT updated_at FROM sync_repeat_transactions WHERE user_id = $1 AND ledger_id = $2
         ) t`,
-        [userId]
+        [userId, ledger_id]
       ),
     ]);
 

@@ -1,4 +1,5 @@
 import { getCurrencySymbol } from "../utils/currency";
+import { lk } from "../utils/ledgerStorage";
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -8,10 +9,12 @@ import { getRealTransactionsList } from "../utils/transactionData";
 
 type TabType = "summary" | "stats";
 
-const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
-];
+const MONTH_KEYS = [
+  "month.jan","month.feb","month.mar","month.apr",
+  "month.may","month.jun","month.jul","month.aug",
+  "month.sep","month.oct","month.nov","month.dec",
+] as const;
+
 
 export default function Stats() {
   const navigate = useNavigate();
@@ -29,7 +32,7 @@ export default function Stats() {
   const allTransactions = useMemo(() => getRealTransactionsList(), []);
 
   const storedAccounts = useMemo<any[]>(() => {
-    try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]"); } catch { return []; }
   }, []);
 
   // --- Tab 1: Summary (all-time per account) ---
@@ -90,7 +93,7 @@ export default function Stats() {
             >
               <ChevronLeft size={24} />
             </button>
-            <h1 className="text-xl font-bold">Report</h1>
+            <h1 className="text-xl font-bold">{T("stats.report_title")}</h1>
           </div>
         </div>
 
@@ -104,7 +107,7 @@ export default function Stats() {
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              Summary
+              {T("stats.tab_summary")}
             </button>
             <button
               onClick={() => setTab("stats")}
@@ -114,7 +117,7 @@ export default function Stats() {
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              Stats
+              {T("stats.tab_stats")}
             </button>
           </div>
         </div>
@@ -163,7 +166,7 @@ export default function Stats() {
               onClick={() => { setShowMonthPicker((v) => !v); setPickerYear(selectedYear); }}
               className="w-full flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              <span>{MONTHS[selectedMonth]} {selectedYear}</span>
+              <span>{T(MONTH_KEYS[selectedMonth])} {selectedYear}</span>
               <ChevronDown
                 size={16}
                 className={`transition-transform ${showMonthPicker ? "rotate-180" : ""}`}
@@ -190,9 +193,9 @@ export default function Stats() {
                 </div>
                 {/* Month grid */}
                 <div className="grid grid-cols-4 gap-2">
-                  {MONTHS.map((m, i) => (
+                  {MONTH_KEYS.map((key, i) => (
                     <button
-                      key={m}
+                      key={key}
                       onClick={() => {
                         setSelectedYear(pickerYear);
                         setSelectedMonth(i);
@@ -204,7 +207,7 @@ export default function Stats() {
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
-                      {m.slice(0, 3)}
+                      {T(key)}
                     </button>
                   ))}
                 </div>
