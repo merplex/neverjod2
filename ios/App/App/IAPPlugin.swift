@@ -10,6 +10,22 @@ public class IAPPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "restorePurchases", returnType: CAPPluginReturnPromise),
     ]
 
+    private var transactionUpdatesTask: Task<Void, Never>?
+
+    override public func load() {
+        transactionUpdatesTask = Task {
+            for await result in Transaction.updates {
+                if case .verified(let transaction) = result {
+                    await transaction.finish()
+                }
+            }
+        }
+    }
+
+    deinit {
+        transactionUpdatesTask?.cancel()
+    }
+
     @objc func purchase(_ call: CAPPluginCall) {
         guard let productId = call.getString("productId") else {
             call.reject("productId required"); return
