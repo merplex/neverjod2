@@ -6,7 +6,10 @@ import nodemailer from "nodemailer";
 import { pool, JWT_SECRET } from "../db";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  family: 4,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
@@ -97,14 +100,15 @@ router.post("/forgot-password", async (req: Request, res: Response) => {
         "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)",
         [userId, token, expiresAt]
       );
-      const appUrl = process.env.APP_URL || "https://neverjod.netlify.app";
-      await sendResetEmail(email.toLowerCase(), `${appUrl}/reset-password?token=${token}`);
+      const appUrl = process.env.APP_URL || "https://neverjod.com";
+      sendResetEmail(email.toLowerCase(), `${appUrl}/reset-password?token=${token}`)
+        .catch((err) => console.error("forgot-password email error:", err));
     }
   } catch (err) {
     console.error("forgot-password error:", err);
   }
 
-  // Always return ok to prevent email enumeration
+  // Always return ok immediately (don't wait for email)
   res.json({ ok: true });
 });
 

@@ -3,8 +3,9 @@ import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut,
 import { CURRENCY_OPTIONS } from "../utils/currency";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { apiLogin, apiRegister, syncAll } from "../utils/syncService";
+import { syncAll } from "../utils/syncService";
 import PremiumModal from "../components/PremiumModal";
+import CloudAuthModal from "../components/CloudAuthModal";
 import { useT } from "../hooks/useT";
 
 const SETTINGS_KEY = "app_settings";
@@ -96,11 +97,6 @@ export default function Settings() {
   // Cloud Backup state
   const [cloudToken, setCloudToken] = useState<string>(() => localStorage.getItem("cloud_token") || "");
   const [cloudEmail, setCloudEmail] = useState<string>(() => localStorage.getItem("cloud_email") || "");
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
   const [syncAuto, setSyncAuto] = useState<boolean>(() => localStorage.getItem("sync_auto_enabled") === "true");
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "ok" | "error">("idle");
   const [syncDirection, setSyncDirection] = useState<"server" | "client" | null>(() => {
@@ -142,36 +138,25 @@ export default function Settings() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleAuth = async () => {
-    setAuthError("");
-    setAuthLoading(true);
+  const handleAuthSuccess = async (isPremium: boolean) => {
+    const token = localStorage.getItem("cloud_token") || "";
+    const email = localStorage.getItem("cloud_email") || "";
+    setCloudToken(token);
+    setCloudEmail(email);
+    setShowAuthForm(false);
+    if (!isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    setSyncStatus("syncing");
     try {
-      const fn = authMode === "login" ? apiLogin : apiRegister;
-      const result = await fn(authEmail, authPassword);
-      localStorage.setItem("app_premium", result.isPremium ? "true" : "false");
-      localStorage.setItem("cloud_token", result.token);
-      localStorage.setItem("cloud_email", result.email);
-      setCloudToken(result.token);
-      setCloudEmail(result.email);
-      setShowAuthForm(false);
-      setAuthEmail("");
-      setAuthPassword("");
-      if (!result.isPremium) {
-        // Free tier — don't allow cloud sync, show upgrade prompt
-        setShowPremiumModal(true);
-        return;
-      }
-      // Auto sync after login
-      setSyncStatus("syncing");
-      await syncAll(result.token, false);
+      await syncAll(token, false);
       localStorage.setItem("sync_direction", "server");
       setSyncDirection("server");
       setSyncStatus("ok");
       refreshLastSyncTime(false);
-    } catch (err: any) {
-      setAuthError(err.message || "เกิดข้อผิดพลาด");
-    } finally {
-      setAuthLoading(false);
+    } catch {
+      setSyncStatus("error");
     }
   };
 
@@ -600,54 +585,6 @@ export default function Settings() {
                 </span>
               </button>
             </div>
-          ) : showAuthForm ? (
-            <div className="space-y-3">
-              <div className="flex gap-2 text-xs mb-1">
-                <button
-                  onClick={() => setAuthMode("login")}
-                  className={`px-3 py-1 rounded-full font-medium ${authMode === "login" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
-                >
-                  {T("login")}
-                </button>
-                <button
-                  onClick={() => setAuthMode("register")}
-                  className={`px-3 py-1 rounded-full font-medium ${authMode === "register" ? "bg-sky-100 text-sky-700" : "text-slate-400"}`}
-                >
-                  {T("register")}
-                </button>
-              </div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-sky-400"
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-sky-400"
-              />
-              {authError && <p className="text-xs text-red-500">{authError}</p>}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowAuthForm(false)}
-                  className="flex-1 py-2.5 rounded-xl text-sm text-slate-500 border border-slate-200 hover:bg-slate-50"
-                >
-                  {T("cancel")}
-                </button>
-                <button
-                  onClick={handleAuth}
-                  disabled={authLoading}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50"
-                >
-                  {authLoading ? "..." : authMode === "login" ? T("login") : T("register_short")}
-                </button>
-              </div>
-            </div>
           ) : (
             <button
               onClick={() => setShowAuthForm(true)}
@@ -702,6 +639,12 @@ export default function Settings() {
 
       </div>
 
+      {showAuthForm && (
+        <CloudAuthModal
+          onSuccess={handleAuthSuccess}
+          onClose={() => setShowAuthForm(false)}
+        />
+      )}
       {showPremiumModal && (
         <PremiumModal
           message={"บัญชีของคุณเป็นแพลนฟรี\nอัปเกรด Premium เพื่อใช้งาน Cloud Sync ข้ามอุปกรณ์"}
