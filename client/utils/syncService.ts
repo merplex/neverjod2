@@ -465,6 +465,17 @@ export async function apiRenameLedger(token: string, id: string, name: string): 
   if (!res.ok) throw new Error(data.error || "Failed");
 }
 
+export async function apiDeleteLedger(token: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/ledgers/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed");
+  }
+}
+
 // --- Full sync (pull then push) ---
 // Pull first: get server data, resolve conflicts, set source="server" on server items.
 // Push second: promote remaining source="local" items to server.

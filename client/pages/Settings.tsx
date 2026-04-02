@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown, BookText, Plus, Pencil, ChevronRight } from "lucide-react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown, BookText, Plus, Pencil, ChevronRight, X, Trash2 } from "lucide-react";
 import { CURRENCY_OPTIONS } from "../utils/currency";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger } from "../utils/syncService";
+import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger, apiDeleteLedger } from "../utils/syncService";
 import { lk, getActiveLedgerId, setActiveLedgerId } from "../utils/ledgerStorage";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
@@ -107,6 +107,7 @@ export default function Settings() {
   const [renamingLedger, setRenamingLedger] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [confirmDeleteLedger, setConfirmDeleteLedger] = useState<string | null>(null);
 
   // Cloud Backup state
   const [cloudToken, setCloudToken] = useState<string>(() => localStorage.getItem("cloud_token") || "");
@@ -275,6 +276,25 @@ export default function Settings() {
     }
   };
 
+  const handleDeleteLedger = async (id: string) => {
+    if (!cloudToken) return;
+    setLedgerLoading(true);
+    try {
+      await apiDeleteLedger(cloudToken, id);
+      // If deleted ledger was active, switch to main first
+      if (activeLedger === id) {
+        setActiveLedgerId("main");
+        setActiveLedger("main");
+      }
+      saveLedgerList(ledgers.filter((l) => l.id !== id));
+      setConfirmDeleteLedger(null);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setLedgerLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
@@ -327,9 +347,14 @@ export default function Settings() {
                       <span className="truncate">{l.name}</span>
                     </button>
                     {cloudToken && l.id !== "main" && (
-                      <button onClick={() => { setRenamingLedger(l.id); setRenameValue(l.name); }} className="p-2 text-slate-400 hover:text-slate-600">
-                        <Pencil size={14} />
-                      </button>
+                      <>
+                        <button onClick={() => { setRenamingLedger(l.id); setRenameValue(l.name); }} className="p-2 text-slate-400 hover:text-slate-600">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => setConfirmDeleteLedger(l.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
+                          <X size={14} />
+                        </button>
+                      </>
                     )}
                   </>
                 )}
@@ -801,6 +826,37 @@ export default function Settings() {
           onClose={() => setShowPremiumModal(false)}
           onSignUp={() => { setShowPremiumModal(false); setShowAuthForm(true); }}
         />
+      )}
+
+      {/* Delete Ledger Confirm */}
+      {confirmDeleteLedger && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmDeleteLedger(null)} />
+          <div className="relative bg-white rounded-t-2xl p-5 pb-10 space-y-3">
+            <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto mb-1">
+              <Trash2 size={20} className="text-red-500" />
+            </div>
+            <p className="text-sm font-semibold text-slate-800 text-center">
+              {T("ledger.delete_confirm") || "ลบสมุดบัญชีนี้?"}
+            </p>
+            <p className="text-xs text-slate-500 text-center">
+              {T("ledger.delete_hint") || "ข้อมูลในสมุดบัญชีนี้จะถูกลบออกจาก Cloud ไม่สามารถกู้คืนได้"}
+            </p>
+            <button
+              onClick={() => handleDeleteLedger(confirmDeleteLedger)}
+              disabled={ledgerLoading}
+              className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold text-sm transition-colors disabled:opacity-50"
+            >
+              {T("delete") || "ลบ"}
+            </button>
+            <button
+              onClick={() => setConfirmDeleteLedger(null)}
+              className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors"
+            >
+              {T("cancel") || "ยกเลิก"}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
