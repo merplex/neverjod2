@@ -77,4 +77,25 @@ router.patch("/:id", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+// DELETE /api/ledgers/:id — delete ledger (and all its synced data)
+router.delete("/:id", authMiddleware, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const { id } = req.params;
+  if (id === "main") return res.status(400).json({ error: "Cannot delete main ledger" });
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM ledgers WHERE id = $1 AND user_id = $2",
+      [id, userId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Ledger not found" });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("ledgers/delete error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 export default router;
