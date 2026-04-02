@@ -1,8 +1,21 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { pool, JWT_SECRET } from "../db";
+
+function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: "No token" });
+  const token = header.replace("Bearer ", "");
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+    (req as any).userId = decoded.userId;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
 
 async function sendResetEmail(to: string, resetUrl: string) {
   const res = await fetch("https://api.resend.com/emails", {
@@ -127,6 +140,16 @@ router.post("/reset-password", async (req: Request, res: Response) => {
     await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [hash, userId]);
     await pool.query("UPDATE password_reset_tokens SET used_at = NOW() WHERE token = $1", [token]);
 
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.delete("/delete-account", authMiddleware, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  try {
+    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Server error" });

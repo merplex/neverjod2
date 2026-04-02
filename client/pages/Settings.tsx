@@ -3,7 +3,7 @@ import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut,
 import { CURRENCY_OPTIONS } from "../utils/currency";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger, apiDeleteLedger } from "../utils/syncService";
+import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger, apiDeleteLedger, apiDeleteAccount } from "../utils/syncService";
 import { lk, getActiveLedgerId, setActiveLedgerId } from "../utils/ledgerStorage";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
@@ -128,6 +128,8 @@ export default function Settings() {
     catch { return ""; }
   });
   const [showAuthForm, setShowAuthForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     saveSettings(settings);
@@ -229,6 +231,20 @@ export default function Settings() {
     setSyncStatus("idle");
     setSyncDirection(null);
     setLastSyncTime("");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!cloudToken) return;
+    setDeleteLoading(true);
+    try {
+      await apiDeleteAccount(cloudToken);
+      handleLogout();
+      setShowDeleteConfirm(false);
+    } catch {
+      // silent — user can retry
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const saveLedgerList = (list: LedgerItem[]) => {
@@ -764,6 +780,34 @@ export default function Settings() {
                     : T("settings.sync_now")}
                 </span>
               </button>
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full py-2 rounded-xl text-xs text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
+                >
+                  {T("settings.delete_account")}
+                </button>
+              ) : (
+                <div className="border border-red-200 rounded-xl p-3 space-y-2 bg-red-50">
+                  <p className="text-xs font-semibold text-red-700">{T("settings.delete_account_confirm")}</p>
+                  <p className="text-xs text-red-500">{T("settings.delete_account_warning")}</p>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1 py-1.5 rounded-lg text-xs border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors"
+                    >
+                      {T("cancel")}
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteLoading}
+                      className="flex-1 py-1.5 rounded-lg text-xs bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
+                    >
+                      {deleteLoading ? "..." : T("delete")}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <button

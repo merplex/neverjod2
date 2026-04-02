@@ -48,6 +48,16 @@ export async function apiResetPassword(token: string, password: string) {
   return data as { ok: boolean };
 }
 
+export async function apiDeleteAccount(token: string) {
+  const res = await fetch(`${API_BASE}/auth/delete-account`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Delete failed");
+  return data as { ok: boolean };
+}
+
 export async function apiVerifyPurchase(receipt: string) {
   const token = localStorage.getItem("app_token");
   if (!token) throw new Error("ต้อง login ก่อนซื้อ");
