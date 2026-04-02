@@ -100,6 +100,8 @@ export function updateRepeatTransfer(
     repeatOption: RepeatOption;
     date: Date;
     time: string;
+    toLedgerId?: string;
+    toLedgerName?: string;
   }
 ) {
   const list = getRepeatTransactions();
@@ -121,6 +123,7 @@ export function updateRepeatTransfer(
     monthOfYear: updates.date.getMonth(),
     time: updates.time,
     startDate: updates.date.toISOString(),
+    ...(updates.toLedgerId ? { toLedgerId: updates.toLedgerId, toLedgerName: updates.toLedgerName } : { toLedgerId: undefined, toLedgerName: undefined }),
   };
   list[idx].nextDue = buildInitialNextDue(list[idx]);
   saveRepeatTransactions(list);

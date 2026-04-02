@@ -341,24 +341,26 @@ export default function Settings() {
           {cloudToken ? (
             isPremium ? (
               showLedgerCreate ? (
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 space-y-2">
                   <input
                     value={newLedgerName}
                     onChange={(e) => setNewLedgerName(e.target.value)}
                     placeholder={T("ledger.name_placeholder")}
-                    className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                     autoFocus
                     onKeyDown={(e) => { if (e.key === "Enter") handleCreateLedger(); if (e.key === "Escape") setShowLedgerCreate(false); }}
                   />
-                  <button onClick={handleCreateLedger} disabled={ledgerLoading || !newLedgerName.trim()} className="px-3 py-2 bg-theme-600 text-white text-sm rounded-lg disabled:opacity-50">{T("btn.save")}</button>
-                  <button onClick={() => setShowLedgerCreate(false)} className="px-3 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg">{T("btn.cancel")}</button>
+                  <div className="flex gap-2">
+                    <button onClick={handleCreateLedger} disabled={ledgerLoading || !newLedgerName.trim()} className="flex-1 py-2 bg-theme-600 text-white text-sm font-semibold rounded-lg disabled:opacity-50 whitespace-nowrap">{T("btn.save")}</button>
+                    <button onClick={() => setShowLedgerCreate(false)} className="flex-1 py-2 bg-slate-100 text-slate-600 text-sm font-semibold rounded-lg whitespace-nowrap">{T("btn.cancel")}</button>
+                  </div>
                 </div>
-              ) : (
+              ) : ledgers.length < 2 ? (
                 <button onClick={() => setShowLedgerCreate(true)} className="mt-3 w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500 hover:border-theme-300 hover:text-theme-600 transition-colors">
                   <Plus size={16} />
                   {T("ledger.add")}
                 </button>
-              )
+              ) : null
             ) : (
               <button onClick={() => setShowPremiumModal(true)} className="mt-3 w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-400 hover:bg-slate-50 transition-colors">
                 <Lock size={14} />
