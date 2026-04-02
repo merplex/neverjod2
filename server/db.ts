@@ -76,6 +76,14 @@ export async function initDB() {
       deleted_at TIMESTAMPTZ,
       PRIMARY KEY (id, user_id)
     )`,
+    `CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token TEXT UNIQUE NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
   ];
   for (const sql of tables) {
     await pool.query(sql);

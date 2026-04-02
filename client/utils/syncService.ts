@@ -24,6 +24,28 @@ export async function apiLogin(email: string, password: string) {
   return data as { token: string; email: string; isPremium: boolean };
 }
 
+export async function apiForgotPassword(email: string) {
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed");
+  return data as { ok: boolean };
+}
+
+export async function apiResetPassword(token: string, password: string) {
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed");
+  return data as { ok: boolean };
+}
+
 export async function apiVerifyPurchase(receipt: string) {
   const token = localStorage.getItem("app_token");
   if (!token) throw new Error("ต้อง login ก่อนซื้อ");

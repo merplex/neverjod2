@@ -12,8 +12,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import OnboardingGuide from "./components/OnboardingGuide";
 
-// Legal pages are accessible on desktop too — only block the main app
-const LEGAL_PATHS = ["/privacy", "/terms", "/eula"];
+// Legal pages and reset-password are accessible on desktop too — only block the main app
+const LEGAL_PATHS = ["/privacy", "/terms", "/eula", "/reset-password"];
 
 function DesktopBlock() {
   const { pathname } = useLocation();
@@ -91,6 +91,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import Eula from "./pages/Eula";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 import BottomNavLayout from "./components/BottomNavLayout";
 
 const queryClient = new QueryClient();
@@ -196,6 +197,7 @@ function AppContent() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/eula" element={<Eula />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showGuide && !LEGAL_PATHS.some((p) => pathname.startsWith(p)) && <OnboardingGuide onClose={() => setShowGuide(false)} />}
