@@ -2,36 +2,35 @@ import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import { pool, JWT_SECRET } from "../db";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  family: 4,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
-
 async function sendResetEmail(to: string, resetUrl: string) {
-  await transporter.sendMail({
-    from: `"NeverJod" <${process.env.GMAIL_USER}>`,
-    to,
-    subject: "Reset your NeverJod password",
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
-        <h2 style="color:#0ea5e9">NeverJod</h2>
-        <p>คุณได้ขอรีเซ็ตรหัสผ่าน กรุณากดลิงก์ด้านล่างภายใน 1 ชั่วโมง</p>
-        <a href="${resetUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#0ea5e9;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold">
-          Reset Password
-        </a>
-        <p style="color:#888;font-size:12px">ถ้าคุณไม่ได้ขอรีเซ็ต ไม่ต้องทำอะไร</p>
-      </div>
-    `,
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "NeverJod <noreply@neverjod.com>",
+      to,
+      subject: "Reset your NeverJod password",
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+          <h2 style="color:#0ea5e9">NeverJod</h2>
+          <p>คุณได้ขอรีเซ็ตรหัสผ่าน กรุณากดลิงก์ด้านล่างภายใน 1 ชั่วโมง</p>
+          <a href="${resetUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#0ea5e9;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold">
+            Reset Password
+          </a>
+          <p style="color:#888;font-size:12px">ถ้าคุณไม่ได้ขอรีเซ็ต ไม่ต้องทำอะไร</p>
+        </div>
+      `,
+    }),
   });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Resend error: ${err}`);
+  }
 }
 
 const router = Router();
