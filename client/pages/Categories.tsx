@@ -145,7 +145,7 @@ export default function Categories() {
   const handleAddCategory = () => {
     if (!newName.trim()) return;
 
-    const keywords = newKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const keywords = newKeywords.replace(/，/g, ",").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Free-tier: max 1 keyword per category
     if (!isPremium && keywords.length > 1) {
@@ -193,7 +193,7 @@ export default function Categories() {
   const saveEdit = () => {
     if (!editingId || !editName.trim()) return;
 
-    const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const keywords = editKeywords.replace(/，/g, ",").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Free-tier: max 1 keyword per category
     if (!isPremium && keywords.length > 1) {

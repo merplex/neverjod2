@@ -160,7 +160,7 @@ export default function AccountsManagement() {
   const handleAddAccount = () => {
     if (!newAccName.trim()) return;
 
-    const keywords = newAccKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const keywords = newAccKeywords.replace(/，/g, ",").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Free-tier: max 1 keyword per account
     if (!isPremium && keywords.length > 1) {
@@ -232,7 +232,7 @@ export default function AccountsManagement() {
   const saveEdit = () => {
     if (!editingId || !editName.trim()) return;
 
-    const keywords = editKeywords.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const keywords = editKeywords.replace(/，/g, ",").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
     // Free-tier: max 1 keyword per account
     if (!isPremium && keywords.length > 1) {
