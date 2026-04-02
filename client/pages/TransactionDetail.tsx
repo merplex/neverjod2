@@ -41,13 +41,21 @@ function deleteLocalTransaction(id: string) {
     const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
     const tx = txns.find((t: any) => t.id === id);
     if (!tx) return;
-    // If transfer — delete both legs
+    // Delete both legs in current ledger
     const idsToDelete = new Set<string>([id]);
     if (tx.transferRef) {
       txns.filter((t: any) => t.transferRef === tx.transferRef).forEach((t: any) => idsToDelete.add(t.id));
     }
     txns.filter((t: any) => idsToDelete.has(t.id)).forEach((t: any) => markDeleted("transaction", t));
     localStorage.setItem(lk("app_transactions"), JSON.stringify(txns.filter((t: any) => !idsToDelete.has(t.id))));
+    // Cross-ledger: delete the paired leg from the other ledger's storage
+    if (tx.transferRef && tx.pairLedgerId) {
+      const otherKey = lk("app_transactions", tx.pairLedgerId);
+      const otherTxns: any[] = JSON.parse(localStorage.getItem(otherKey) || "[]");
+      const toRemove = otherTxns.filter((t: any) => t.transferRef === tx.transferRef);
+      toRemove.forEach((t: any) => markDeleted("transaction", t));
+      localStorage.setItem(otherKey, JSON.stringify(otherTxns.filter((t: any) => t.transferRef !== tx.transferRef)));
+    }
   } catch {}
 }
 

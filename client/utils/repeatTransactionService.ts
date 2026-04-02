@@ -249,15 +249,17 @@ export function checkAndExecuteRepeats(): boolean {
           repeatId: rt.id,
           transferRef,
           ...(rt.toLedgerName ? { ledgerName: rt.toLedgerName } : {}),
+          ...(rt.toLedgerId ? { pairLedgerId: rt.toLedgerId } : {}),
         });
         localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
         // transfer_in → destination ledger (same or cross)
+        const srcLedgerId = getActiveLedgerId();
         const toTxnsKey = rt.toLedgerId ? lk("app_transactions", rt.toLedgerId) : lk("app_transactions");
         const txnsIn = toTxnsKey !== lk("app_transactions")
           ? JSON.parse(localStorage.getItem(toTxnsKey) || "[]")
           : txns;
         const fromLedgerList = JSON.parse(localStorage.getItem("app_ledgers") || "null") || [{ id: "main", name: "Main" }];
-        const fromLedgerName = fromLedgerList.find((l: any) => l.id === getActiveLedgerId())?.name || "";
+        const fromLedgerName = fromLedgerList.find((l: any) => l.id === srcLedgerId)?.name || "";
         txnsIn.unshift({
           id: `${id}_in`,
           categoryId: "transfer_in",
@@ -270,7 +272,7 @@ export function checkAndExecuteRepeats(): boolean {
           isRepeat: true,
           repeatId: rt.id,
           transferRef,
-          ...(rt.toLedgerId ? { ledgerName: fromLedgerName } : {}),
+          ...(rt.toLedgerId ? { ledgerName: fromLedgerName, pairLedgerId: srcLedgerId } : {}),
         });
         localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
       } else {

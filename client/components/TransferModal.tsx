@@ -189,7 +189,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
         time: timeStr,
         isTransfer: true,
         transferRef,
-        ...(isCrossLedger ? { ledgerName: toLedgerName } : {}),
+        ...(isCrossLedger ? { ledgerName: toLedgerName, pairLedgerId: toLedgerId } : {}),
       });
       localStorage.setItem(lk("app_transactions"), JSON.stringify(txnsOut));
       // transfer_in — goes to the destination ledger (same or cross)
@@ -206,7 +206,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
         time: timeStr,
         isTransfer: true,
         transferRef,
-        ...(isCrossLedger ? { ledgerName: fromLedgerName } : {}),
+        ...(isCrossLedger ? { ledgerName: fromLedgerName, pairLedgerId: activeLedgerId } : {}),
       });
       localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
       window.dispatchEvent(new CustomEvent("app-data-updated"));
