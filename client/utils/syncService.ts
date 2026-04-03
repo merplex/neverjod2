@@ -59,7 +59,7 @@ export async function apiDeleteAccount(token: string) {
 }
 
 export async function apiVerifyPurchase(receipt: string) {
-  const token = localStorage.getItem("app_token");
+  const token = localStorage.getItem("cloud_token");
   if (!token) throw new Error("ต้อง login ก่อนซื้อ");
   const res = await fetch(`${API_BASE}/subscription/verify`, {
     method: "POST",
