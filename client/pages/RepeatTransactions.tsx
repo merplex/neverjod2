@@ -15,7 +15,8 @@ import { getLang } from "../utils/i18n";
 function repeatLabel(rt: RepeatTransaction): string {
   const opt = REPEAT_OPTIONS.find((o) => o.value === rt.repeatOption);
   if (!opt) return rt.repeatOption;
-  return getLang() === "en" ? opt.labelEn : opt.label;
+  const lang = getLang();
+  return lang === "en" ? opt.labelEn : lang === "zh" ? opt.labelZh : opt.label;
 }
 
 function formatNextDue(isoStr: string): string {
@@ -75,7 +76,7 @@ export default function RepeatTransactions() {
           >
             <ChevronLeft size={24} />
           </button>
-          <h1 className="flex-1 text-base font-semibold">Repeat Transactions</h1>
+          <h1 className="flex-1 text-base font-semibold">{T("repeat.page_title")}</h1>
           <button
             onClick={() => setShowAddModal(true)}
             className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
@@ -203,7 +204,7 @@ export default function RepeatTransactions() {
                 className="w-full flex items-center justify-between px-3 py-2 border border-slate-200 rounded-xl text-sm"
               >
                 <span className="font-semibold text-slate-800">
-                  {(() => { const o = REPEAT_OPTIONS.find((o) => o.value === editRepeatOption); return o ? (getLang() === "en" ? o.labelEn : o.label) : editRepeatOption; })()}
+                  {(() => { const o = REPEAT_OPTIONS.find((o) => o.value === editRepeatOption); const lang = getLang(); return o ? (lang === "en" ? o.labelEn : lang === "zh" ? o.labelZh : o.label) : editRepeatOption; })()}
                 </span>
                 <span className="text-xs text-slate-400">
                   {REPEAT_OPTIONS.find((o) => o.value === editRepeatOption)?.desc}
@@ -217,7 +218,7 @@ export default function RepeatTransactions() {
                       onClick={() => { setEditRepeatOption(opt.value); setShowEditRepeatPicker(false); }}
                       className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${opt.value === editRepeatOption ? "bg-theme-50" : ""}`}
                     >
-                      <span className={`text-sm font-semibold w-28 text-left ${opt.value === editRepeatOption ? "text-theme-700" : "text-slate-800"}`}>{getLang() === "en" ? opt.labelEn : opt.label}</span>
+                      <span className={`text-sm font-semibold w-28 text-left ${opt.value === editRepeatOption ? "text-theme-700" : "text-slate-800"}`}>{getLang() === "en" ? opt.labelEn : getLang() === "zh" ? opt.labelZh : opt.label}</span>
                       <span className="text-xs text-slate-400 flex-1 text-left">{opt.desc}</span>
                       {opt.value === editRepeatOption && <span className="text-theme-600">✓</span>}
                     </button>

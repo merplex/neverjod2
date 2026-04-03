@@ -337,7 +337,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors"
                 >
                   <span className="text-sm font-medium text-slate-800 text-left flex-1">
-                    {getLang() === "en" ? selectedRepeat.labelEn : selectedRepeat.label}
+                    {getLang() === "en" ? selectedRepeat.labelEn : getLang() === "zh" ? selectedRepeat.labelZh : selectedRepeat.label}
                   </span>
                   <span className="text-xs text-slate-400 mr-2">{selectedRepeat.desc}</span>
                   <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
@@ -475,7 +475,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                   className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors ${opt.value === repeatOption ? "bg-theme-50" : ""}`}
                 >
                   <span className={`text-sm font-semibold w-28 text-left ${opt.value === repeatOption ? "text-theme-700" : "text-slate-800"}`}>
-                    {getLang() === "en" ? opt.labelEn : opt.label}
+                    {getLang() === "en" ? opt.labelEn : getLang() === "zh" ? opt.labelZh : opt.label}
                   </span>
                   <span className="text-xs text-slate-400 flex-1 text-left">{opt.desc}</span>
                   {opt.value === repeatOption && (

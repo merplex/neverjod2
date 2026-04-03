@@ -133,7 +133,11 @@ export default function Stats() {
               {summaryData.map((acc: any, i: number) => {
                 const balance = Number(acc.balance || 0) + acc.income - acc.expense;
                 return (
-                  <div key={acc.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-slate-100" : ""}`}>
+                  <div
+                    key={acc.id}
+                    onClick={() => navigate(`/transactions?accountId=${acc.id}`)}
+                    className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors ${i > 0 ? "border-t border-slate-100" : ""}`}
+                  >
                     <p className="font-medium text-slate-800 text-sm">{acc.name}</p>
                     <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
                       {balance >= 0 ? "+" : "-"}{cur}{Math.abs(balance).toLocaleString()}
@@ -226,7 +230,11 @@ export default function Stats() {
             ) : (
               <>
                 {expenseByCat.map(([cat, total]) => (
-                  <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                  <div
+                    key={cat}
+                    onClick={() => navigate(`/transactions?search=${encodeURIComponent(cat)}`)}
+                    className="flex items-center justify-between px-4 py-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                  >
                     <span className="text-sm text-slate-700">{cat}</span>
                     <span className="text-sm font-semibold text-red-500">-{cur}{total.toLocaleString()}</span>
                   </div>
@@ -247,7 +255,11 @@ export default function Stats() {
             ) : (
               <>
                 {incomeByCat.map(([cat, total]) => (
-                  <div key={cat} className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                  <div
+                    key={cat}
+                    onClick={() => navigate(`/transactions?search=${encodeURIComponent(cat)}`)}
+                    className="flex items-center justify-between px-4 py-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                  >
                     <span className="text-sm text-slate-700">{cat}</span>
                     <span className="text-sm font-semibold text-green-600">+{cur}{total.toLocaleString()}</span>
                   </div>
@@ -273,7 +285,11 @@ export default function Stats() {
                   <span className="text-xs font-medium text-slate-400 text-right">{T("stats.expense_col")}</span>
                 </div>
                 {accountMonthData.map((acc: any) => (
-                  <div key={acc.id} className="grid grid-cols-3 px-4 py-3 items-center border-b border-slate-100">
+                  <div
+                    key={acc.id}
+                    onClick={() => navigate(`/transactions?accountId=${acc.id}`)}
+                    className="grid grid-cols-3 px-4 py-3 items-center border-b border-slate-100 cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                  >
                     <span className="text-sm text-slate-700 font-medium truncate pr-2">{acc.name}</span>
                     <span className="text-sm font-semibold text-green-600 text-center">
                       {acc.income > 0 ? `+${cur}${acc.income.toLocaleString()}` : "—"}

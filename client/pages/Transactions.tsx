@@ -88,7 +88,7 @@ export default function Transactions() {
 
     const filtered = sampleTransactions.filter((t) => {
       if (timeRange === "all") return true;
-      return t.date >= startDate && t.date <= today;
+      return t.date >= startDate;
     });
 
     // Sort transactions by date, then by time within each day

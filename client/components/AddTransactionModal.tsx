@@ -369,7 +369,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100"
                 >
                   <span className="text-xs text-slate-400 w-20 text-left">Repeat</span>
-                  <span className="flex-1 text-sm font-medium text-slate-800 text-left">{getLang() === "en" ? selected.labelEn : selected.label}</span>
+                  <span className="flex-1 text-sm font-medium text-slate-800 text-left">{getLang() === "en" ? selected.labelEn : getLang() === "zh" ? selected.labelZh : selected.label}</span>
                   <span className="text-xs text-slate-400 mr-2">{selected.desc}</span>
                   <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
                 </button>
@@ -543,7 +543,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                   className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors ${opt.value === repeatOption ? "bg-theme-50" : ""}`}
                 >
                   <span className={`text-sm font-semibold w-28 text-left ${opt.value === repeatOption ? "text-theme-700" : "text-slate-800"}`}>
-                    {getLang() === "en" ? opt.labelEn : opt.label}
+                    {getLang() === "en" ? opt.labelEn : getLang() === "zh" ? opt.labelZh : opt.label}
                   </span>
                   <span className="text-xs text-slate-400 flex-1 text-left">{opt.desc}</span>
                   {opt.value === repeatOption && (

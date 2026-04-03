@@ -173,9 +173,8 @@ export default function AllTransactions() {
   const accountIdFilter = searchParams.get("accountId");
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [showSearch, setShowSearch] = useState(!!searchParams.get("search"));
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [showAccountGrid, setShowAccountGrid] = useState(false);
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customStart, setCustomStart] = useState<Date | null>(null);
@@ -233,9 +232,9 @@ export default function AllTransactions() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const q = searchQuery.trim().toLowerCase();
 
+
     return allTransactions.filter((transaction) => {
       if (accountIdFilter && transaction.accountId !== accountIdFilter) return false;
-      if (categoryFilter && transaction.category !== categoryFilter) return false;
       if (q) {
         const transferLabel = T("acc.transfer").toLowerCase();
         const repeatLabel = T("txn.repeat").toLowerCase();
@@ -259,15 +258,15 @@ export default function AllTransactions() {
       } else if (timeRange === "month") {
         const monthAgo = new Date(today);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
-        return transactionDate >= monthAgo && transactionDate <= today;
+        return transactionDate >= monthAgo;
       }
       return true;
     });
-  }, [allTransactions, timeRange, searchQuery, accountIdFilter, categoryFilter, customStart, customEnd]);
+  }, [allTransactions, timeRange, searchQuery, accountIdFilter, customStart, customEnd]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      const dateCompare = a.date.getTime() - b.date.getTime();
+      const dateCompare = startOfDay(a.date).getTime() - startOfDay(b.date).getTime();
       if (dateCompare !== 0) {
         return sortOrder === "asc" ? dateCompare : -dateCompare;
       }
@@ -385,14 +384,6 @@ export default function AllTransactions() {
         <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200">
           <div className="flex justify-between items-center gap-2 mb-1">
             <span className="text-xs text-slate-400">{sorted.length} transactions</span>
-            {categoryFilter && (
-              <button
-                onClick={() => setCategoryFilter(null)}
-                className="flex items-center gap-1 text-xs font-semibold text-theme-600 bg-theme-50 px-2 py-1 rounded-full"
-              >
-                {categoryFilter} <X size={12} />
-              </button>
-            )}
           </div>
           <div className="flex justify-between items-center gap-2">
             <button
@@ -479,7 +470,7 @@ export default function AllTransactions() {
                         ) : (
                           <span
                             className="text-xs font-semibold text-theme-600 cursor-pointer hover:underline"
-                            onClick={(e) => { e.stopPropagation(); setCategoryFilter(transaction.category); }}
+                            onClick={(e) => { e.stopPropagation(); setSearchQuery(transaction.category); setShowSearch(true); }}
                           >{transaction.category}</span>
                         )}
                         {transaction.ledgerName && (

@@ -158,6 +158,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "txn.repeat": "อัตโนมัติ",
 
     // Repeat Transactions
+    "repeat.page_title": "Repeat Transaction",
     "repeat.empty": "ยังไม่มี repeat transaction",
     "repeat.empty_hint": "กด + เพื่อสร้าง",
     "repeat.next_due": "ถัดไป",
@@ -420,6 +421,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "txn.repeat": "Repeat",
 
     // Repeat Transactions
+    "repeat.page_title": "Repeat Transactions",
     "repeat.empty": "No repeat transactions yet",
     "repeat.empty_hint": "Tap + to create one",
     "repeat.next_due": "Next",
@@ -682,6 +684,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "txn.repeat": "重复",
 
     // Repeat Transactions
+    "repeat.page_title": "重复交易",
     "repeat.empty": "暂无重复交易",
     "repeat.empty_hint": "点击 + 创建",
     "repeat.next_due": "下次",

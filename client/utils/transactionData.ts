@@ -214,7 +214,7 @@ export const getRealTransactionsList = (): Transaction[] => {
       return {
         id: t.id,
         date,
-        time: date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
+        time: t.time || date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
         category: catName,
         amount: Number(t.amount) || 0,
         description: t.description || "",
