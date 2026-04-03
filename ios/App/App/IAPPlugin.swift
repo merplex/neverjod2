@@ -62,11 +62,18 @@ public class IAPPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func restorePurchases(_ call: CAPPluginCall) {
         Task {
-            if let url = Bundle.main.appStoreReceiptURL,
-               let data = try? Data(contentsOf: url) {
-                call.resolve(["receipt": data.base64EncodedString()])
-            } else {
-                call.resolve(["receipt": ""])
+            do {
+                try await AppStore.sync()
+                for await result in Transaction.currentEntitlements {
+                    if case .verified(let transaction) = result {
+                        await transaction.finish()
+                        call.resolve(["receipt": result.jwsRepresentation])
+                        return
+                    }
+                }
+                call.reject("ไม่พบการซื้อเดิม")
+            } catch {
+                call.reject(error.localizedDescription)
             }
         }
     }
