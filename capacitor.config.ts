@@ -10,6 +10,7 @@ const config: CapacitorConfig = {
   ios: {
     packageClassList: ["SignInWithApple", "IAPPlugin"],
   },
+  packageClassList: ["SignInWithApple", "IAPPlugin"],
 };
 
 export default config;

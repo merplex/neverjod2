@@ -12,6 +12,7 @@
 		]
 	},
 	"packageClassList": [
-		"SignInWithApple"
+		"SignInWithApple",
+		"IAPPlugin"
 	]
 }
