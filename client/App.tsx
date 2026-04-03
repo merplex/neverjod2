@@ -127,7 +127,10 @@ function AppContent() {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         if (typeof payload.isPremium === "boolean") {
-          localStorage.setItem("app_premium", payload.isPremium ? "true" : "false");
+          // Only downgrade premium if JWT explicitly says false — never override a true set by purchase
+          if (payload.isPremium === true || localStorage.getItem("app_premium") !== "true") {
+            localStorage.setItem("app_premium", payload.isPremium ? "true" : "false");
+          }
         }
       } catch {}
       if (localStorage.getItem("sync_auto_enabled") === "true") {
