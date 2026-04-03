@@ -60,6 +60,11 @@ router.post("/register", async (req: Request, res: Response) => {
       [email.toLowerCase(), hash]
     );
     const user = result.rows[0];
+    // Create default "main" ledger for the new user
+    await pool.query(
+      "INSERT INTO ledgers (id, user_id, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+      ["main", user.id, "สมุดบัญชีหลัก"]
+    );
     const token = jwt.sign({ userId: user.id, email: user.email, isPremium: user.is_premium }, JWT_SECRET, { expiresIn: "30d" });
     res.json({ token, email: user.email, isPremium: user.is_premium });
   } catch (err: any) {
@@ -90,6 +95,12 @@ router.post("/login", async (req: Request, res: Response) => {
       await pool.query("UPDATE users SET is_premium = FALSE WHERE id = $1", [user.id]);
       user.is_premium = false;
     }
+
+    // Ensure "main" ledger exists for existing users (backfill)
+    await pool.query(
+      "INSERT INTO ledgers (id, user_id, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+      ["main", user.id, "สมุดบัญชีหลัก"]
+    );
 
     const token = jwt.sign({ userId: user.id, email: user.email, isPremium: user.is_premium }, JWT_SECRET, { expiresIn: "30d" });
     res.json({ token, email: user.email, isPremium: user.is_premium });
