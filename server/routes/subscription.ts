@@ -26,35 +26,44 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
   }
 
   try {
-    const payload = { "receipt-data": receipt, password: sharedSecret };
+    let originalTxId: string | undefined;
+    let expiresAt: Date | null = null;
 
-    let data: any;
-    const prodRes = await fetch("https://buy.itunes.apple.com/verifyReceipt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    data = await prodRes.json();
-
-    // 21007 = sandbox receipt sent to production → retry sandbox
-    if (data.status === 21007) {
-      const sandboxRes = await fetch("https://sandbox.itunes.apple.com/verifyReceipt", {
+    // StoreKit 2 JWS token (contains dots) — decode payload directly
+    if (receipt.includes(".")) {
+      const parts = receipt.split(".");
+      if (parts.length < 2) return res.status(400).json({ error: "Invalid JWS token" });
+      const padded = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const json = Buffer.from(padded, "base64").toString("utf8");
+      const claims = JSON.parse(json);
+      originalTxId = claims.originalTransactionId;
+      if (claims.expiresDate) expiresAt = new Date(claims.expiresDate);
+    } else {
+      // Legacy base64 receipt — try production first, fallback to sandbox
+      const payload = { "receipt-data": receipt, password: sharedSecret };
+      let data: any;
+      const prodRes = await fetch("https://buy.itunes.apple.com/verifyReceipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      data = await sandboxRes.json();
+      data = await prodRes.json();
+      if (data.status === 21007) {
+        const sandboxRes = await fetch("https://sandbox.itunes.apple.com/verifyReceipt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        data = await sandboxRes.json();
+      }
+      if (data.status !== 0) {
+        return res.status(400).json({ error: `Apple verify failed: status=${data.status}` });
+      }
+      const latestInfo = data.latest_receipt_info?.[data.latest_receipt_info.length - 1];
+      originalTxId = latestInfo?.original_transaction_id;
+      const expiresMs = latestInfo?.expires_date_ms ? parseInt(latestInfo.expires_date_ms) : null;
+      expiresAt = expiresMs ? new Date(expiresMs) : null;
     }
-
-    if (data.status !== 0) {
-      return res.status(400).json({ error: `Apple verify failed: status=${data.status}` });
-    }
-
-    // Extract latest transaction info for expiry + linking future notifications
-    const latestInfo = data.latest_receipt_info?.[data.latest_receipt_info.length - 1];
-    const originalTxId: string | undefined = latestInfo?.original_transaction_id;
-    const expiresMs = latestInfo?.expires_date_ms ? parseInt(latestInfo.expires_date_ms) : null;
-    const expiresAt = expiresMs ? new Date(expiresMs) : null;
 
     await pool.query(
       `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id) WHERE id = $3`,

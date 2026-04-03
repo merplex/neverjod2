@@ -41,13 +41,9 @@ public class IAPPlugin: CAPPlugin, CAPBridgedPlugin {
                 case .success(let verification):
                     switch verification {
                     case .verified(let transaction):
-                        guard let url = Bundle.main.appStoreReceiptURL,
-                              let data = try? Data(contentsOf: url) else {
-                            call.reject("Cannot read receipt"); return
-                        }
                         await transaction.finish()
                         call.resolve(["productId": transaction.productID,
-                                      "receipt": data.base64EncodedString()])
+                                      "receipt": transaction.jwsRepresentation])
                     case .unverified(_, let err):
                         call.reject("Unverified: \(err.localizedDescription)")
                     }
