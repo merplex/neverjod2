@@ -155,6 +155,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "acc.date": "วันที่",
     "acc.time": "เวลา",
     "acc.transfer": "โอน",
+    "txn.repeat": "อัตโนมัติ",
 
     // Repeat Transactions
     "repeat.empty": "ยังไม่มี repeat transaction",
@@ -416,6 +417,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "acc.date": "Date",
     "acc.time": "Time",
     "acc.transfer": "Transfer",
+    "txn.repeat": "Repeat",
 
     // Repeat Transactions
     "repeat.empty": "No repeat transactions yet",
@@ -677,6 +679,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "acc.date": "日期",
     "acc.time": "时间",
     "acc.transfer": "转账",
+    "txn.repeat": "重复",
 
     // Repeat Transactions
     "repeat.empty": "暂无重复交易",

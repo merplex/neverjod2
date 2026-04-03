@@ -123,22 +123,16 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
 
                   return (
                     <g key={`outer-${i}`} onClick={() => handleClockClick(hour)}>
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="7"
-                        fill={isSelected ? "#4f46e5" : "transparent"}
-                        className="cursor-pointer hover:fill-theme-100"
-                      />
+                      <circle cx={x} cy={y} r="14" fill="transparent" className="cursor-pointer" />
                       <text
                         x={x}
                         y={y}
                         textAnchor="middle"
                         dy="0.35em"
                         fontSize="13"
-                        fontWeight="600"
-                        fill={isSelected ? "white" : "#1e293b"}
-                        className="cursor-pointer font-semibold"
+                        fontWeight={isSelected ? "700" : "600"}
+                        fill={isSelected ? "#4f46e5" : "#1e293b"}
+                        className="cursor-pointer"
                       >
                         {hour}
                       </text>
@@ -156,21 +150,15 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
 
                   return (
                     <g key={`inner-${i}`} onClick={() => handleClockClick(hour)}>
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="6"
-                        fill={isSelected ? "#4f46e5" : "transparent"}
-                        className="cursor-pointer hover:fill-theme-100"
-                      />
+                      <circle cx={x} cy={y} r="12" fill="transparent" className="cursor-pointer" />
                       <text
                         x={x}
                         y={y}
                         textAnchor="middle"
                         dy="0.35em"
                         fontSize="11"
-                        fontWeight="500"
-                        fill={isSelected ? "white" : "#64748b"}
+                        fontWeight={isSelected ? "700" : "500"}
+                        fill={isSelected ? "#4f46e5" : "#64748b"}
                         className="cursor-pointer"
                       >
                         {hour}
@@ -190,21 +178,15 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
 
                 return (
                   <g key={`minute-${i}`} onClick={() => handleClockClick(i)}>
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="7"
-                      fill={isSelected ? "#4f46e5" : "transparent"}
-                      className="cursor-pointer hover:fill-theme-100"
-                    />
+                    <circle cx={x} cy={y} r="14" fill="transparent" className="cursor-pointer" />
                     <text
                       x={x}
                       y={y}
                       textAnchor="middle"
                       dy="0.35em"
                       fontSize="12"
-                      fontWeight="600"
-                      fill={isSelected ? "white" : "#1e293b"}
+                      fontWeight={isSelected ? "700" : "600"}
+                      fill={isSelected ? "#4f46e5" : "#1e293b"}
                       className="cursor-pointer"
                     >
                       {minute.toString().padStart(2, "0")}

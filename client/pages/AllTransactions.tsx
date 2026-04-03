@@ -175,6 +175,7 @@ export default function AllTransactions() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [showAccountGrid, setShowAccountGrid] = useState(false);
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customStart, setCustomStart] = useState<Date | null>(null);
@@ -234,10 +235,18 @@ export default function AllTransactions() {
 
     return allTransactions.filter((transaction) => {
       if (accountIdFilter && transaction.accountId !== accountIdFilter) return false;
-      if (q && !transaction.accountName.toLowerCase().includes(q) &&
-               !transaction.category.toLowerCase().includes(q) &&
-               !transaction.amount.toString().includes(q) &&
-               !(transaction.description || "").toLowerCase().includes(q)) return false;
+      if (categoryFilter && transaction.category !== categoryFilter) return false;
+      if (q) {
+        const transferLabel = T("acc.transfer").toLowerCase();
+        const repeatLabel = T("txn.repeat").toLowerCase();
+        const transferMatch = q === transferLabel && transaction.isTransfer;
+        const repeatMatch = q === repeatLabel && transaction.isRepeat;
+        if (!transferMatch && !repeatMatch &&
+            !transaction.accountName.toLowerCase().includes(q) &&
+            !transaction.category.toLowerCase().includes(q) &&
+            !transaction.amount.toString().includes(q) &&
+            !(transaction.description || "").toLowerCase().includes(q)) return false;
+      }
       const transactionDate = new Date(
         transaction.date.getFullYear(),
         transaction.date.getMonth(),
@@ -254,7 +263,7 @@ export default function AllTransactions() {
       }
       return true;
     });
-  }, [allTransactions, timeRange, searchQuery, accountIdFilter, customStart, customEnd]);
+  }, [allTransactions, timeRange, searchQuery, accountIdFilter, categoryFilter, customStart, customEnd]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -376,6 +385,14 @@ export default function AllTransactions() {
         <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200">
           <div className="flex justify-between items-center gap-2 mb-1">
             <span className="text-xs text-slate-400">{sorted.length} transactions</span>
+            {categoryFilter && (
+              <button
+                onClick={() => setCategoryFilter(null)}
+                className="flex items-center gap-1 text-xs font-semibold text-theme-600 bg-theme-50 px-2 py-1 rounded-full"
+              >
+                {categoryFilter} <X size={12} />
+              </button>
+            )}
           </div>
           <div className="flex justify-between items-center gap-2">
             <button
@@ -453,17 +470,23 @@ export default function AllTransactions() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
-                        <span className="text-xs font-medium text-slate-600">{transaction.accountName}</span>
+                        <span
+                          className="text-xs font-medium text-slate-600 cursor-pointer hover:underline"
+                          onClick={(e) => { e.stopPropagation(); selectAccount(transaction.accountId); }}
+                        >{transaction.accountName}</span>
                         {transaction.isTransfer ? (
-                          <span className="text-xs text-slate-500">transfer</span>
+                          <span className="text-xs text-slate-500">{T("acc.transfer")}</span>
                         ) : (
-                          <span className="text-xs font-semibold text-theme-600">{transaction.category}</span>
+                          <span
+                            className="text-xs font-semibold text-theme-600 cursor-pointer hover:underline"
+                            onClick={(e) => { e.stopPropagation(); setCategoryFilter(transaction.category); }}
+                          >{transaction.category}</span>
                         )}
                         {transaction.ledgerName && (
                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 leading-none flex-shrink-0">{transaction.ledgerName}</span>
                         )}
                         {transaction.isRepeat && (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-theme-100 text-theme-600 leading-none flex-shrink-0">repeat</span>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-theme-100 text-theme-600 leading-none flex-shrink-0">{T("txn.repeat")}</span>
                         )}
                       </div>
                       <span className="text-xs text-slate-500">{transaction.time}</span>
