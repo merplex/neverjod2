@@ -43,7 +43,7 @@ public class IAPPlugin: CAPPlugin, CAPBridgedPlugin {
                     case .verified(let transaction):
                         await transaction.finish()
                         call.resolve(["productId": transaction.productID,
-                                      "receipt": transaction.jwsRepresentation])
+                                      "receipt": verification.jwsRepresentation])
                     case .unverified(_, let err):
                         call.reject("Unverified: \(err.localizedDescription)")
                     }
