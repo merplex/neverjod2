@@ -155,10 +155,13 @@ export default function Settings() {
   useEffect(() => {
     if (!cloudToken) return;
     apiListLedgers(cloudToken).then((list) => {
-      if (list.length > 0) {
-        const mapped = list.map((l) => ({ id: l.id, name: l.name }));
-        saveLedgerList(mapped);
-      }
+      const serverItems = list.map((l) => ({ id: l.id, name: l.name }));
+      // Always keep "main" ledger — it's local-only and never stored on server
+      const hasMain = serverItems.some((l) => l.id === "main");
+      const merged = hasMain
+        ? serverItems
+        : [{ id: "main", name: T("ledger.main_name") }, ...serverItems];
+      saveLedgerList(merged);
     }).catch(() => {});
   }, [cloudToken]);
 
