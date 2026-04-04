@@ -39,8 +39,8 @@ export default function VoiceResultConfirmation({
     if (!isSuccess || !accountName) return;
 
     const interval = setInterval(() => {
-      setCountdown((prev) => Math.max(0, prev - 0.5));
-    }, 500);
+      setCountdown((prev) => Math.max(0, prev - 1));
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [isSuccess, accountName]);
