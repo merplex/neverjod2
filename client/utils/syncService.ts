@@ -184,7 +184,16 @@ function mergeRepeatTransIntoLocal(serverItems: any[]) {
     }
 
     if (serverById.has(localItem.id)) {
-      result.push(serverById.get(localItem.id)!);  // server wins
+      const serverItem = serverById.get(localItem.id)!;
+      // server wins on everything EXCEPT nextDue/lastExecuted:
+      // if local nextDue is further in the future, we've already fired this repeat locally —
+      // don't let server roll it back (would cause duplicate transactions on next launch)
+      const localNextDue = localItem.nextDue ? new Date(localItem.nextDue).getTime() : 0;
+      const serverNextDue = serverItem.nextDue ? new Date(serverItem.nextDue).getTime() : 0;
+      const merged = localNextDue > serverNextDue
+        ? { ...serverItem, nextDue: localItem.nextDue, lastExecuted: localItem.lastExecuted }
+        : serverItem;
+      result.push(merged);
       seenIds.add(localItem.id);
     } else {
       result.push(localItem);  // server hasn't changed it — keep local
