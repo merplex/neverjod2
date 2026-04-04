@@ -1,7 +1,7 @@
 import { getCurrencySymbol } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X } from "lucide-react";
 import { useState } from "react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { getTransaction } from "../utils/transactionData";
@@ -129,7 +129,6 @@ export default function TransactionDetail() {
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   // Load from localStorage
   const [categoriesList] = useState<any[]>(() => {
@@ -194,12 +193,6 @@ export default function TransactionDetail() {
     const timeStr = `${timeDate.getHours().toString().padStart(2, "0")}:${timeDate.getMinutes().toString().padStart(2, "0")}`;
     updateLocalTransaction(transactionId!, { time: timeStr });
     setShowTimePicker(false);
-  };
-
-  const handleSave = () => {
-    updateLocalTransaction(transactionId!, { description });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
   };
 
   const handleDelete = () => {
@@ -370,11 +363,10 @@ export default function TransactionDetail() {
 
         {/* Save Button */}
         <button
-          onClick={handleSave}
-          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${saved ? "bg-green-500 text-white border border-green-500" : "bg-theme-600 text-white hover:bg-theme-700"}`}
+          onClick={() => navigate(-1)}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold bg-theme-600 text-white hover:bg-theme-700 transition-colors"
         >
-          <Check size={16} />
-          {saved ? "Saved!" : "Save"}
+          Save
         </button>
 
         {/* Delete Button */}
