@@ -192,6 +192,7 @@ export default function Index() {
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [categoriesList, setCategoriesList] = useState(loadCategoriesFromStorage);
   const [accountsList, setAccountsList] = useState(loadAccountsFromStorage);
+  const [txnVersion, setTxnVersion] = useState(0);
   const [isCategoryReorderMode, setIsCategoryReorderMode] = useState(false);
   const [isAccountPageReorderMode, setIsAccountPageReorderMode] = useState(false);
   const [selectedCategoryForSwap, setSelectedCategoryForSwap] = useState<string | null>(null);
@@ -266,6 +267,7 @@ export default function Index() {
       const { categoryId, accountId, amount } = pendingVoiceResultRef.current;
       if (categoryId && accountId && amount) {
         saveTransaction(categoryId, accountId, amount, pendingVoiceResultRef.current.transcript);
+        setTxnVersion((v) => v + 1);
         showVoiceResultRef.current = false; // prevent double-save
       }
     };
@@ -472,6 +474,7 @@ export default function Index() {
     // If all 3 detected — save directly, no need to go to amount page
     if (categoryId && accountId && amount) {
       saveTransaction(categoryId, accountId, amount, transcript);
+      setTxnVersion((v) => v + 1);
       setDisplay("0");
       setValue(0);
       setSelectedCategory(null);
@@ -581,6 +584,7 @@ export default function Index() {
     if (isCalcMode) { handleEquals(); return; }
     if (selectedCategory && selectedAccount && value > 0) {
       saveTransaction(selectedCategory, selectedAccount, value);
+      setTxnVersion((v) => v + 1);
     }
     setDisplay("0");
     setValue(0);
@@ -642,7 +646,7 @@ export default function Index() {
 
       return { periodLabel, topExpenses: rank(expTotals), topIncomes: rank(incTotals) };
     } catch { return { periodLabel: "", topExpenses: [], topIncomes: [] }; }
-  }, [categoriesList]);
+  }, [categoriesList, txnVersion]);
 
   return (
     <div className="h-[100dvh] flex flex-col pb-safe-content bg-white overflow-hidden">
@@ -662,19 +666,19 @@ export default function Index() {
                   if (item) {
                     const Icon = item.cat?.icon || MoreHorizontal;
                     return (
-                      <div key={item.id} className="flex flex-col items-center gap-0.5">
-                        <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center">
+                      <div key={`exp-${i}`} className="flex flex-col items-center gap-0.5 transition-opacity duration-300">
+                        <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center transition-all duration-300">
                           <Icon className="text-white w-1/2 h-1/2" />
                         </div>
-                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{item.cat?.name || item.id}</span>
-                        <span className="text-[12px] font-bold text-white">
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate transition-all duration-300">{item.cat?.name || item.id}</span>
+                        <span className="text-[12px] font-bold text-white transition-all duration-300">
                           {item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
                         </span>
                       </div>
                     );
                   }
                   return (
-                    <div key={`exp-empty-${i}`} className="flex flex-col items-center gap-0.5 opacity-60">
+                    <div key={`exp-${i}`} className="flex flex-col items-center gap-0.5 opacity-60 transition-opacity duration-300">
                       <div className="w-4/5 mx-auto aspect-square border-2 border-dashed border-white/70 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-sm">{i + 1}</span>
                       </div>
@@ -694,19 +698,19 @@ export default function Index() {
                   if (item) {
                     const Icon = item.cat?.icon || MoreHorizontal;
                     return (
-                      <div key={item.id} className="flex flex-col items-center gap-0.5">
-                        <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center">
+                      <div key={`inc-${i}`} className="flex flex-col items-center gap-0.5 transition-opacity duration-300">
+                        <div className="w-4/5 mx-auto aspect-square bg-white/20 rounded-lg flex items-center justify-center transition-all duration-300">
                           <Icon className="text-white w-1/2 h-1/2" />
                         </div>
-                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate">{item.cat?.name || item.id}</span>
-                        <span className="text-[12px] font-bold text-white">
+                        <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate transition-all duration-300">{item.cat?.name || item.id}</span>
+                        <span className="text-[12px] font-bold text-white transition-all duration-300">
                           {item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
                         </span>
                       </div>
                     );
                   }
                   return (
-                    <div key={`inc-empty-${i}`} className="flex flex-col items-center gap-0.5 opacity-60">
+                    <div key={`inc-${i}`} className="flex flex-col items-center gap-0.5 opacity-60 transition-opacity duration-300">
                       <div className="w-4/5 mx-auto aspect-square border-2 border-dashed border-white/70 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-sm">{i + 1}</span>
                       </div>
