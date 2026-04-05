@@ -118,6 +118,9 @@ export async function initDB() {
   await pool.query(`ALTER TABLE sync_repeat_transactions ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
   // Migration: add cross_ledger_ref for cross-ledger transfers
   await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS cross_ledger_ref TEXT`).catch(() => {});
+  // Migration: add is_repeat and repeat_id to preserve Repeat badge through sync
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS is_repeat BOOLEAN DEFAULT FALSE`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS repeat_id TEXT`).catch(() => {});
   // Migration: create "main" ledger for all existing users that don't have one
   await pool.query(`
     INSERT INTO ledgers (id, user_id, name)

@@ -75,19 +75,21 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
         .map((tx: any) =>
           pool.query(
             `INSERT INTO sync_transactions
-               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, updated_at, deleted_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, is_repeat, repeat_id, updated_at, deleted_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
              ON CONFLICT (id, user_id) DO UPDATE
                SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                    amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
                    date = EXCLUDED.date, time = EXCLUDED.time, ledger_id = EXCLUDED.ledger_id,
                    cross_ledger_ref = EXCLUDED.cross_ledger_ref,
+                   is_repeat = EXCLUDED.is_repeat, repeat_id = EXCLUDED.repeat_id,
                    updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
                WHERE sync_transactions.updated_at < EXCLUDED.updated_at`,
             [tx.id, userId, tx.categoryId || null, tx.accountId || null,
              tx.amount, tx.type, tx.description || null,
              tx.date, tx.time || null, tx.fingerprint || null,
              ledger_id, tx.crossLedgerRef || null,
+             tx.isRepeat || false, tx.repeatId || null,
              tx.updated_at, tx.deleted_at || null]
           )
         )

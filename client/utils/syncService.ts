@@ -117,6 +117,8 @@ function normalizeServerItem(item: any): any {
   if ("category_id" in out) { out.categoryId = out.category_id; delete out.category_id; }
   if ("account_id" in out) { out.accountId = out.account_id; delete out.account_id; }
   if ("start_balance" in out) { out.balance = parseFloat(out.start_balance) || 0; delete out.start_balance; }
+  if ("is_repeat"  in out) { out.isRepeat  = out.is_repeat  || false; delete out.is_repeat; }
+  if ("repeat_id"  in out) { out.repeatId  = out.repeat_id  || null;    delete out.repeat_id; }
   if ("amount" in out && typeof out.amount === "string") { out.amount = parseFloat(out.amount) || 0; }
   // keywords comes as JSONB array from PG; ensure it's an array
   if (out.keywords && !Array.isArray(out.keywords)) {
@@ -212,14 +214,29 @@ function mergeRepeatTransIntoLocal(serverItems: any[]) {
 function mergeIntoLocal(storageKey: string, serverItems: any[]) {
   const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey)) || "[]");
   const localMap = new Map(local.map((item) => [item.id, item]));
+
+  // Do not restore items that the user has locally deleted (pending push to server).
+  // Only relevant for the transactions store; skip the Set build for other keys.
+  const pendingDeleteIds = storageKey === "app_transactions"
+    ? new Set(getPendingDeletes().transactions.map((p: any) => p.id))
+    : new Set<string>();
+
   for (const raw of serverItems) {
     const serverItem = normalizeServerItem(raw);
     if (serverItem.deleted_at) {
       localMap.delete(serverItem.id);
     } else {
-      // Server is source of truth on pull — always overwrite local
+      if (pendingDeleteIds.has(serverItem.id)) continue;
       const existing = localMap.get(serverItem.id);
-      localMap.set(serverItem.id, { ...(existing || {}), ...serverItem });
+      if (!existing || !existing.updated_at || existing.updated_at < serverItem.updated_at) {
+        // Preserve local-only fields (isRepeat, repeatId) that server doesn't store
+        const preserve: any = {};
+        if (existing?.isRepeat)  preserve.isRepeat  = existing.isRepeat;
+        if (existing?.repeatId)  preserve.repeatId  = existing.repeatId;
+        if (existing?.isTransfer) preserve.isTransfer = existing.isTransfer;
+        if (existing?.transferRef) preserve.transferRef = existing.transferRef;
+        localMap.set(serverItem.id, { ...(existing || {}), ...serverItem, ...preserve });
+      }
     }
   }
   localStorage.setItem(lk(storageKey), JSON.stringify(Array.from(localMap.values())));
