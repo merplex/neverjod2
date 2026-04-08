@@ -7,6 +7,7 @@ import syncRouter from "./routes/sync";
 import ledgersRouter from "./routes/ledgers";
 import subscriptionRouter from "./routes/subscription";
 import appleNotificationsRouter from "./routes/appleNotifications";
+import guideRouter from "./routes/guide";
 import { initDB } from "./db";
 
 export function createServer() {
@@ -34,6 +35,7 @@ export function createServer() {
   app.use("/api/ledgers", ledgersRouter);
   app.use("/api/subscription", subscriptionRouter);
   app.use("/api/apple-notifications", appleNotificationsRouter);
+  app.use("/api/guide", guideRouter);
 
   return app;
 }

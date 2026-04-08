@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { API_BASE } from "../utils/syncService";
 
-const slides = [
+const FALLBACK_SLIDES = [
   "/guide-1.jpg",
   "/guide-2.jpg",
   "/guide-3.jpg",
@@ -13,8 +14,22 @@ interface Props {
 }
 
 export default function OnboardingGuide({ onClose }: Props) {
+  const [slides, setSlides] = useState<string[]>(FALLBACK_SLIDES);
   const [index, setIndex] = useState(0);
   const isLast = index === slides.length - 1;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${API_BASE}/guide/slides`, { signal: controller.signal })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.slides) && data.slides.length > 0) {
+          setSlides(data.slides);
+        }
+      })
+      .catch((err) => { if (err.name !== "AbortError") {/* keep fallback */} });
+    return () => controller.abort();
+  }, []);
 
   const finish = () => {
     try { localStorage.setItem("app_onboarding_done", "1"); } catch {}

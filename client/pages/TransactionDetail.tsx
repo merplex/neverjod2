@@ -30,7 +30,7 @@ function updateLocalTransaction(id: string, updates: any) {
     const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
     const idx = txns.findIndex((t: any) => t.id === id);
     if (idx !== -1) {
-      txns[idx] = { ...txns[idx], ...updates };
+      txns[idx] = { ...txns[idx], ...updates, updated_at: new Date().toISOString() };
       localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
     }
   } catch {}

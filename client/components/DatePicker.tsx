@@ -32,6 +32,7 @@ export default function DatePicker({ value, onChange, onClose }: DatePickerProps
 
   const selectDay = (day: number) => {
     const selected = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day);
+    selected.setHours(dateValue.getHours(), dateValue.getMinutes(), dateValue.getSeconds(), dateValue.getMilliseconds());
     setCurrentDate(selected);
     onChange(selected);
     onClose();

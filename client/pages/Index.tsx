@@ -999,13 +999,13 @@ export default function Index() {
                           : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
                         ).map((btn) => {
                           if (btn === 'save') return (
-                            <button key="save" onClick={handleConfirm} className="h-full aspect-square justify-self-center bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-full transition-all active:scale-95 flex items-center justify-center">{T("btn.save")}</button>
+                            <button key="save" onClick={handleConfirm} style={{ touchAction: 'manipulation' }} className="h-full aspect-square justify-self-center bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-full transition-colors active:scale-95 flex items-center justify-center">{T("btn.save")}</button>
                           );
                           if (btn === '.') return (
-                            <button key="dot" onClick={handleDecimal} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-all active:scale-95 flex items-center justify-center">.</button>
+                            <button key="dot" onClick={handleDecimal} style={{ touchAction: 'manipulation' }} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-colors active:scale-95 flex items-center justify-center">.</button>
                           );
                           return (
-                            <button key={btn} onClick={() => handleNumberClick(btn as number)} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-all active:scale-95 flex items-center justify-center">{btn}</button>
+                            <button key={btn} onClick={() => handleNumberClick(btn as number)} style={{ touchAction: 'manipulation' }} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-colors active:scale-95 flex items-center justify-center">{btn}</button>
                           );
                         })}
                       </div>

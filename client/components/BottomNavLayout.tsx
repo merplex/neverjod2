@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FileText, BarChart3, Grid3x3, Landmark, Settings } from "lucide-react";
+import { FileText, BarChart3, Grid3x3, Landmark, Settings, Plus } from "lucide-react";
 
 const LEGAL_PATHS = ["/privacy", "/terms", "/eula"];
 
@@ -40,6 +40,16 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex flex-col min-h-screen">
       <div className={`flex-1 ${isHome || isLegal ? "" : "pb-safe-content"}`}>{children}</div>
+
+      {!isHome && !isLegal && (
+        <button
+          onClick={() => navigate("/")}
+          className="fixed right-4 z-50 w-14 h-14 rounded-full bg-theme-600 text-white shadow-lg flex items-center justify-center active:bg-theme-700 transition-colors"
+          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)" }}
+        >
+          <Plus size={28} strokeWidth={2.5} />
+        </button>
+      )}
 
       {/* Bottom Navigation - hidden on legal pages */}
       {isLegal ? null : <div className="fixed bottom-0 left-0 right-0 flex justify-center z-40">
