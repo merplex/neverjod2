@@ -141,12 +141,12 @@ export async function initDB() {
       premium_expires_at = COALESCE(premium_expires_at, NOW() + INTERVAL '1 year')
     WHERE email = 'premsak.c@gmail.com'
   `).catch(() => {});
-  // Dev premium: chanyakon.ry@gmail.com — monthly test account
+  // Dev premium: chanyakon.ry@gmail.com — monthly test account (renews 18 Apr 2026)
   await pool.query(`
     UPDATE users SET
       is_premium = TRUE,
-      plan_type = COALESCE(plan_type, 'monthly'),
-      premium_expires_at = COALESCE(premium_expires_at, NOW() + INTERVAL '30 days')
+      plan_type = 'monthly',
+      premium_expires_at = '2026-04-18T00:00:00Z'
     WHERE email = 'chanyakon.ry@gmail.com'
   `).catch(() => {});
 }
