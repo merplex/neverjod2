@@ -33,6 +33,7 @@ export default function CloudAuthModal({ onSuccess, onClose }: Props) {
         else localStorage.removeItem("app_plan_type");
         if (result.premiumExpiresAt) localStorage.setItem("app_premium_expires_at", result.premiumExpiresAt);
         else localStorage.removeItem("app_premium_expires_at");
+        localStorage.setItem("app_auto_renew", result.autoRenew ? "true" : "false");
         onSuccess(result.isPremium);
       }
     } catch (err: any) {

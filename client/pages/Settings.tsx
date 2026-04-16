@@ -101,6 +101,7 @@ export default function Settings() {
   const isPremium = localStorage.getItem("app_premium") === "true";
   const planType = localStorage.getItem("app_plan_type") as "monthly" | "yearly" | null;
   const premiumExpiresAt = localStorage.getItem("app_premium_expires_at");
+  const autoRenew = localStorage.getItem("app_auto_renew") !== "false";
   const [purchaseLoading, setPurchaseLoading] = useState<"monthly" | "yearly" | "restore" | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<"monthly" | "yearly" | null>(null);
@@ -250,6 +251,7 @@ export default function Settings() {
     localStorage.removeItem("last_client_sync_at");
     localStorage.removeItem("app_plan_type");
     localStorage.removeItem("app_premium_expires_at");
+    localStorage.removeItem("app_auto_renew");
     setCloudToken("");
     setCloudEmail("");
     setSyncStatus("idle");
@@ -916,7 +918,7 @@ export default function Settings() {
               </p>
               {premiumExpiresAt ? (
                 <p className="text-xs text-amber-600 mt-1">
-                  {T("premium.renews_on", {
+                  {T(autoRenew ? "premium.renews_on" : "premium.expires_on", {
                     date: new Date(premiumExpiresAt).toLocaleDateString(
                       LANG_LOCALE[getLang()] + "-u-ca-gregory",
                       { day: "numeric", month: "short", year: "numeric" },

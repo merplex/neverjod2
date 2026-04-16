@@ -73,7 +73,7 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
       : null;
 
     await pool.query(
-      `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type) WHERE id = $4`,
+      `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type), auto_renew = TRUE WHERE id = $4`,
       [expiresAt, originalTxId ?? null, planType, req.userId]
     );
     res.json({ ok: true });

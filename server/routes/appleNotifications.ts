@@ -45,14 +45,22 @@ router.post("/", async (req: Request, res: Response) => {
     const expiredEvents = ["EXPIRED", "REVOKED"];
 
     if (activeEvents.includes(notificationType)) {
+      // Fresh subscribe / renew → ensure auto_renew flips back on
       await pool.query(
-        `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, plan_type = COALESCE($2, plan_type) WHERE original_transaction_id = $3`,
+        `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, plan_type = COALESCE($2, plan_type), auto_renew = TRUE WHERE original_transaction_id = $3`,
         [expiresAt, planType, originalTransactionId]
       );
     } else if (expiredEvents.includes(notificationType)) {
       await pool.query(
-        `UPDATE users SET is_premium = FALSE, premium_expires_at = $1 WHERE original_transaction_id = $2`,
+        `UPDATE users SET is_premium = FALSE, premium_expires_at = $1, auto_renew = FALSE WHERE original_transaction_id = $2`,
         [expiresAt, originalTransactionId]
+      );
+    } else if (notificationType === "DID_CHANGE_RENEWAL_STATUS") {
+      // subtype AUTO_RENEW_DISABLED = user cancelled; AUTO_RENEW_ENABLED = turned back on
+      const autoRenew = subtype === "AUTO_RENEW_ENABLED";
+      await pool.query(
+        `UPDATE users SET auto_renew = $1 WHERE original_transaction_id = $2`,
+        [autoRenew, originalTransactionId]
       );
     }
     // DID_FAIL_TO_RENEW, GRACE_PERIOD_EXPIRED etc. — leave premium as-is until truly expired

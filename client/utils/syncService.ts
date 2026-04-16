@@ -10,6 +10,7 @@ export type AuthResponse = {
   isPremium: boolean;
   planType: "monthly" | "yearly" | null;
   premiumExpiresAt: string | null;
+  autoRenew: boolean;
 };
 
 export async function apiRegister(email: string, password: string) {
@@ -476,6 +477,9 @@ export async function syncPull(token: string) {
   else localStorage.removeItem("app_plan_type");
   if (data.premiumExpiresAt) localStorage.setItem("app_premium_expires_at", data.premiumExpiresAt);
   else localStorage.removeItem("app_premium_expires_at");
+  if (typeof data.autoRenew === "boolean") {
+    localStorage.setItem("app_auto_renew", data.autoRenew ? "true" : "false");
+  }
   localStorage.setItem(lk("last_sync_at"), data.server_time);
   if (data.last_push_at) localStorage.setItem(lk("last_push_at"), data.last_push_at);
   return true;

@@ -106,6 +106,8 @@ export async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS original_transaction_id TEXT`).catch(() => {});
   // Migration: add plan_type ('monthly' | 'yearly') to differentiate subscription tier
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_type TEXT`).catch(() => {});
+  // Migration: add auto_renew — TRUE = will renew, FALSE = cancelled (but may still be active)
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_renew BOOLEAN DEFAULT TRUE`).catch(() => {});
   // Migration: add keywords + icon_id to categories and accounts
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT '[]'`).catch(() => {});
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS icon_id TEXT`).catch(() => {});
@@ -140,13 +142,5 @@ export async function initDB() {
       plan_type = COALESCE(plan_type, 'yearly'),
       premium_expires_at = COALESCE(premium_expires_at, NOW() + INTERVAL '1 year')
     WHERE email = 'premsak.c@gmail.com'
-  `).catch(() => {});
-  // Dev premium: chanyakon.ry@gmail.com — monthly test account (renews 18 Apr 2026)
-  await pool.query(`
-    UPDATE users SET
-      is_premium = TRUE,
-      plan_type = 'monthly',
-      premium_expires_at = '2026-04-18T00:00:00Z'
-    WHERE email = 'chanyakon.ry@gmail.com'
   `).catch(() => {});
 }
