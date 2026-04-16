@@ -691,7 +691,6 @@ export default function AccountsManagement() {
         <PremiumModal
           message={premiumMessage}
           onClose={() => setShowPremiumModal(false)}
-          onSignUp={() => setShowCloudAuth(true)}
         />
       )}
 

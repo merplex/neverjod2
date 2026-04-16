@@ -1,24 +1,43 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useT } from "../hooks/useT";
+import CloudAuthModal from "./CloudAuthModal";
 
 interface PremiumModalProps {
   message: string;
   onClose: () => void;
-  onSignUp?: () => void;
 }
 
-export default function PremiumModal({ message, onClose, onSignUp }: PremiumModalProps) {
+export default function PremiumModal({ message, onClose }: PremiumModalProps) {
   const navigate = useNavigate();
   const T = useT();
+  const [showAuth, setShowAuth] = useState(false);
+
+  const goToPremium = () => {
+    onClose();
+    navigate("/settings", { state: { scrollToPremium: true } });
+  };
 
   const handleSubscribe = () => {
-    onClose();
-    if (onSignUp) {
-      onSignUp();
+    const token = localStorage.getItem("cloud_token");
+    if (token) {
+      goToPremium();
     } else {
-      navigate("/settings", { state: { scrollToPremium: true } });
+      setShowAuth(true);
     }
   };
+
+  if (showAuth) {
+    return (
+      <CloudAuthModal
+        onClose={() => setShowAuth(false)}
+        onSuccess={() => {
+          setShowAuth(false);
+          goToPremium();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col justify-end">

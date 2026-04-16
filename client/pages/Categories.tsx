@@ -651,7 +651,6 @@ export default function Categories() {
         <PremiumModal
           message={premiumMessage}
           onClose={() => setShowPremiumModal(false)}
-          onSignUp={() => setShowCloudAuth(true)}
         />
       )}
 

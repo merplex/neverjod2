@@ -543,7 +543,7 @@ function parseVietnameseNumberText(text: string): number | undefined {
   const words: Record<string, number> = {
     'không':0,'một':1,'mot':1,'hai':2,'ba':3,'bốn':4,'bon':4,'năm':5,'nam':5,
     'sáu':6,'sau':6,'bảy':7,'bay':7,'tám':8,'tam':8,'chín':9,'chin':9,
-    'mười':10,'muoi':10,'mươi':10,'muoi':10,
+    'mười':10,'muoi':10,'mươi':10,
   };
   const multipliers: Record<string, number> = {
     'trăm':100,'tram':100,
