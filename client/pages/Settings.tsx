@@ -100,6 +100,7 @@ export default function Settings() {
   const isPremium = localStorage.getItem("app_premium") === "true";
   const [purchaseLoading, setPurchaseLoading] = useState<"monthly" | "yearly" | "restore" | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<"monthly" | "yearly" | null>(null);
 
   // Ledger management state
   type LedgerItem = { id: string; name: string };
@@ -181,6 +182,15 @@ export default function Settings() {
     setCloudToken(token);
     setCloudEmail(email);
     setShowAuthForm(false);
+
+    // ถ้ามาจากกดสมัคร → ซื้อต่อเลย
+    if (pendingPlan) {
+      const plan = pendingPlan;
+      setPendingPlan(null);
+      executePurchase(plan);
+      return;
+    }
+
     if (!isPremium) {
       scrollToPremium();
       return;
@@ -252,7 +262,7 @@ export default function Settings() {
     }
   }, []);
 
-  const handlePurchase = async (plan: "monthly" | "yearly") => {
+  const executePurchase = async (plan: "monthly" | "yearly") => {
     setPurchaseError(null);
     setPurchaseLoading(plan);
     try {
@@ -265,6 +275,15 @@ export default function Settings() {
     } finally {
       setPurchaseLoading(null);
     }
+  };
+
+  const handlePurchase = (plan: "monthly" | "yearly") => {
+    if (!cloudToken) {
+      setPendingPlan(plan);
+      setShowAuthForm(true);
+      return;
+    }
+    executePurchase(plan);
   };
 
   const handleRestorePurchase = async () => {
