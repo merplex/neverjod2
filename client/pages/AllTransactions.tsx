@@ -7,6 +7,7 @@ import { ChevronLeft, ArrowUpDown, X, Search, ChevronDown, Plus, ChevronRight } 
 import { getRealTransactionsList } from "../utils/transactionData";
 import AddTransactionModal from "../components/AddTransactionModal";
 import { useT } from "../hooks/useT";
+import { getLang } from "../utils/i18n";
 
 type TimeRange = "custom" | "month" | "all";
 type SortOrder = "asc" | "desc";
@@ -26,6 +27,8 @@ function CalendarRangePicker({
   onSelect: (start: Date, end: Date) => void;
   onClose: () => void;
 }) {
+  const T = useT();
+  const lang = getLang();
   const today = startOfDay(new Date());
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -35,7 +38,7 @@ function CalendarRangePicker({
 
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
-  const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const DAYS = [0, 1, 2, 3, 4, 5, 6].map((i) => T(`day.short.${i}`));
 
   function prevMonth() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
@@ -78,10 +81,17 @@ function CalendarRangePicker({
     return isSameDay(new Date(viewYear, viewMonth, day), tempEnd);
   }
 
-  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const MONTH_KEYS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  const monthFull = (m: number) => T(`month.full.${MONTH_KEYS[m]}`);
+  const monthShort = (m: number) => T(`month.${MONTH_KEYS[m]}`);
+
+  const formatMonthYear = (y: number, m: number) =>
+    lang === "zh" ? `${y}年${m + 1}月` : `${monthFull(m)} ${y}`;
 
   const formatLabel = (d: Date) =>
-    d.getDate() + " " + MONTH_NAMES[d.getMonth()].slice(0, 3) + " " + d.getFullYear();
+    lang === "zh"
+      ? `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+      : `${d.getDate()} ${monthShort(d.getMonth())} ${d.getFullYear()}`;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -91,11 +101,11 @@ function CalendarRangePicker({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
             <span className={`px-3 py-1.5 rounded-lg ${picking === "start" ? "bg-theme-600 text-white" : "bg-theme-50 text-theme-700"}`}>
-              {tempStart ? formatLabel(tempStart) : "Start"}
+              {tempStart ? formatLabel(tempStart) : T("calendar.start")}
             </span>
             <ChevronRight size={16} className="text-slate-400" />
             <span className={`px-3 py-1.5 rounded-lg ${picking === "end" ? "bg-theme-600 text-white" : "bg-theme-50 text-theme-700"}`}>
-              {tempEnd ? formatLabel(tempEnd) : "End"}
+              {tempEnd ? formatLabel(tempEnd) : T("calendar.end")}
             </span>
           </div>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600">
@@ -108,7 +118,7 @@ function CalendarRangePicker({
           <button onClick={prevMonth} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
             <ChevronLeft size={20} className="text-slate-600" />
           </button>
-          <span className="font-semibold text-slate-800">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+          <span className="font-semibold text-slate-800">{formatMonthYear(viewYear, viewMonth)}</span>
           <button onClick={nextMonth} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
             <ChevronRight size={20} className="text-slate-600" />
           </button>
@@ -116,8 +126,8 @@ function CalendarRangePicker({
 
         {/* Day headers */}
         <div className="grid grid-cols-7 mb-1">
-          {DAYS.map(d => (
-            <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
+          {DAYS.map((d, i) => (
+            <div key={i} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
           ))}
         </div>
 
@@ -157,7 +167,7 @@ function CalendarRangePicker({
               : "bg-slate-100 text-slate-400 cursor-not-allowed"
           }`}
         >
-          Apply Range
+          {T("calendar.apply")}
         </button>
       </div>
     </div>
@@ -222,10 +232,10 @@ export default function AllTransactions() {
   }, [accountIdFilter, storedAccounts, allTransactions]);
 
   const customLabel = useMemo(() => {
-    if (!customStart || !customEnd) return "Custom";
+    if (!customStart || !customEnd) return T("filter.custom");
     const fmt = (d: Date) => d.getDate() + "/" + (d.getMonth() + 1);
     return `${fmt(customStart)}–${fmt(customEnd)}`;
-  }, [customStart, customEnd]);
+  }, [customStart, customEnd, T]);
 
   const filtered = useMemo(() => {
     const now = new Date();
@@ -278,19 +288,27 @@ export default function AllTransactions() {
     });
   }, [filtered, sortOrder]);
 
+  const lang = getLang();
+  const MONTH_KEYS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+
+  const formatGroupDate = (d: Date) => {
+    const weekday = T(`day.full.${d.getDay()}`);
+    const m = d.getMonth();
+    const day = d.getDate();
+    if (lang === "zh") return `${weekday}, ${T(`month.full.${MONTH_KEYS[m]}`)}${day}日`;
+    if (lang === "th") return `${weekday}, ${T(`month.full.${MONTH_KEYS[m]}`)} ${day}`;
+    return `${weekday}, ${T(`month.${MONTH_KEYS[m]}`)} ${day}`;
+  };
+
   const grouped = useMemo(() => {
     const groups: { [key: string]: typeof sorted } = {};
     sorted.forEach((transaction) => {
-      const dateStr = transaction.date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
+      const dateStr = formatGroupDate(transaction.date);
       if (!groups[dateStr]) groups[dateStr] = [];
       groups[dateStr].push(transaction);
     });
     return groups;
-  }, [sorted]);
+  }, [sorted, lang]);
 
   function selectAccount(id: string | null) {
     if (id) setSearchParams({ accountId: id });
@@ -383,7 +401,7 @@ export default function AllTransactions() {
         {/* Controls */}
         <div className="max-w-md mx-auto px-4 py-3 bg-white border-b border-slate-200">
           <div className="flex justify-between items-center gap-2 mb-1">
-            <span className="text-xs text-slate-400">{sorted.length} transactions</span>
+            <span className="text-xs text-slate-400">{T("txn.count", { n: sorted.length })}</span>
           </div>
           <div className="flex justify-between items-center gap-2">
             <button

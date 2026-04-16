@@ -282,6 +282,44 @@ const translations: Record<Lang, Record<string, string>> = {
     "month.nov": "พ.ย.",
     "month.dec": "ธ.ค.",
 
+    // Full month names
+    "month.full.jan": "มกราคม",
+    "month.full.feb": "กุมภาพันธ์",
+    "month.full.mar": "มีนาคม",
+    "month.full.apr": "เมษายน",
+    "month.full.may": "พฤษภาคม",
+    "month.full.jun": "มิถุนายน",
+    "month.full.jul": "กรกฎาคม",
+    "month.full.aug": "สิงหาคม",
+    "month.full.sep": "กันยายน",
+    "month.full.oct": "ตุลาคม",
+    "month.full.nov": "พฤศจิกายน",
+    "month.full.dec": "ธันวาคม",
+
+    // Day short names (Sun–Sat)
+    "day.short.0": "อา.",
+    "day.short.1": "จ.",
+    "day.short.2": "อ.",
+    "day.short.3": "พ.",
+    "day.short.4": "พฤ.",
+    "day.short.5": "ศ.",
+    "day.short.6": "ส.",
+
+    // Day full names (Sun–Sat)
+    "day.full.0": "วันอาทิตย์",
+    "day.full.1": "วันจันทร์",
+    "day.full.2": "วันอังคาร",
+    "day.full.3": "วันพุธ",
+    "day.full.4": "วันพฤหัสบดี",
+    "day.full.5": "วันศุกร์",
+    "day.full.6": "วันเสาร์",
+
+    // Calendar / date range picker
+    "calendar.start": "เริ่มต้น",
+    "calendar.end": "สิ้นสุด",
+    "calendar.apply": "ยืนยัน",
+    "txn.count": "{{n}} รายการ",
+
     // Onboarding
     "onboarding.start": "เริ่มใช้งาน",
   },
@@ -559,6 +597,44 @@ const translations: Record<Lang, Record<string, string>> = {
     "month.nov": "Nov",
     "month.dec": "Dec",
 
+    // Full month names
+    "month.full.jan": "January",
+    "month.full.feb": "February",
+    "month.full.mar": "March",
+    "month.full.apr": "April",
+    "month.full.may": "May",
+    "month.full.jun": "June",
+    "month.full.jul": "July",
+    "month.full.aug": "August",
+    "month.full.sep": "September",
+    "month.full.oct": "October",
+    "month.full.nov": "November",
+    "month.full.dec": "December",
+
+    // Day short names (Sun–Sat)
+    "day.short.0": "Su",
+    "day.short.1": "Mo",
+    "day.short.2": "Tu",
+    "day.short.3": "We",
+    "day.short.4": "Th",
+    "day.short.5": "Fr",
+    "day.short.6": "Sa",
+
+    // Day full names (Sun–Sat)
+    "day.full.0": "Sunday",
+    "day.full.1": "Monday",
+    "day.full.2": "Tuesday",
+    "day.full.3": "Wednesday",
+    "day.full.4": "Thursday",
+    "day.full.5": "Friday",
+    "day.full.6": "Saturday",
+
+    // Calendar / date range picker
+    "calendar.start": "Start",
+    "calendar.end": "End",
+    "calendar.apply": "Apply Range",
+    "txn.count": "{{n}} transactions",
+
     // Onboarding
     "onboarding.start": "Get Started",
   },
@@ -835,6 +911,44 @@ const translations: Record<Lang, Record<string, string>> = {
     "month.oct": "10月",
     "month.nov": "11月",
     "month.dec": "12月",
+
+    // Full month names
+    "month.full.jan": "1月",
+    "month.full.feb": "2月",
+    "month.full.mar": "3月",
+    "month.full.apr": "4月",
+    "month.full.may": "5月",
+    "month.full.jun": "6月",
+    "month.full.jul": "7月",
+    "month.full.aug": "8月",
+    "month.full.sep": "9月",
+    "month.full.oct": "10月",
+    "month.full.nov": "11月",
+    "month.full.dec": "12月",
+
+    // Day short names (Sun–Sat)
+    "day.short.0": "日",
+    "day.short.1": "一",
+    "day.short.2": "二",
+    "day.short.3": "三",
+    "day.short.4": "四",
+    "day.short.5": "五",
+    "day.short.6": "六",
+
+    // Day full names (Sun–Sat)
+    "day.full.0": "星期日",
+    "day.full.1": "星期一",
+    "day.full.2": "星期二",
+    "day.full.3": "星期三",
+    "day.full.4": "星期四",
+    "day.full.5": "星期五",
+    "day.full.6": "星期六",
+
+    // Calendar / date range picker
+    "calendar.start": "开始",
+    "calendar.end": "结束",
+    "calendar.apply": "应用",
+    "txn.count": "{{n}} 条记录",
 
     // Onboarding
     "onboarding.start": "开始使用",
