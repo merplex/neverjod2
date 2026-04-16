@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
-import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown, BookText, Plus, Pencil, ChevronRight, X, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ChevronLeft, Mic, Cloud, Globe, Palette, Check, BookOpen, Hand, LogOut, RefreshCw, Repeat, Lock, FileText, Shield, ChevronDown, BookText, Plus, Pencil, X, Trash2, Star, Loader2 } from "lucide-react";
 import { CURRENCY_OPTIONS } from "../utils/currency";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
-import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger, apiDeleteLedger, apiDeleteAccount } from "../utils/syncService";
+import { Capacitor } from "@capacitor/core";
+import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger, apiDeleteLedger, apiDeleteAccount, apiVerifyPurchase } from "../utils/syncService";
 import { lk, getActiveLedgerId, setActiveLedgerId } from "../utils/ledgerStorage";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
+import { purchaseProduct, restorePurchases } from "../utils/iap";
 import { useT } from "../hooks/useT";
 
 const SETTINGS_KEY = () => lk("app_settings");
@@ -92,8 +94,12 @@ export default function Settings() {
   const [showVoiceLangPicker, setShowVoiceLangPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
+  const location = useLocation();
+  const premiumRef = useRef<HTMLDivElement>(null);
+  const isNative = Capacitor.isNativePlatform();
   const isPremium = localStorage.getItem("app_premium") === "true";
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [purchaseLoading, setPurchaseLoading] = useState<"monthly" | "yearly" | "restore" | null>(null);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   // Ledger management state
   type LedgerItem = { id: string; name: string };
@@ -176,7 +182,7 @@ export default function Settings() {
     setCloudEmail(email);
     setShowAuthForm(false);
     if (!isPremium) {
-      setShowPremiumModal(true);
+      scrollToPremium();
       return;
     }
     setSyncStatus("syncing");
@@ -208,7 +214,7 @@ export default function Settings() {
 
   const handleSync = async () => {
     if (!cloudToken) return;
-    if (!isPremium) { setShowPremiumModal(true); return; }
+    if (!isPremium) { scrollToPremium(); return; }
     setSyncStatus("syncing");
     try {
       await syncAll(cloudToken, true);
@@ -234,6 +240,47 @@ export default function Settings() {
     setSyncStatus("idle");
     setSyncDirection(null);
     setLastSyncTime("");
+  };
+
+  const scrollToPremium = () => {
+    setTimeout(() => premiumRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+  };
+
+  useEffect(() => {
+    if ((location.state as any)?.scrollToPremium) {
+      scrollToPremium();
+    }
+  }, []);
+
+  const handlePurchase = async (plan: "monthly" | "yearly") => {
+    setPurchaseError(null);
+    setPurchaseLoading(plan);
+    try {
+      const { receipt } = await purchaseProduct(plan);
+      await apiVerifyPurchase(receipt);
+      localStorage.setItem("app_premium", "true");
+      window.location.reload();
+    } catch (e: any) {
+      if (e.message !== "cancelled") setPurchaseError(e.message || T("premium.error"));
+    } finally {
+      setPurchaseLoading(null);
+    }
+  };
+
+  const handleRestorePurchase = async () => {
+    setPurchaseError(null);
+    setPurchaseLoading("restore");
+    try {
+      const { receipt } = await restorePurchases();
+      if (!receipt) { setPurchaseError("ไม่พบการซื้อเดิม"); return; }
+      await apiVerifyPurchase(receipt);
+      localStorage.setItem("app_premium", "true");
+      window.location.reload();
+    } catch (e: any) {
+      setPurchaseError(e.message || T("premium.error"));
+    } finally {
+      setPurchaseLoading(null);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -411,7 +458,7 @@ export default function Settings() {
                 </button>
               ) : null
             ) : (
-              <button onClick={() => setShowPremiumModal(true)} className="mt-3 w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-400 hover:bg-slate-50 transition-colors">
+              <button onClick={scrollToPremium} className="mt-3 w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-400 hover:bg-slate-50 transition-colors">
                 <Lock size={14} />
                 {T("ledger.add")}
               </button>
@@ -739,7 +786,7 @@ export default function Settings() {
             </div>
             <button
               onClick={() => {
-                if (!isPremium) { setShowPremiumModal(true); return; }
+                if (!isPremium) { scrollToPremium(); return; }
                 const next = !syncAuto;
                 setSyncAuto(next);
                 localStorage.setItem("sync_auto_enabled", next ? "true" : "false");
@@ -823,6 +870,133 @@ export default function Settings() {
           )}
         </div>
 
+        {/* Premium Subscription */}
+        <div ref={premiumRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Star size={18} className="text-amber-500" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Premium</h2>
+              <p className="text-xs text-slate-500">
+                {T("premium.current_plan")}: {isPremium ? "Premium" : T("premium.free_plan")}
+              </p>
+            </div>
+          </div>
+
+          {isPremium ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+              <p className="text-amber-700 font-bold text-base">{T("premium.active_badge")}</p>
+              <p className="text-xs text-amber-600 mt-1">{T("premium.active_desc")}</p>
+              {isNative && (
+                <button
+                  onClick={handleRestorePurchase}
+                  disabled={!!purchaseLoading}
+                  className="mt-3 text-xs text-amber-500 underline disabled:opacity-50"
+                >
+                  {purchaseLoading === "restore" ? "..." : T("premium.restore")}
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Current plan - Free */}
+              <div className="border border-slate-200 rounded-xl p-4 mb-3">
+                <p className="text-sm font-bold text-slate-700 mb-2">
+                  {T("premium.current_plan")} ({T("premium.free_plan")})
+                </p>
+                <ul className="space-y-1.5">
+                  {(["premium.free_limit_keyword", "premium.free_limit_income", "premium.free_limit_expense", "premium.free_limit_account"] as const).map((k) => (
+                    <li key={k} className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0" />
+                      {T(k)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Monthly */}
+              <div className="border border-theme-200 rounded-xl p-4 mb-3">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Premium {T("premium.monthly")}</p>
+                    <p className="text-lg font-bold text-theme-600">฿{T("premium.monthly_price")}</p>
+                  </div>
+                  {isNative && (
+                    <button
+                      onClick={() => handlePurchase("monthly")}
+                      disabled={!!purchaseLoading}
+                      className="px-4 py-2 rounded-xl bg-theme-500 text-white font-semibold text-sm hover:bg-theme-600 transition-colors disabled:opacity-60 flex items-center gap-1"
+                    >
+                      {purchaseLoading === "monthly" ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {T("premium.subscribe")}
+                    </button>
+                  )}
+                </div>
+                <ul className="space-y-1.5">
+                  {(["premium.feat_keywords", "premium.feat_income_cat", "premium.feat_expense_cat", "premium.feat_accounts", "premium.feat_ledger", "premium.feat_sync"] as const).map((k) => (
+                    <li key={k} className="flex items-center gap-2 text-xs text-slate-600">
+                      <Check size={12} className="text-theme-500 flex-shrink-0" />
+                      {T(k)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Yearly */}
+              <div className="relative border-2 border-amber-400 rounded-xl p-4 mb-3">
+                <span className="absolute -top-2.5 right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full leading-none">-47%</span>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Premium {T("premium.yearly")}</p>
+                    <p className="text-lg font-bold text-amber-600">฿{T("premium.yearly_price")}</p>
+                  </div>
+                  {isNative && (
+                    <button
+                      onClick={() => handlePurchase("yearly")}
+                      disabled={!!purchaseLoading}
+                      className="px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors disabled:opacity-60 flex items-center gap-1"
+                    >
+                      {purchaseLoading === "yearly" ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {T("premium.subscribe")}
+                    </button>
+                  )}
+                </div>
+                <ul className="space-y-1.5">
+                  {(["premium.feat_keywords", "premium.feat_income_cat", "premium.feat_expense_cat", "premium.feat_accounts", "premium.feat_ledger", "premium.feat_sync"] as const).map((k) => (
+                    <li key={k} className="flex items-center gap-2 text-xs text-slate-600">
+                      <Check size={12} className="text-amber-500 flex-shrink-0" />
+                      {T(k)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {purchaseError && (
+                <p className="text-xs text-red-500 text-center mb-2">{purchaseError}</p>
+              )}
+
+              {isNative && (
+                <button
+                  onClick={handleRestorePurchase}
+                  disabled={!!purchaseLoading}
+                  className="w-full py-2 text-xs text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
+                >
+                  {purchaseLoading === "restore" ? "..." : T("premium.restore")}
+                </button>
+              )}
+
+              <div className="flex justify-center gap-3 text-[11px] text-slate-400 mt-3 pt-3 border-t border-slate-100">
+                <button onClick={() => navigate("/privacy")} className="underline hover:text-slate-600">Privacy Policy</button>
+                <span>·</span>
+                <button onClick={() => navigate("/terms")} className="underline hover:text-slate-600">Terms of Use</button>
+                <span>·</span>
+                <button onClick={() => navigate("/eula")} className="underline hover:text-slate-600">EULA</button>
+              </div>
+            </>
+          )}
+        </div>
+
         {/* Legal */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-5 pt-5 pb-3 flex items-center gap-3">
@@ -872,14 +1046,6 @@ export default function Settings() {
           onClose={() => setShowAuthForm(false)}
         />
       )}
-      {showPremiumModal && (
-        <PremiumModal
-          message={"บัญชีของคุณเป็นแพลนฟรี\nอัปเกรด Premium เพื่อใช้งาน Cloud Sync ข้ามอุปกรณ์"}
-          onClose={() => setShowPremiumModal(false)}
-          onSignUp={() => { setShowPremiumModal(false); setShowAuthForm(true); }}
-        />
-      )}
-
       {/* Delete Ledger Confirm */}
       {confirmDeleteLedger && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
