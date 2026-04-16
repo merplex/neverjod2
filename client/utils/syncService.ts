@@ -367,36 +367,32 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   if (isFirstSync === undefined) isFirstSync = !localStorage.getItem(lk("last_sync_at"));
   const catAccStamp = isFirstSync ? new Date(0).toISOString() : now;
 
-  // Promote source:"local" → source:"server" before push so server gets the correct ownership
-  // and subsequent pulls treat them as server-owned (no ID-rename loop).
+  // Build promoted copies for push (source:"local" → "server") WITHOUT writing
+  // to localStorage yet — only persist after the server confirms success.
   // Also assign sortOrder based on current display index so the server preserves ordering.
   const ledgerId = getActiveLedgerId();
   const pinnedCatId = "nocat";
   const pinnedAccId = "account_deleted";
+
+  const promotedStores: { key: string; items: any[] }[] = [];
   for (const [key, pinnedId] of [["app_categories", pinnedCatId], ["app_accounts", pinnedAccId]] as const) {
     const storageKey = lk(key);
     const items: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
     let orderIdx = 0;
     const promoted = items.map((i) => {
       const isPromoted = i.source === "local" ? { ...i, source: "server" } : i;
-      // Pinned items (nocat / account_deleted) don't get a sort_order
       const sortOrder = i.id === pinnedId ? undefined : orderIdx++;
       return { ...isPromoted, sortOrder };
     });
-    localStorage.setItem(storageKey, JSON.stringify(promoted));
+    promotedStores.push({ key: storageKey, items: promoted });
   }
 
-  // Promote repeat transactions source:"local" → "server"
-  {
-    const repeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]");
-    const promoted = repeats.map((r) => r.source === "local" ? { ...r, source: "server" } : r);
-    localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(promoted));
-  }
+  // Promote repeat transactions source:"local" → "server" (in-memory only)
+  const repeatsRaw: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]");
+  const promotedRepeats = repeatsRaw.map((r) => r.source === "local" ? { ...r, source: "server" } : r);
 
-  const categories = (JSON.parse(localStorage.getItem(lk("app_categories")) || "[]") as any[])
-    .map((c) => ({ ...c, updated_at: catAccStamp }));
-  const accounts = (JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]") as any[])
-    .map((a) => ({ ...a, updated_at: catAccStamp }));
+  const categories = promotedStores[0].items.map((c) => ({ ...c, updated_at: catAccStamp }));
+  const accounts = promotedStores[1].items.map((a) => ({ ...a, updated_at: catAccStamp }));
   const transactions = (JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]") as any[])
     .map((tx) => {
       const cat = categories.find((c) => c.id === tx.categoryId);
@@ -411,8 +407,7 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   const allTransactions = mergeWithTombstones(transactions, pending.transactions, now);
 
   // Repeat transactions: merge with repeat tombstones
-  const repeatTransactions = (JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]") as any[])
-    .map((r) => ({ ...r, updated_at: catAccStamp }));
+  const repeatTransactions = promotedRepeats.map((r) => ({ ...r, updated_at: catAccStamp }));
   const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats")) || "[]");
   const allRepeatTransactions = mergeWithTombstones(repeatTransactions, pendingRepeats, now);
 
@@ -421,7 +416,16 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions, ledger_id: ledgerId }),
   });
-  if (!res.ok) throw new Error("Push failed");
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    throw new Error(`Push failed (${res.status}): ${errBody}`);
+  }
+
+  // Push succeeded — now persist promoted sources to localStorage
+  for (const { key, items } of promotedStores) {
+    localStorage.setItem(key, JSON.stringify(items));
+  }
+  localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(promotedRepeats));
   flushPendingDeletes();
   return true;
 }
@@ -444,7 +448,10 @@ export async function syncPull(token: string) {
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ last_sync_at: lastSync, ledger_id: ledgerId }),
   });
-  if (!res.ok) throw new Error("Pull failed");
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    throw new Error(`Pull failed (${res.status}): ${errBody}`);
+  }
 
   const data = await res.json();
   // Categories and accounts: name-based merge so server wins even when IDs differ

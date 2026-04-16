@@ -186,7 +186,8 @@ export default function Settings() {
       setSyncDirection("server");
       setSyncStatus("ok");
       refreshLastSyncTime(false);
-    } catch {
+    } catch (err) {
+      console.error("sync (auth) error:", err);
       setSyncStatus("error");
     }
   };
@@ -218,7 +219,8 @@ export default function Settings() {
       setSyncDirection("client");
       setSyncStatus("ok");
       refreshLastSyncTime(true);
-    } catch {
+    } catch (err) {
+      console.error("sync error:", err);
       setSyncStatus("error");
     }
   };
