@@ -96,7 +96,7 @@ export default function Settings() {
 
   const location = useLocation();
   const premiumRef = useRef<HTMLDivElement>(null);
-  const isNative = Capacitor.isNativePlatform();
+  const isIOS = Capacitor.getPlatform() === "ios";
   const isPremium = localStorage.getItem("app_premium") === "true";
   const [purchaseLoading, setPurchaseLoading] = useState<"monthly" | "yearly" | "restore" | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
@@ -888,7 +888,7 @@ export default function Settings() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
               <p className="text-amber-700 font-bold text-base">{T("premium.active_badge")}</p>
               <p className="text-xs text-amber-600 mt-1">{T("premium.active_desc")}</p>
-              {isNative && (
+              {isIOS && (
                 <button
                   onClick={handleRestorePurchase}
                   disabled={!!purchaseLoading}
@@ -922,7 +922,7 @@ export default function Settings() {
                     <p className="text-sm font-bold text-slate-800">Premium {T("premium.monthly")}</p>
                     <p className="text-lg font-bold text-theme-600">฿{T("premium.monthly_price")}</p>
                   </div>
-                  {isNative && (
+                  {isIOS && (
                     <button
                       onClick={() => handlePurchase("monthly")}
                       disabled={!!purchaseLoading}
@@ -951,7 +951,7 @@ export default function Settings() {
                     <p className="text-sm font-bold text-slate-800">Premium {T("premium.yearly")}</p>
                     <p className="text-lg font-bold text-amber-600">฿{T("premium.yearly_price")}</p>
                   </div>
-                  {isNative && (
+                  {isIOS && (
                     <button
                       onClick={() => handlePurchase("yearly")}
                       disabled={!!purchaseLoading}
@@ -976,7 +976,7 @@ export default function Settings() {
                 <p className="text-xs text-red-500 text-center mb-2">{purchaseError}</p>
               )}
 
-              {isNative && (
+              {isIOS && (
                 <button
                   onClick={handleRestorePurchase}
                   disabled={!!purchaseLoading}
