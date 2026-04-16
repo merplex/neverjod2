@@ -74,21 +74,40 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
 
     // Transfer ownership: revoke any OTHER user that previously claimed this
     // subscription (same original_transaction_id) — "last restore wins".
-    // Prevents one Apple ID's paid subscription from being used by multiple app accounts.
+    // Preserves the prior owner's auto_renew so a cancelled sub stays cancelled
+    // after transfer (can't "uncancel" by logging out and restoring elsewhere).
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      let transferAutoRenew: boolean | null = null;
       if (originalTxId) {
-        await client.query(
-          `UPDATE users SET is_premium = FALSE, original_transaction_id = NULL, auto_renew = FALSE
-           WHERE original_transaction_id = $1 AND id != $2`,
+        const prior = await client.query(
+          `SELECT auto_renew FROM users WHERE original_transaction_id = $1 AND id != $2 LIMIT 1`,
           [originalTxId, req.userId]
         );
+        if (prior.rows.length) {
+          transferAutoRenew = prior.rows[0].auto_renew;
+          await client.query(
+            `UPDATE users SET is_premium = FALSE, original_transaction_id = NULL, auto_renew = FALSE
+             WHERE original_transaction_id = $1 AND id != $2`,
+            [originalTxId, req.userId]
+          );
+        }
       }
-      await client.query(
-        `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type), auto_renew = TRUE WHERE id = $4`,
-        [expiresAt, originalTxId ?? null, planType, req.userId]
-      );
+      if (transferAutoRenew === null) {
+        // Initial purchase or restore on same user → don't touch auto_renew;
+        // let the column default (TRUE for new rows) or existing value stand.
+        // Webhooks (DID_CHANGE_RENEWAL_STATUS / EXPIRED) keep it authoritative.
+        await client.query(
+          `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type) WHERE id = $4`,
+          [expiresAt, originalTxId ?? null, planType, req.userId]
+        );
+      } else {
+        await client.query(
+          `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type), auto_renew = $4 WHERE id = $5`,
+          [expiresAt, originalTxId ?? null, planType, transferAutoRenew, req.userId]
+        );
+      }
       await client.query("COMMIT");
     } catch (e) {
       await client.query("ROLLBACK");
