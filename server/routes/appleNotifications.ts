@@ -32,8 +32,12 @@ router.post("/", async (req: Request, res: Response) => {
     const originalTransactionId: string = txDecoded.originalTransactionId;
     const expiresMs: number | undefined = txDecoded.expiresDate;
     const expiresAt = expiresMs ? new Date(expiresMs) : null;
+    const productId: string | undefined = txDecoded.productId;
+    const planType = productId?.endsWith(".monthly") ? "monthly"
+      : productId?.endsWith(".yearly") ? "yearly"
+      : null;
 
-    console.log("[apple-notify]", notificationType, subtype, originalTransactionId, expiresAt);
+    console.log("[apple-notify]", notificationType, subtype, originalTransactionId, expiresAt, planType);
 
     // Events where subscription is still active
     const activeEvents = ["SUBSCRIBED", "DID_RENEW", "DID_RECOVER", "RESUBSCRIBE"];
@@ -42,8 +46,8 @@ router.post("/", async (req: Request, res: Response) => {
 
     if (activeEvents.includes(notificationType)) {
       await pool.query(
-        `UPDATE users SET is_premium = TRUE, premium_expires_at = $1 WHERE original_transaction_id = $2`,
-        [expiresAt, originalTransactionId]
+        `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, plan_type = COALESCE($2, plan_type) WHERE original_transaction_id = $3`,
+        [expiresAt, planType, originalTransactionId]
       );
     } else if (expiredEvents.includes(notificationType)) {
       await pool.query(

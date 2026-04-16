@@ -160,7 +160,7 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
         "SELECT * FROM sync_repeat_transactions WHERE user_id = $1 AND ledger_id = $2 AND updated_at > $3",
         [userId, ledger_id, since]
       ),
-      pool.query("SELECT is_premium FROM users WHERE id = $1", [userId]),
+      pool.query("SELECT is_premium, plan_type, premium_expires_at FROM users WHERE id = $1", [userId]),
       pool.query(
         `SELECT MAX(updated_at) as last_push_at FROM (
           SELECT updated_at FROM sync_categories WHERE user_id = $1 AND ledger_id = $2
@@ -181,6 +181,8 @@ router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
       transactions: txns.rows,
       repeatTransactions: repeats.rows,
       isPremium: userRow.rows[0]?.is_premium ?? false,
+      planType: userRow.rows[0]?.is_premium ? (userRow.rows[0]?.plan_type ?? null) : null,
+      premiumExpiresAt: userRow.rows[0]?.is_premium ? (userRow.rows[0]?.premium_expires_at ?? null) : null,
       server_time: new Date().toISOString(),
       last_push_at: lastPushRow.rows[0]?.last_push_at ?? null,
     });

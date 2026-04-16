@@ -29,6 +29,10 @@ export default function CloudAuthModal({ onSuccess, onClose }: Props) {
         localStorage.setItem("app_premium", result.isPremium ? "true" : "false");
         localStorage.setItem("cloud_token", result.token);
         localStorage.setItem("cloud_email", result.email);
+        if (result.planType) localStorage.setItem("app_plan_type", result.planType);
+        else localStorage.removeItem("app_plan_type");
+        if (result.premiumExpiresAt) localStorage.setItem("app_premium_expires_at", result.premiumExpiresAt);
+        else localStorage.removeItem("app_premium_expires_at");
         onSuccess(result.isPremium);
       }
     } catch (err: any) {

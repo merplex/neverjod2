@@ -28,6 +28,7 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
   try {
     let originalTxId: string | undefined;
     let expiresAt: Date | null = null;
+    let productId: string | undefined;
 
     // StoreKit 2 JWS token (contains dots) — decode payload directly
     if (receipt.includes(".")) {
@@ -37,6 +38,7 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
       const json = Buffer.from(padded, "base64").toString("utf8");
       const claims = JSON.parse(json);
       originalTxId = claims.originalTransactionId;
+      productId = claims.productId;
       if (claims.expiresDate) expiresAt = new Date(claims.expiresDate);
     } else {
       // Legacy base64 receipt — try production first, fallback to sandbox
@@ -61,13 +63,18 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
       }
       const latestInfo = data.latest_receipt_info?.[data.latest_receipt_info.length - 1];
       originalTxId = latestInfo?.original_transaction_id;
+      productId = latestInfo?.product_id;
       const expiresMs = latestInfo?.expires_date_ms ? parseInt(latestInfo.expires_date_ms) : null;
       expiresAt = expiresMs ? new Date(expiresMs) : null;
     }
 
+    const planType = productId?.endsWith(".monthly") ? "monthly"
+      : productId?.endsWith(".yearly") ? "yearly"
+      : null;
+
     await pool.query(
-      `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id) WHERE id = $3`,
-      [expiresAt, originalTxId ?? null, req.userId]
+      `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type) WHERE id = $4`,
+      [expiresAt, originalTxId ?? null, planType, req.userId]
     );
     res.json({ ok: true });
   } catch (err: any) {

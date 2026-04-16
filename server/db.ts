@@ -104,6 +104,8 @@ export async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_expires_at TIMESTAMPTZ`).catch(() => {});
   // Migration: add original_transaction_id for linking Apple notifications to users
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS original_transaction_id TEXT`).catch(() => {});
+  // Migration: add plan_type ('monthly' | 'yearly') to differentiate subscription tier
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_type TEXT`).catch(() => {});
   // Migration: add keywords + icon_id to categories and accounts
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT '[]'`).catch(() => {});
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS icon_id TEXT`).catch(() => {});
@@ -131,6 +133,20 @@ export async function initDB() {
       SELECT 1 FROM ledgers WHERE ledgers.user_id = users.id AND ledgers.id = 'main'
     )
   `).catch(() => {});
-  // Dev premium: premsak.c@gmail.com is always premium
-  await pool.query(`UPDATE users SET is_premium = TRUE WHERE email = 'premsak.c@gmail.com'`).catch(() => {});
+  // Dev premium: premsak.c@gmail.com — yearly test account
+  await pool.query(`
+    UPDATE users SET
+      is_premium = TRUE,
+      plan_type = COALESCE(plan_type, 'yearly'),
+      premium_expires_at = COALESCE(premium_expires_at, NOW() + INTERVAL '1 year')
+    WHERE email = 'premsak.c@gmail.com'
+  `).catch(() => {});
+  // Dev premium: chanyakon.ry@gmail.com — monthly test account
+  await pool.query(`
+    UPDATE users SET
+      is_premium = TRUE,
+      plan_type = COALESCE(plan_type, 'monthly'),
+      premium_expires_at = COALESCE(premium_expires_at, NOW() + INTERVAL '30 days')
+    WHERE email = 'chanyakon.ry@gmail.com'
+  `).catch(() => {});
 }

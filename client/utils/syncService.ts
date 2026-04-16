@@ -4,6 +4,14 @@ import { getActiveLedgerId, lk } from "./ledgerStorage";
 
 // --- Auth ---
 
+export type AuthResponse = {
+  token: string;
+  email: string;
+  isPremium: boolean;
+  planType: "monthly" | "yearly" | null;
+  premiumExpiresAt: string | null;
+};
+
 export async function apiRegister(email: string, password: string) {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",
@@ -12,7 +20,7 @@ export async function apiRegister(email: string, password: string) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Register failed");
-  return data as { token: string; email: string; isPremium: boolean };
+  return data as AuthResponse;
 }
 
 export async function apiLogin(email: string, password: string) {
@@ -23,7 +31,7 @@ export async function apiLogin(email: string, password: string) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Login failed");
-  return data as { token: string; email: string; isPremium: boolean };
+  return data as AuthResponse;
 }
 
 export async function apiForgotPassword(email: string) {
@@ -464,6 +472,10 @@ export async function syncPull(token: string) {
   if (typeof data.isPremium === "boolean") {
     localStorage.setItem("app_premium", data.isPremium ? "true" : "false");
   }
+  if (data.planType) localStorage.setItem("app_plan_type", data.planType);
+  else localStorage.removeItem("app_plan_type");
+  if (data.premiumExpiresAt) localStorage.setItem("app_premium_expires_at", data.premiumExpiresAt);
+  else localStorage.removeItem("app_premium_expires_at");
   localStorage.setItem(lk("last_sync_at"), data.server_time);
   if (data.last_push_at) localStorage.setItem(lk("last_push_at"), data.last_push_at);
   return true;

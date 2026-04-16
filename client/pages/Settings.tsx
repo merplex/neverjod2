@@ -10,6 +10,7 @@ import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
 import { purchaseProduct, restorePurchases } from "../utils/iap";
 import { useT } from "../hooks/useT";
+import { getLang, LANG_LOCALE } from "../utils/i18n";
 
 const SETTINGS_KEY = () => lk("app_settings");
 
@@ -98,6 +99,8 @@ export default function Settings() {
   const premiumRef = useRef<HTMLDivElement>(null);
   const isIOS = Capacitor.getPlatform() === "ios";
   const isPremium = localStorage.getItem("app_premium") === "true";
+  const planType = localStorage.getItem("app_plan_type") as "monthly" | "yearly" | null;
+  const premiumExpiresAt = localStorage.getItem("app_premium_expires_at");
   const [purchaseLoading, setPurchaseLoading] = useState<"monthly" | "yearly" | "restore" | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<"monthly" | "yearly" | null>(null);
@@ -245,6 +248,8 @@ export default function Settings() {
     localStorage.removeItem(lk("last_sync_at"));
     localStorage.removeItem("sync_direction");
     localStorage.removeItem("last_client_sync_at");
+    localStorage.removeItem("app_plan_type");
+    localStorage.removeItem("app_premium_expires_at");
     setCloudToken("");
     setCloudEmail("");
     setSyncStatus("idle");
@@ -905,8 +910,22 @@ export default function Settings() {
 
           {isPremium ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-              <p className="text-amber-700 font-bold text-base">{T("premium.active_badge")}</p>
-              <p className="text-xs text-amber-600 mt-1">{T("premium.active_desc")}</p>
+              <p className="text-amber-700 font-bold text-base">
+                {T("premium.active_badge")}
+                {planType ? ` · ${T(`premium.${planType}`)}` : ""}
+              </p>
+              {premiumExpiresAt ? (
+                <p className="text-xs text-amber-600 mt-1">
+                  {T("premium.renews_on", {
+                    date: new Date(premiumExpiresAt).toLocaleDateString(
+                      LANG_LOCALE[getLang()] + "-u-ca-gregory",
+                      { day: "numeric", month: "short", year: "numeric" },
+                    ),
+                  })}
+                </p>
+              ) : (
+                <p className="text-xs text-amber-600 mt-1">{T("premium.active_desc")}</p>
+              )}
               {isIOS && (
                 <button
                   onClick={handleRestorePurchase}
