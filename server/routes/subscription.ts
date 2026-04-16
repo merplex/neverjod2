@@ -72,10 +72,30 @@ router.post("/verify", requireAuth, async (req: any, res: Response) => {
       : productId?.endsWith(".yearly") ? "yearly"
       : null;
 
-    await pool.query(
-      `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type), auto_renew = TRUE WHERE id = $4`,
-      [expiresAt, originalTxId ?? null, planType, req.userId]
-    );
+    // Transfer ownership: revoke any OTHER user that previously claimed this
+    // subscription (same original_transaction_id) — "last restore wins".
+    // Prevents one Apple ID's paid subscription from being used by multiple app accounts.
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      if (originalTxId) {
+        await client.query(
+          `UPDATE users SET is_premium = FALSE, original_transaction_id = NULL, auto_renew = FALSE
+           WHERE original_transaction_id = $1 AND id != $2`,
+          [originalTxId, req.userId]
+        );
+      }
+      await client.query(
+        `UPDATE users SET is_premium = TRUE, premium_expires_at = $1, original_transaction_id = COALESCE($2, original_transaction_id), plan_type = COALESCE($3, plan_type), auto_renew = TRUE WHERE id = $4`,
+        [expiresAt, originalTxId ?? null, planType, req.userId]
+      );
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
     res.json({ ok: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -249,6 +249,7 @@ export default function Settings() {
     localStorage.removeItem(lk("last_sync_at"));
     localStorage.removeItem("sync_direction");
     localStorage.removeItem("last_client_sync_at");
+    localStorage.removeItem("app_premium");
     localStorage.removeItem("app_plan_type");
     localStorage.removeItem("app_premium_expires_at");
     localStorage.removeItem("app_auto_renew");
@@ -257,6 +258,7 @@ export default function Settings() {
     setSyncStatus("idle");
     setSyncDirection(null);
     setLastSyncTime("");
+    window.location.reload();
   };
 
   const scrollToPremium = () => {
