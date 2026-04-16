@@ -5,6 +5,7 @@ const { Pool } = pg;
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
+  max: 30,
 });
 
 export const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
