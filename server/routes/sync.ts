@@ -18,9 +18,33 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// --- Premium guard ---
+// Sync is a paid feature. Reject non-premium users at the API boundary so a
+// stolen/forged client can't bypass the frontend lock by hitting the endpoint
+// directly. Auto-expires stale subscriptions to stay consistent with /login.
+async function premiumMiddleware(req: Request, res: Response, next: NextFunction) {
+  const userId = (req as any).userId;
+  try {
+    const result = await pool.query(
+      "SELECT is_premium, premium_expires_at FROM users WHERE id = $1",
+      [userId]
+    );
+    if (!result.rows.length) return res.status(403).json({ error: "Premium required" });
+    const user = result.rows[0];
+    if (user.is_premium && user.premium_expires_at && new Date(user.premium_expires_at) < new Date()) {
+      await pool.query("UPDATE users SET is_premium = FALSE WHERE id = $1", [userId]);
+      user.is_premium = false;
+    }
+    if (!user.is_premium) return res.status(403).json({ error: "Premium required" });
+    next();
+  } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+}
+
 // --- POST /api/sync/push ---
 // Client sends local data; server upserts with last-write-wins
-router.post("/push", authMiddleware, async (req: Request, res: Response) => {
+router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const { categories = [], accounts = [], transactions = [], repeatTransactions = [], ledger_id = "main" } = req.body;
 
@@ -137,7 +161,7 @@ router.post("/push", authMiddleware, async (req: Request, res: Response) => {
 
 // --- POST /api/sync/pull ---
 // Client sends last_sync_at; server returns everything newer
-router.post("/pull", authMiddleware, async (req: Request, res: Response) => {
+router.post("/pull", authMiddleware, premiumMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const { last_sync_at, ledger_id = "main" } = req.body;
   const since = last_sync_at ? new Date(last_sync_at) : new Date(0);

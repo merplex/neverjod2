@@ -363,6 +363,7 @@ function updateTransactionRefs(
 // force=false: use existing timestamp or epoch (auto sync — server data wins if newer)
 // isFirstSync: passed in from syncAll so pull (which sets last_sync_at) doesn't flip the flag
 export async function syncPush(token: string, force = false, isFirstSync?: boolean) {
+  if (localStorage.getItem("app_premium") !== "true") return false;
   const now = new Date().toISOString();
 
   // On the very first sync (no last_sync_at), we do NOT know which local
@@ -446,6 +447,7 @@ function mergeWithTombstones(live: any[], tombstones: any[], now: string): any[]
 // --- Pull server data to local ---
 
 export async function syncPull(token: string) {
+  if (localStorage.getItem("app_premium") !== "true") return false;
   const ledgerId = getActiveLedgerId();
   const lastSync = localStorage.getItem(lk("last_sync_at")) || null;
   const res = await fetch(`${API_BASE}/sync/pull`, {
@@ -534,6 +536,7 @@ export async function apiDeleteLedger(token: string, id: string): Promise<void> 
 // isFirstSync is captured BEFORE pull so that pull setting last_sync_at doesn't
 // accidentally make push think it's a non-first sync and use `now` as timestamp.
 export async function syncAll(token: string, force = false): Promise<void> {
+  if (localStorage.getItem("app_premium") !== "true") return;
   const isFirstSync = !localStorage.getItem(lk("last_sync_at"));
   await syncPull(token);
   await syncPush(token, force, isFirstSync);
