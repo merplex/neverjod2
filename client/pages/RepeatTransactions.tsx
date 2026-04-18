@@ -12,6 +12,12 @@ import AddTransactionModal from "../components/AddTransactionModal";
 import TransferModal from "../components/TransferModal";
 import { getLang } from "../utils/i18n";
 
+function sortedRepeats(): RepeatTransaction[] {
+  return [...getRepeatTransactions()].sort(
+    (a, b) => new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime()
+  );
+}
+
 function repeatLabel(rt: RepeatTransaction): string {
   const opt = REPEAT_OPTIONS.find((o) => o.value === rt.repeatOption);
   if (!opt) return rt.repeatOption;
@@ -30,7 +36,7 @@ export default function RepeatTransactions() {
   useSwipeBack();
   const cur = getCurrencySymbol();
 
-  const [list, setList] = useState<RepeatTransaction[]>(() => getRepeatTransactions());
+  const [list, setList] = useState<RepeatTransaction[]>(() => sortedRepeats());
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [editTransferId, setEditTransferId] = useState<string | null>(null);
@@ -57,7 +63,7 @@ export default function RepeatTransactions() {
     refresh();
   };
 
-  const refresh = () => setList(getRepeatTransactions());
+  const refresh = () => setList(sortedRepeats());
 
   const handleDelete = (id: string) => {
     deleteRepeatTransaction(id);
