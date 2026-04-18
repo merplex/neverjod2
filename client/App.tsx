@@ -135,6 +135,7 @@ function AppContent() {
       } catch {}
       if (localStorage.getItem("sync_auto_enabled") === "true") {
         syncAll(token).then(() => {
+          if (localStorage.getItem("app_premium") !== "true") return;
           // Refresh data in-place after first sync (no reload — avoids resetting app state/mic)
           if (!sessionStorage.getItem("synced_once")) {
             sessionStorage.setItem("synced_once", "1");
@@ -168,6 +169,7 @@ function AppContent() {
         const token = localStorage.getItem("cloud_token");
         if (token && localStorage.getItem("sync_auto_enabled") === "true") {
           syncAll(token).then(() => {
+            if (localStorage.getItem("app_premium") !== "true") return;
             const now = new Date().toISOString();
             localStorage.setItem("sync_direction", "client");
             localStorage.setItem("last_client_sync_at", now);
