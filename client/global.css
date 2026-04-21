@@ -81,11 +81,17 @@ html, body {
   /* Antialiased rendering — prevents bold text from looking too thick on iOS WKWebView */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Disable text selection app-wide (mobile app, not a document) */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Prevent iOS auto-zoom on input focus (font-size < 16px triggers zoom) */
 input, textarea, select {
   font-size: max(16px, 1em);
+  /* Re-enable text selection for editable fields */
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* Safe-area utilities for iOS notch / Dynamic Island */

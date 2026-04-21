@@ -214,7 +214,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Navigation
     "nav.transactions": "รายการ",
-    "nav.stats": "สถิติ",
+    "nav.stats": "รายงาน",
     "nav.categories": "หมวดหมู่",
     "nav.accounts": "บัญชี",
     "nav.settings": "ตั้งค่า",
@@ -531,7 +531,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Navigation
     "nav.transactions": "Transactions",
-    "nav.stats": "Stats",
+    "nav.stats": "Report",
     "nav.categories": "Categories",
     "nav.accounts": "Accounts",
     "nav.settings": "Settings",
@@ -848,7 +848,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Navigation
     "nav.transactions": "交易",
-    "nav.stats": "统计",
+    "nav.stats": "报告",
     "nav.categories": "分类",
     "nav.accounts": "账户",
     "nav.settings": "设置",

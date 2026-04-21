@@ -9,6 +9,7 @@ import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromLis
 import { getCurrencySymbol } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { LANG_LOCALE } from "../utils/i18n";
+import { Clipboard } from "@capacitor/clipboard";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -238,6 +239,8 @@ export default function Index() {
   }>({});
   const allDetectedRef = useRef(false);
   const displayScrollRef = useRef<HTMLDivElement>(null);
+  const displayLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [copyToast, setCopyToast] = useState<string | null>(null);
 
   const voiceTimeoutRef = useRef<NodeJS.Timeout>();
   const voiceAccumulatorRef = useRef<{
@@ -526,6 +529,23 @@ export default function Index() {
     localStorage.setItem(lk("app_accounts"), JSON.stringify(toSave));
   };
 
+  const handleDisplayLongPress = async () => {
+    if (display === "0") {
+      try {
+        const { value } = await Clipboard.read();
+        const cleaned = value.replace(/[^0-9.]/g, "");
+        const num = parseFloat(cleaned);
+        if (!isNaN(num) && num > 0) setDisplay(String(num));
+      } catch {}
+    } else {
+      try {
+        await Clipboard.write({ string: display });
+        setCopyToast("Copied");
+        setTimeout(() => setCopyToast(null), 1500);
+      } catch {}
+    }
+  };
+
   const handleNumberClick = (num: number) => {
     if (isCalcMode) {
       setDisplay(prev => prev === "0" ? num.toString() : prev + num.toString());
@@ -650,6 +670,11 @@ export default function Index() {
 
   return (
     <div className="h-[100dvh] flex flex-col pb-safe-content bg-white overflow-hidden">
+      {copyToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-white text-slate-800 text-sm font-medium px-4 py-2 rounded-xl shadow-lg z-50 pointer-events-none border border-slate-200">
+          {copyToast}
+        </div>
+      )}
       <div className="w-full flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Monthly Ranking Header */}
         <div className="pt-safe-header bg-theme-600 px-4 pb-3">
@@ -970,6 +995,15 @@ export default function Index() {
                       ref={displayScrollRef}
                       className="flex-1 overflow-x-auto"
                       style={{ scrollbarWidth: "none" }}
+                      onTouchStart={() => {
+                        displayLongPressTimer.current = setTimeout(handleDisplayLongPress, 500);
+                      }}
+                      onTouchEnd={() => {
+                        if (displayLongPressTimer.current) clearTimeout(displayLongPressTimer.current);
+                      }}
+                      onTouchMove={() => {
+                        if (displayLongPressTimer.current) clearTimeout(displayLongPressTimer.current);
+                      }}
                     >
                       <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
                         {categoryType === "income" ? "+" : "-"}{cur}{display}

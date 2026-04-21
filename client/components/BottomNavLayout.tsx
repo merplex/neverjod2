@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FileText, BarChart3, Grid3x3, Landmark, Settings, Plus } from "lucide-react";
+import { useT } from "../hooks/useT";
 
 const LEGAL_PATHS = ["/privacy", "/terms", "/eula"];
 
@@ -23,12 +24,13 @@ export default function BottomNavLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("backbutton", handler, false);
   }, [location.pathname, navigate]);
 
+  const T = useT();
   const navItems = [
-    { path: "/transactions", label: "Transaction", icon: FileText },
-    { path: "/stats", label: "Stats", icon: BarChart3 },
-    { path: "/categories", label: "Category", icon: Grid3x3 },
-    { path: "/accounts", label: "Account", icon: Landmark },
-    { path: "/settings", label: "Setting", icon: Settings },
+    { path: "/transactions", label: T("nav.transactions"), icon: FileText },
+    { path: "/stats", label: T("nav.stats"), icon: BarChart3 },
+    { path: "/categories", label: T("nav.categories"), icon: Grid3x3 },
+    { path: "/accounts", label: T("nav.accounts"), icon: Landmark },
+    { path: "/settings", label: T("nav.settings"), icon: Settings },
   ];
 
   const isActive = (path: string) => location.pathname === path;

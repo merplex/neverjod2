@@ -190,6 +190,7 @@ export default function AllTransactions() {
   const [customStart, setCustomStart] = useState<Date | null>(null);
   const [customEnd, setCustomEnd] = useState<Date | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchFromUrl = useRef(!!searchParams.get("search"));
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -204,8 +205,16 @@ export default function AllTransactions() {
   }, []);
 
   useEffect(() => {
-    if (showSearch) searchInputRef.current?.focus();
-    else setSearchQuery("");
+    if (showSearch) {
+      if (searchFromUrl.current) {
+        searchFromUrl.current = false;
+        searchInputRef.current?.blur();
+      } else {
+        searchInputRef.current?.focus();
+      }
+    } else {
+      setSearchQuery("");
+    }
   }, [showSearch]);
 
   const allTransactions = useMemo(() => getRealTransactionsList(), [refreshKey]);
