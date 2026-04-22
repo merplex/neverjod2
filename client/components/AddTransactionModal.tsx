@@ -1,6 +1,7 @@
 import { getCurrencySymbol, getAccountCurrency } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Clipboard } from "@capacitor/clipboard";
 import { X, Calculator, Lock, LockOpen, ChevronRight, ChevronDown } from "lucide-react";
 import {
   REPEAT_OPTIONS, RepeatOption,
@@ -97,6 +98,8 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [accountId, setAccountId] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountCurrency, setAccountCurrency] = useState<{ currency: string; exchangeRate: number }>({ currency: "", exchangeRate: 1 });
+  const [copyToast, setCopyToast] = useState("");
+  const displayLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [description, setDescription] = useState("");
@@ -163,6 +166,23 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
     setAccountCurrency(getAccountCurrency(accId));
     setShowAccountPicker(false);
     setShowAmountPad(true);
+  };
+
+  const handleDisplayLongPress = async () => {
+    if (display === "0") {
+      try {
+        const { value } = await Clipboard.read();
+        const cleaned = value.replace(/[^0-9.]/g, "");
+        const num = parseFloat(cleaned);
+        if (!isNaN(num) && num > 0) { setDisplay(String(num)); setValue(num); }
+      } catch {}
+    } else {
+      try {
+        await Clipboard.write({ string: display });
+        setCopyToast("Copied");
+        setTimeout(() => setCopyToast(""), 1500);
+      } catch {}
+    }
   };
 
   // ---- numpad handlers ----
@@ -608,9 +628,15 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
             {/* Section B: Display */}
             <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
-              <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+              <div
+                className="flex-1 overflow-x-auto"
+                style={{ scrollbarWidth: "none" }}
+                onTouchStart={() => { displayLongPressTimer.current = setTimeout(handleDisplayLongPress, 500); }}
+                onTouchEnd={() => { if (displayLongPressTimer.current) { clearTimeout(displayLongPressTimer.current); displayLongPressTimer.current = null; } }}
+                onTouchMove={() => { if (displayLongPressTimer.current) { clearTimeout(displayLongPressTimer.current); displayLongPressTimer.current = null; } }}
+              >
                 <div className="text-2xl font-bold font-mono tracking-tight text-white whitespace-nowrap">
-                  {sign}{cur}{display}
+                  {sign}{accountCurrency.currency || cur}{display}
                 </div>
               </div>
               <button
@@ -697,6 +723,11 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
           </div>
         </div>
       )}
+      {copyToast ? (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-white text-slate-800 text-xs font-semibold px-4 py-2 rounded-xl shadow-lg border border-slate-100 z-[200] pointer-events-none">
+          {copyToast}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -64,6 +64,8 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
   const [toId, setToId] = useState<string | null>(null);
   const [toLedgerId, setToLedgerId] = useState<string>(activeLedgerId);
   const [amount, setAmount] = useState("");
+  const [fromExchangeRate, setFromExchangeRate] = useState("");
+  const [toExchangeRate, setToExchangeRate] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [time, setTime] = useState(new Date());
 
@@ -117,6 +119,26 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
   const toAcc = toPickerAccounts.find((a) => a.id === toId) || accounts.find((a) => a.id === toId);
   const isCrossLedger = toLedgerId !== activeLedgerId;
   const toLedgerName = ledgers.find((l) => l.id === toLedgerId)?.name || "";
+
+  // Reset exchange rates when accounts change
+  useEffect(() => {
+    setFromExchangeRate(fromAcc?.exchangeRate ? fromAcc.exchangeRate.toString() : "");
+  }, [fromId]);
+  useEffect(() => {
+    setToExchangeRate(toAcc?.exchangeRate ? toAcc.exchangeRate.toString() : "");
+  }, [toId]);
+
+  // Multi-currency derived values
+  const fromCurrency: string = fromAcc?.currency || "";
+  const toCurrency: string = toAcc?.currency || "";
+  const fromRate = parseFloat(fromExchangeRate) || fromAcc?.exchangeRate || 1;
+  const toRate = parseFloat(toExchangeRate) || toAcc?.exchangeRate || 1;
+  const parsedAmt = parseFloat(amount) || 0;
+  // receiveAmount: amount in toCurrency (or main if toAcc is main)
+  const showReceive = !!(fromCurrency || toCurrency) && parsedAmt > 0;
+  const mainAmt = fromCurrency ? parsedAmt * fromRate : parsedAmt;
+  const receiveAmount = toCurrency ? mainAmt / toRate : mainAmt;
+  const receiveSymbol = toCurrency || cur;
 
   const canSave = fromId && toId && (fromId !== toId || isCrossLedger) && parseFloat(amount) > 0;
 
@@ -179,6 +201,9 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       const transferRef = `transfer_${now}`;
       // transfer_out — always in the current (from) ledger
       const txnsOut: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
+      const outCurrencyFields = fromCurrency && fromRate > 0
+        ? { currency: fromCurrency, exchangeRate: fromRate, currencyAmount: parseFloat((parsedAmount * fromRate).toFixed(2)) }
+        : {};
       txnsOut.unshift({
         id: `${now}_transfer_out`,
         categoryId: "transfer_out",
@@ -189,6 +214,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
         time: timeStr,
         isTransfer: true,
         transferRef,
+        ...outCurrencyFields,
         ...(isCrossLedger ? { ledgerName: toLedgerName, pairLedgerId: toLedgerId } : {}),
       });
       localStorage.setItem(lk("app_transactions"), JSON.stringify(txnsOut));
@@ -196,16 +222,21 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       const toTxnsKey = isCrossLedger ? lk("app_transactions", toLedgerId) : lk("app_transactions");
       const txnsIn: any[] = JSON.parse(localStorage.getItem(toTxnsKey) || "[]");
       const fromLedgerName = ledgers.find((l) => l.id === activeLedgerId)?.name || "";
+      const inAmount = toCurrency ? parseFloat(receiveAmount.toFixed(4)) : parsedAmount;
+      const inCurrencyFields = toCurrency && toRate > 0
+        ? { currency: toCurrency, exchangeRate: toRate, currencyAmount: parseFloat((inAmount * toRate).toFixed(2)) }
+        : {};
       txnsIn.unshift({
         id: `${now + 1}_transfer_in`,
         categoryId: "transfer_in",
         accountId: toId,
-        amount: parsedAmount,
+        amount: inAmount,
         description: `← ${fromAcc?.name || fromId}`,
         date: txDate.toISOString(),
         time: timeStr,
         isTransfer: true,
         transferRef,
+        ...inCurrencyFields,
         ...(isCrossLedger ? { ledgerName: fromLedgerName, pairLedgerId: activeLedgerId } : {}),
       });
       localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
@@ -249,13 +280,31 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                   <>
                     <span className="font-semibold text-slate-800">{fromAcc.name}</span>
                     <span className={`text-xs ${fromAcc.currentBalance >= 0 ? "text-slate-500" : "text-red-500"}`}>
-                      {cur}{fromAcc.currentBalance.toLocaleString()}
+                      {fromCurrency || cur}{fromAcc.currentBalance.toLocaleString()}
                     </span>
                   </>
                 ) : (
                   <span className="text-slate-400 text-xs">{T("acc.select_source")}</span>
                 )}
               </button>
+              {fromCurrency && (
+                <div className="flex items-center mt-1.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-100">
+                  <span className="text-xs text-slate-400 w-10 flex-shrink-0">Rate</span>
+                  <div className="flex-1 flex items-center gap-1">
+                    <span className="text-xs text-amber-700 whitespace-nowrap">1 {fromCurrency} =</span>
+                    <input
+                      type="number"
+                      min="0.0001"
+                      step="0.0001"
+                      value={fromExchangeRate}
+                      onChange={(e) => setFromExchangeRate(e.target.value)}
+                      className="flex-1 min-w-0 px-2 py-1 border border-amber-200 rounded-lg text-sm text-amber-800 bg-white"
+                      placeholder={fromAcc?.exchangeRate?.toString() || "rate"}
+                    />
+                    <span className="text-xs text-amber-700 flex-shrink-0">{cur}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* To Account */}
@@ -274,13 +323,31 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                       )}
                     </div>
                     <span className={`text-xs flex-shrink-0 ${toAcc.currentBalance >= 0 ? "text-slate-500" : "text-red-500"}`}>
-                      {cur}{toAcc.currentBalance.toLocaleString()}
+                      {toCurrency || cur}{toAcc.currentBalance.toLocaleString()}
                     </span>
                   </div>
                 ) : (
                   <span className="text-slate-400 text-xs">{T("acc.select_dest")}</span>
                 )}
               </button>
+              {toCurrency && (
+                <div className="flex items-center mt-1.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-100">
+                  <span className="text-xs text-slate-400 w-10 flex-shrink-0">Rate</span>
+                  <div className="flex-1 flex items-center gap-1">
+                    <span className="text-xs text-amber-700 whitespace-nowrap">1 {toCurrency} =</span>
+                    <input
+                      type="number"
+                      min="0.0001"
+                      step="0.0001"
+                      value={toExchangeRate}
+                      onChange={(e) => setToExchangeRate(e.target.value)}
+                      className="flex-1 min-w-0 px-2 py-1 border border-amber-200 rounded-lg text-sm text-amber-800 bg-white"
+                      placeholder={toAcc?.exchangeRate?.toString() || "rate"}
+                    />
+                    <span className="text-xs text-amber-700 flex-shrink-0">{cur}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Amount */}
@@ -293,6 +360,14 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
                 placeholder="0"
               />
+              {showReceive && (
+                <div className="flex items-center justify-between mt-1.5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-xs text-slate-500">Receive amount</span>
+                  <span className="text-sm font-bold text-theme-700">
+                    {receiveSymbol}{receiveAmount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Date + Time */}
