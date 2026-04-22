@@ -308,7 +308,13 @@ function mergeCategOrAccIntoLocal(
 
     // Server-owned (previously synced)
     if (deletedIds.has(localItem.id)) continue;   // Server soft-deleted this item
-    if (serverById.has(localItem.id)) continue;    // Same ID → server version already in result
+    if (serverById.has(localItem.id)) {
+      // Last-write-wins: if local is newer, keep local (will be pushed right after pull)
+      const serverTime = new Date(serverById.get(localItem.id).updated_at || 0).getTime();
+      const localTime  = new Date(localItem.updated_at || 0).getTime();
+      if (localTime > serverTime) resultMap.set(localItem.id, localItem);
+      continue;
+    }
 
     // Server-owned item absent from server response → unchanged since last sync, keep it
     resultMap.set(localItem.id, localItem);
