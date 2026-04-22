@@ -86,6 +86,16 @@ html, body {
   user-select: none;
 }
 
+/* iOS WKWebView only — switch from SF Pro to Inter so digits don't look flat/wide.
+   Android keeps Roboto (looks fine). The @supports check matches WebKit-based
+   browsers; Android WebView (Blink) skips this rule. */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    font-family: Inter, -apple-system, system-ui, sans-serif;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
 /* Prevent iOS auto-zoom on input focus (font-size < 16px triggers zoom) */
 input, textarea, select {
   font-size: max(16px, 1em);
