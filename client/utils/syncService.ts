@@ -129,6 +129,8 @@ function normalizeServerItem(item: any): any {
   if ("is_repeat"  in out) { out.isRepeat  = out.is_repeat  || false; delete out.is_repeat; }
   if ("repeat_id"  in out) { out.repeatId  = out.repeat_id  || null;    delete out.repeat_id; }
   if ("amount" in out && typeof out.amount === "string") { out.amount = parseFloat(out.amount) || 0; }
+  if ("exchange_rate" in out) { out.exchangeRate = out.exchange_rate != null ? parseFloat(out.exchange_rate) : undefined; delete out.exchange_rate; }
+  if ("currency_amount" in out) { out.currencyAmount = out.currency_amount != null ? parseFloat(out.currency_amount) : undefined; delete out.currency_amount; }
   // keywords comes as JSONB array from PG; ensure it's an array
   if (out.keywords && !Array.isArray(out.keywords)) {
     try { out.keywords = JSON.parse(out.keywords); } catch { out.keywords = []; }
@@ -310,6 +312,20 @@ function mergeCategOrAccIntoLocal(
 
     // Server-owned item absent from server response → unchanged since last sync, keep it
     resultMap.set(localItem.id, localItem);
+  }
+
+  // Preserve local-only fields (currency, exchangeRate) for accounts where server returned null.
+  // This protects against server not yet having deployed currency column migrations.
+  if (storageKey === "app_accounts") {
+    const localById = new Map(local.map((i) => [i.id, i]));
+    for (const [id, item] of resultMap) {
+      if (!item.currency && !item.exchangeRate) {
+        const loc = localById.get(id);
+        if (loc?.currency) {
+          resultMap.set(id, { ...item, currency: loc.currency, exchangeRate: loc.exchangeRate });
+        }
+      }
+    }
   }
 
   // Order: local items first (source="local", preserve their relative order)

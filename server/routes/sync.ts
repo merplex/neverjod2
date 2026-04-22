@@ -67,16 +67,18 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
       ),
       ...accounts.map((acc: any) =>
         pool.query(
-          `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, icon_id, keywords, sort_order, ledger_id, updated_at, deleted_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+          `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, icon_id, keywords, sort_order, ledger_id, currency, exchange_rate, updated_at, deleted_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
            ON CONFLICT (id, user_id) DO UPDATE
              SET name = EXCLUDED.name, type = EXCLUDED.type, start_balance = EXCLUDED.start_balance,
                  icon = EXCLUDED.icon, icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
                  sort_order = EXCLUDED.sort_order, ledger_id = EXCLUDED.ledger_id,
+                 currency = EXCLUDED.currency, exchange_rate = EXCLUDED.exchange_rate,
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
              WHERE sync_accounts.updated_at < EXCLUDED.updated_at`,
           [acc.id, userId, acc.name, acc.type || null, acc.startBalance || acc.balance || 0,
-           null, acc.iconId || null, JSON.stringify(acc.keywords || []), acc.sortOrder ?? null, ledger_id, acc.updated_at, acc.deleted_at || null]
+           null, acc.iconId || null, JSON.stringify(acc.keywords || []), acc.sortOrder ?? null, ledger_id,
+           acc.currency || null, acc.exchangeRate || null, acc.updated_at, acc.deleted_at || null]
         )
       ),
     ]);
@@ -99,14 +101,16 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
         .map((tx: any) =>
           pool.query(
             `INSERT INTO sync_transactions
-               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, is_repeat, repeat_id, updated_at, deleted_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, is_repeat, repeat_id, currency, exchange_rate, currency_amount, updated_at, deleted_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
              ON CONFLICT (id, user_id) DO UPDATE
                SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                    amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
                    date = EXCLUDED.date, time = EXCLUDED.time, ledger_id = EXCLUDED.ledger_id,
                    cross_ledger_ref = EXCLUDED.cross_ledger_ref,
                    is_repeat = EXCLUDED.is_repeat, repeat_id = EXCLUDED.repeat_id,
+                   currency = EXCLUDED.currency, exchange_rate = EXCLUDED.exchange_rate,
+                   currency_amount = EXCLUDED.currency_amount,
                    updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
                WHERE sync_transactions.updated_at < EXCLUDED.updated_at`,
             [tx.id, userId, tx.categoryId || null, tx.accountId || null,
@@ -114,6 +118,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
              tx.date, tx.time || null, tx.fingerprint || null,
              ledger_id, tx.crossLedgerRef || null,
              tx.isRepeat || false, tx.repeatId || null,
+             tx.currency || null, tx.exchangeRate || null, tx.currencyAmount || null,
              tx.updated_at, tx.deleted_at || null]
           )
         )

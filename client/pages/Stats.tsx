@@ -1,6 +1,6 @@
 import { getCurrencySymbol } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
@@ -22,6 +22,11 @@ export default function Stats() {
   const T = useT();
   const cur = getCurrencySymbol();
   const [tab, setTab] = useState<TabType>("summary");
+  const [showNativeTicker, setShowNativeTicker] = useState(true);
+  useEffect(() => {
+    const t = setInterval(() => setShowNativeTicker((v) => !v), 3000);
+    return () => clearInterval(t);
+  }, []);
 
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
@@ -55,7 +60,8 @@ export default function Stats() {
   const expenseByCat = useMemo(() => {
     const map: Record<string, number> = {};
     monthFiltered.filter((t) => t.type === "expense" && !t.isTransfer).forEach((t) => {
-      map[t.category] = (map[t.category] || 0) + t.amount;
+      const eff = (t as any).currencyAmount ?? t.amount;
+      map[t.category] = (map[t.category] || 0) + eff;
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [monthFiltered]);
@@ -63,7 +69,8 @@ export default function Stats() {
   const incomeByCat = useMemo(() => {
     const map: Record<string, number> = {};
     monthFiltered.filter((t) => t.type === "income" && !t.isTransfer).forEach((t) => {
-      map[t.category] = (map[t.category] || 0) + t.amount;
+      const eff = (t as any).currencyAmount ?? t.amount;
+      map[t.category] = (map[t.category] || 0) + eff;
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [monthFiltered]);
@@ -72,8 +79,8 @@ export default function Stats() {
     storedAccounts
       .map((acc: any) => {
         const txns = monthFiltered.filter((t) => t.accountId === acc.id && !t.isTransfer);
-        const income = txns.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-        const expense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+        const income = txns.filter((t) => t.type === "income").reduce((s, t) => s + ((t as any).currencyAmount ?? t.amount), 0);
+        const expense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + ((t as any).currencyAmount ?? t.amount), 0);
         return { ...acc, income, expense };
       })
       .filter((a: any) => a.income > 0 || a.expense > 0),
@@ -132,6 +139,8 @@ export default function Stats() {
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               {summaryData.map((acc: any, i: number) => {
                 const balance = Number(acc.balance || 0) + acc.income - acc.expense;
+                const hasForeign = acc.currency && typeof acc.exchangeRate === "number" && acc.exchangeRate > 0;
+                const mainEquiv = hasForeign ? balance * acc.exchangeRate : balance;
                 return (
                   <div
                     key={acc.id}
@@ -139,14 +148,31 @@ export default function Stats() {
                     className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition-colors ${i > 0 ? "border-t border-slate-100" : ""}`}
                   >
                     <p className="font-medium text-slate-800 text-sm">{acc.name}</p>
-                    <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
-                      {balance >= 0 ? "+" : "-"}{cur}{Math.abs(balance).toLocaleString()}
-                    </p>
+                    {hasForeign ? (
+                      <div className="h-5 overflow-hidden text-right">
+                        <p
+                          key={`${acc.id}-${showNativeTicker}`}
+                          className={`flip-ticker font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}
+                        >
+                          {showNativeTicker
+                            ? `${balance >= 0 ? "+" : "-"}${acc.currency} ${Math.abs(balance).toLocaleString()}`
+                            : `${mainEquiv >= 0 ? "+" : "-"}${cur}${Math.abs(mainEquiv).toLocaleString()}`}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className={`font-bold text-sm ${balance >= 0 ? "text-slate-800" : "text-red-500"}`}>
+                        {balance >= 0 ? "+" : "-"}{cur}{Math.abs(balance).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 );
               })}
               {summaryData.length > 0 && (() => {
-                const total = summaryData.reduce((s: number, acc: any) => s + Number(acc.balance || 0) + acc.income - acc.expense, 0);
+                const total = summaryData.reduce((s: number, acc: any) => {
+                  const bal = Number(acc.balance || 0) + acc.income - acc.expense;
+                  const rate = (acc.currency && acc.exchangeRate > 0) ? acc.exchangeRate : 1;
+                  return s + bal * rate;
+                }, 0);
                 return (
                   <div className="flex items-center justify-between px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
                     <p className="font-semibold text-slate-600 text-sm">{T("stats.total")}</p>

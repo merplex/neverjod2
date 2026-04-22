@@ -126,6 +126,12 @@ export async function initDB() {
   // Migration: add is_repeat and repeat_id to preserve Repeat badge through sync
   await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS is_repeat BOOLEAN DEFAULT FALSE`).catch(() => {});
   await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS repeat_id TEXT`).catch(() => {});
+  // Migration: multi-currency support
+  await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS currency TEXT`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS exchange_rate NUMERIC(18,4)`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS currency TEXT`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS exchange_rate NUMERIC(18,4)`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS currency_amount NUMERIC(18,2)`).catch(() => {});
   // Migration: create "main" ledger for all existing users that don't have one
   await pool.query(`
     INSERT INTO ledgers (id, user_id, name)

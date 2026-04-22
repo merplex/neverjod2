@@ -6,7 +6,7 @@ import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
 import { matchCategory, matchAccount, matchCategoryFromList, matchAccountFromList } from "../utils/keywordMatch";
-import { getCurrencySymbol } from "../utils/currency";
+import { getCurrencySymbol, getAccountCurrency } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { LANG_LOCALE } from "../utils/i18n";
 import { Clipboard } from "@capacitor/clipboard";
@@ -16,7 +16,8 @@ const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as 
 type InputPage = "category" | "account" | "amount";
 
 function saveTransaction(categoryId: string, accountId: string, amount: number, description = "") {
-  const transaction = {
+  const accCurrency = getAccountCurrency(accountId);
+  const transaction: Record<string, any> = {
     id: Date.now().toString(),
     categoryId,
     accountId,
@@ -24,6 +25,11 @@ function saveTransaction(categoryId: string, accountId: string, amount: number, 
     description: description.trim(),
     date: new Date().toISOString(),
   };
+  if (accCurrency.currency && accCurrency.exchangeRate > 0) {
+    transaction.currency = accCurrency.currency;
+    transaction.exchangeRate = accCurrency.exchangeRate;
+    transaction.currencyAmount = parseFloat((amount * accCurrency.exchangeRate).toFixed(2));
+  }
   const existing = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
   existing.unshift(transaction);
   localStorage.setItem(lk("app_transactions"), JSON.stringify(existing));
@@ -191,6 +197,7 @@ export default function Index() {
   const cur = getCurrencySymbol();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [selectedAccountCurrency, setSelectedAccountCurrency] = useState<{ currency: string; exchangeRate: number }>({ currency: "", exchangeRate: 1 });
   const [categoriesList, setCategoriesList] = useState(loadCategoriesFromStorage);
   const [accountsList, setAccountsList] = useState(loadAccountsFromStorage);
   const [txnVersion, setTxnVersion] = useState(0);
@@ -515,6 +522,7 @@ export default function Index() {
   const handleAccountSelect = (accountId: string) => {
     if (!isAccountPageReorderMode) {
       setSelectedAccount(accountId);
+      setSelectedAccountCurrency(getAccountCurrency(accountId));
       setCurrentPage("amount");
     }
   };
@@ -610,6 +618,7 @@ export default function Index() {
     setValue(0);
     setSelectedCategory(null);
     setSelectedAccount(null);
+    setSelectedAccountCurrency({ currency: "", exchangeRate: 1 });
     setCurrentPage("category");
   };
 
@@ -655,7 +664,8 @@ export default function Index() {
         const cat = categoriesList.find((c: any) => c.id === t.categoryId);
         if (!cat) continue;
         const totals = cat.type === "income" ? incTotals : expTotals;
-        totals[t.categoryId] = (totals[t.categoryId] || 0) + (Number(t.amount) || 0);
+        const eff = t.currencyAmount != null ? Number(t.currencyAmount) : (Number(t.amount) || 0);
+        totals[t.categoryId] = (totals[t.categoryId] || 0) + eff;
       }
 
       const rank = (totals: Record<string, number>) =>
@@ -1006,7 +1016,7 @@ export default function Index() {
                       }}
                     >
                       <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
-                        {categoryType === "income" ? "+" : "-"}{cur}{display}
+                        {categoryType === "income" ? "+" : "-"}{selectedAccountCurrency.currency || cur}{display}
                       </div>
                     </div>
                     <button

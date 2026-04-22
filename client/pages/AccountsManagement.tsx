@@ -1,5 +1,6 @@
 import { lk } from "../utils/ledgerStorage";
 import { useState, useRef, useEffect } from "react";
+import { CURRENCY_OPTIONS, getCurrencySymbol } from "../utils/currency";
 import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
 import CloudAuthModal from "../components/CloudAuthModal";
 import PremiumModal from "../components/PremiumModal";
@@ -90,6 +91,9 @@ export default function AccountsManagement() {
   const [editIconId, setEditIconId] = useState("other");
   const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
+  const [editCurrencySymbol, setEditCurrencySymbol] = useState("");
+  const [editCurrencyName, setEditCurrencyName] = useState("");
+  const [editExchangeRate, setEditExchangeRate] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -104,6 +108,9 @@ export default function AccountsManagement() {
   const [newAccIconId, setNewAccIconId] = useState("other");
   const [newAccKeywords, setNewAccKeywords] = useState("");
   const [newAccKeywordError, setNewAccKeywordError] = useState("");
+  const [newAccCurrencySymbol, setNewAccCurrencySymbol] = useState("");
+  const [newAccCurrencyName, setNewAccCurrencyName] = useState("");
+  const [newAccExchangeRate, setNewAccExchangeRate] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
   const [showCloudAuth, setShowCloudAuth] = useState(false);
@@ -185,6 +192,8 @@ export default function AccountsManagement() {
     const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[accIconOptions.length - 1];
     const newId = `custom_acc_${Date.now()}`;
     const isPreSync = !localStorage.getItem(lk("last_sync_at"));
+    const resolvedCurrency = newAccCurrencySymbol === "other" ? newAccCurrencyName.trim() : newAccCurrencySymbol;
+    const resolvedRate = parseFloat(newAccExchangeRate) || 0;
     const newAcc: Account & { iconId?: string; source?: string } = {
       id: newId,
       name: newAccName.trim(),
@@ -195,6 +204,7 @@ export default function AccountsManagement() {
       keywords,
       updated_at: new Date().toISOString(),
       ...(isPreSync ? { source: "local" } : {}),
+      ...(resolvedCurrency && resolvedRate > 0 ? { currency: resolvedCurrency, exchangeRate: resolvedRate } : {}),
     };
     const deletedAcc = accounts.find((a) => a.id === "account_deleted");
     const rest = accounts.filter((a) => a.id !== "account_deleted");
@@ -203,12 +213,13 @@ export default function AccountsManagement() {
     localStorage.setItem(lk("app_accounts"), JSON.stringify(updated));
     setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other");
     setNewAccKeywords(""); setNewAccKeywordError("");
+    setNewAccCurrencySymbol(""); setNewAccCurrencyName(""); setNewAccExchangeRate("");
     setShowAddForm(false);
   };
 
   const [showTransferModal, setShowTransferModal] = useState(false);
 
-  const startEditing = (account: Account & { iconId?: string }) => {
+  const startEditing = (account: Account & { iconId?: string; currency?: string; exchangeRate?: number }) => {
     setEditingId(account.id);
     setEditName(account.name);
     setEditType(account.type);
@@ -218,6 +229,20 @@ export default function AccountsManagement() {
     setEditIconId(account.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
     setKeywordError("");
+    const mainSym = getCurrencySymbol();
+    const knownSymbols = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym).map((o) => o.symbol);
+    if (account.currency) {
+      if (knownSymbols.includes(account.currency)) {
+        setEditCurrencySymbol(account.currency);
+        setEditCurrencyName(account.currency);
+      } else {
+        setEditCurrencySymbol("other");
+        setEditCurrencyName(account.currency);
+      }
+      setEditExchangeRate(account.exchangeRate?.toString() || "");
+    } else {
+      setEditCurrencySymbol(""); setEditCurrencyName(""); setEditExchangeRate("");
+    }
   };
 
   const saveEdit = () => {
@@ -250,11 +275,17 @@ export default function AccountsManagement() {
 
     setKeywordError("");
     const iconEntry = accIconOptions.find((o) => o.id === editIconId) || accIconOptions[accIconOptions.length - 1];
-    const updatedAccounts = accounts.map((acc) =>
-      acc.id === editingId
-        ? { ...acc, name: editName, type: editType, balance: parseFloat(editBalance) || 0, keywords, icon: iconEntry.icon, iconId: editIconId, updated_at: new Date().toISOString() }
-        : acc
-    );
+    const resolvedCurrency = editCurrencySymbol === "other" ? editCurrencyName.trim() : editCurrencySymbol;
+    const resolvedRate = parseFloat(editExchangeRate) || 0;
+    const updatedAccounts = accounts.map((acc) => {
+      if (acc.id !== editingId) return acc;
+      const base = { ...acc, name: editName, type: editType, balance: parseFloat(editBalance) || 0, keywords, icon: iconEntry.icon, iconId: editIconId, updated_at: new Date().toISOString() };
+      if (resolvedCurrency && resolvedRate > 0) {
+        return { ...base, currency: resolvedCurrency, exchangeRate: resolvedRate };
+      }
+      const { currency: _c, exchangeRate: _r, ...rest } = base as any;
+      return rest;
+    });
 
     setAccounts(updatedAccounts);
     localStorage.setItem(lk("app_accounts"), JSON.stringify(updatedAccounts));
@@ -270,6 +301,7 @@ export default function AccountsManagement() {
     setEditIconId("other");
     setShowEditIconPicker(false);
     setKeywordError("");
+    setEditCurrencySymbol(""); setEditCurrencyName(""); setEditExchangeRate("");
   };
 
   const deleteTransactionCount = (accountId: string): number => {
@@ -482,6 +514,64 @@ export default function AccountsManagement() {
                       />
                     </div>
                     <div>
+                      <label className="text-xs font-semibold text-slate-600">{T("acc.currency_label")}</label>
+                      {!isPremium ? (
+                        <button
+                          type="button"
+                          onClick={() => showPremium(T("acc.multi_currency_premium"))}
+                          className="w-full mt-1 flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-400 bg-slate-50"
+                        >
+                          <Lock size={13} className="text-amber-400" />
+                          {T("acc.currency_premium_hint")}
+                        </button>
+                      ) : (
+                        <div className="space-y-1 mt-1">
+                          <div className="flex gap-2">
+                            {(() => {
+                              const mainSym = getCurrencySymbol();
+                              const opts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
+                              return (
+                                <select
+                                  value={editCurrencySymbol}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setEditCurrencySymbol(val);
+                                    if (val !== "other" && val !== "") setEditCurrencyName(val);
+                                    else if (val === "") setEditCurrencyName("");
+                                  }}
+                                  className="w-36 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm"
+                                >
+                                  <option value="">— {mainSym} —</option>
+                                  {opts.map((o) => <option key={o.lang} value={o.symbol}>{o.label}</option>)}
+                                  <option value="other">{T("acc.currency_other")}</option>
+                                </select>
+                              );
+                            })()}
+                            <input
+                              type="number"
+                              min="0.0001"
+                              step="0.0001"
+                              value={editExchangeRate}
+                              disabled={!editCurrencySymbol}
+                              onChange={(e) => setEditExchangeRate(e.target.value)}
+                              className="flex-1 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                              placeholder="exchange rate"
+                            />
+                          </div>
+                          {editCurrencySymbol === "other" && (
+                            <input
+                              type="text"
+                              maxLength={4}
+                              value={editCurrencyName}
+                              onChange={(e) => setEditCurrencyName(e.target.value.toUpperCase().slice(0, 4))}
+                              className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm"
+                              placeholder="GOLD (max 4 chars)"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div>
                       <label className="text-xs font-semibold text-slate-600">{T("acc.keywords_label")}</label>
                       <input
                         type="text"
@@ -633,6 +723,64 @@ export default function AccountsManagement() {
                   onChange={(e) => setNewAccBalance(e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
                 />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600">{T("acc.currency_label")}</label>
+                {!isPremium ? (
+                  <button
+                    type="button"
+                    onClick={() => showPremium(T("acc.multi_currency_premium"))}
+                    className="w-full mt-1 flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-400 bg-slate-50"
+                  >
+                    <Lock size={13} className="text-amber-400" />
+                    {T("acc.currency_premium_hint")}
+                  </button>
+                ) : (
+                  <div className="space-y-1 mt-1">
+                    <div className="flex gap-2">
+                      {(() => {
+                        const mainSym = getCurrencySymbol();
+                        const opts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
+                        return (
+                          <select
+                            value={newAccCurrencySymbol}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setNewAccCurrencySymbol(val);
+                              if (val !== "other" && val !== "") setNewAccCurrencyName(val);
+                              else if (val === "") setNewAccCurrencyName("");
+                            }}
+                            className="w-36 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm"
+                          >
+                            <option value="">— {mainSym} —</option>
+                            {opts.map((o) => <option key={o.lang} value={o.symbol}>{o.label}</option>)}
+                            <option value="other">{T("acc.currency_other")}</option>
+                          </select>
+                        );
+                      })()}
+                      <input
+                        type="number"
+                        min="0.0001"
+                        step="0.0001"
+                        value={newAccExchangeRate}
+                        disabled={!newAccCurrencySymbol}
+                        onChange={(e) => setNewAccExchangeRate(e.target.value)}
+                        className="flex-1 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                        placeholder="exchange rate"
+                      />
+                    </div>
+                    {newAccCurrencySymbol === "other" && (
+                      <input
+                        type="text"
+                        maxLength={4}
+                        value={newAccCurrencyName}
+                        onChange={(e) => setNewAccCurrencyName(e.target.value.toUpperCase().slice(0, 4))}
+                        className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm"
+                        placeholder="GOLD (max 4 chars)"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600">{T("acc.keywords_label")}</label>

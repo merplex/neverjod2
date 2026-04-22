@@ -193,6 +193,11 @@ export default function AllTransactions() {
   const searchFromUrl = useRef(!!searchParams.get("search"));
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showNativeTicker, setShowNativeTicker] = useState(true);
+  useEffect(() => {
+    const t = setInterval(() => setShowNativeTicker((v) => !v), 3000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const handler = () => setRefreshKey((k) => k + 1);
@@ -220,6 +225,12 @@ export default function AllTransactions() {
   const allTransactions = useMemo(() => getRealTransactionsList(), [refreshKey]);
 
   // Running balance per transaction (ascending order, based on start balance + all txns)
+  const accountCurrencyMap = useMemo(() => {
+    const map: Record<string, string | undefined> = {};
+    storedAccounts.forEach((acc: any) => { if (acc.currency) map[acc.id] = acc.currency; });
+    return map;
+  }, [storedAccounts]);
+
   const runningBalances = useMemo(() => {
     const currentBalance: Record<string, number> = {};
     storedAccounts.forEach((acc: any) => { currentBalance[acc.id] = Number(acc.balance) || 0; });
@@ -510,12 +521,25 @@ export default function AllTransactions() {
                       <span className="text-xs text-slate-500">{transaction.time}</span>
                     </div>
                     <div className="text-right">
-                      <span className={`font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-red-500"}`}>
-                        {transaction.type === "income" ? "+" : "-"}{cur}{transaction.amount.toLocaleString()}
-                      </span>
+                      {transaction.currency && (transaction as any).currencyAmount != null ? (
+                        <div className="h-5 overflow-hidden text-right">
+                          <span
+                            key={showNativeTicker ? `n-${transaction.id}` : `m-${transaction.id}`}
+                            className={`flip-ticker font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-red-500"}`}
+                          >
+                            {showNativeTicker
+                              ? `${transaction.type === "income" ? "+" : "-"}${transaction.currency}${transaction.amount.toLocaleString()}`
+                              : `${transaction.type === "income" ? "+" : "-"}${cur}${Number((transaction as any).currencyAmount).toLocaleString()}`}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className={`font-semibold text-sm ${transaction.type === "income" ? "text-green-600" : "text-red-500"}`}>
+                          {transaction.type === "income" ? "+" : "-"}{cur}{transaction.amount.toLocaleString()}
+                        </span>
+                      )}
                       {runningBalances[transaction.id] !== undefined && (
                         <p className={`text-[10px] mt-0.5 ${runningBalances[transaction.id] >= 0 ? "text-slate-400" : "text-red-400"}`}>
-                          {cur}{runningBalances[transaction.id].toLocaleString()}
+                          {accountCurrencyMap[transaction.accountId] || cur}{runningBalances[transaction.id].toLocaleString()}
                         </p>
                       )}
                     </div>

@@ -113,6 +113,8 @@ export default function TransactionDetail() {
   const [amount, setAmount] = useState<string>(transaction?.amount.toString() || "0");
   const [showAmountPad, setShowAmountPad] = useState(false);
   const [numpadDisplay, setNumpadDisplay] = useState(transaction?.amount.toString() || "0");
+  const txnCurrency: string = (raw as any)?.currency || "";
+  const [txnExchangeRate, setTxnExchangeRate] = useState<string>((raw as any)?.exchangeRate?.toString() || "");
   const [numpadSize, setNumpadSize] = useState(70);
   const [isRightMode, setIsRightMode] = useState(false);
   const [isNumpadLocked, setIsNumpadLocked] = useState(false);
@@ -274,10 +276,28 @@ export default function TransactionDetail() {
       return;
     }
     const val = parseFloat(numpadDisplay) || 0;
+    if (val <= 0) { setShowAmountPad(false); return; }
     setAmount(val.toString());
     setNumpadDisplay(val.toString());
-    updateLocalTransaction(transactionId!, { amount: val });
+    const rateVal = parseFloat(txnExchangeRate);
+    const updates: Record<string, any> = { amount: val };
+    if (txnCurrency && rateVal > 0) {
+      updates.currencyAmount = parseFloat((val * rateVal).toFixed(2));
+    }
+    updateLocalTransaction(transactionId!, updates);
     setShowAmountPad(false);
+  };
+
+  const handleExchangeRateSave = (newRateStr: string) => {
+    const newRate = parseFloat(newRateStr);
+    if (!newRate || newRate <= 0 || !txnCurrency) return;
+    const amtVal = parseFloat(amount) || 0;
+    if (amtVal <= 0) return;
+    setTxnExchangeRate(newRateStr);
+    updateLocalTransaction(transactionId!, {
+      exchangeRate: newRate,
+      currencyAmount: parseFloat((amtVal * newRate).toFixed(2)),
+    });
   };
 
   return (
@@ -342,10 +362,31 @@ export default function TransactionDetail() {
               className="flex-1 text-left"
             >
               <span className={`text-sm font-semibold ${signColor}`}>
-                {sign}{cur}{parseFloat(amount).toLocaleString()}
+                {txnCurrency
+                  ? `${sign}${txnCurrency} ${parseFloat(amount).toLocaleString()} (= ${cur}${(parseFloat(amount) * (parseFloat(txnExchangeRate) || 0)).toLocaleString()})`
+                  : `${sign}${cur}${parseFloat(amount).toLocaleString()}`}
               </span>
             </button>
           </div>
+          {/* Exchange Rate Row — only for foreign currency transactions */}
+          {txnCurrency && (
+            <div className="flex items-center px-4 py-3 border-t border-slate-100 bg-amber-50">
+              <span className="text-xs text-slate-400 w-20">Rate</span>
+              <div className="flex-1 flex items-center gap-1">
+                <span className="text-xs text-amber-700">1 {txnCurrency} =</span>
+                <input
+                  type="number"
+                  min="0.0001"
+                  step="0.0001"
+                  value={txnExchangeRate}
+                  onChange={(e) => setTxnExchangeRate(e.target.value)}
+                  onBlur={(e) => handleExchangeRateSave(e.target.value)}
+                  className="w-28 px-2 py-1 border border-amber-200 rounded-lg text-sm text-amber-800 bg-white"
+                />
+                <span className="text-xs text-amber-700">{cur}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Description */}

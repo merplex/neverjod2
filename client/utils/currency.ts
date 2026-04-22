@@ -23,3 +23,18 @@ export function getCurrencySymbol(): string {
       : "฿";
   } catch { return "฿"; }
 }
+
+export function getAccountCurrency(accountId: string): { currency: string; exchangeRate: number } {
+  try {
+    const accounts = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
+    const acc = accounts.find((a: any) => a.id === accountId);
+    if (acc && acc.currency && typeof acc.exchangeRate === "number" && acc.exchangeRate > 0) {
+      return { currency: acc.currency, exchangeRate: acc.exchangeRate };
+    }
+  } catch {}
+  return { currency: "", exchangeRate: 1 };
+}
+
+export function isForeignCurrency(accountId: string): boolean {
+  return getAccountCurrency(accountId).currency !== "";
+}

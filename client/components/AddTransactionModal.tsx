@@ -1,4 +1,4 @@
-import { getCurrencySymbol } from "../utils/currency";
+import { getCurrencySymbol, getAccountCurrency } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { useState } from "react";
 import { X, Calculator, Lock, LockOpen, ChevronRight, ChevronDown } from "lucide-react";
@@ -51,7 +51,8 @@ function saveNewTransaction(
   categoryId: string, accountId: string, amount: number,
   description: string, date: Date, timeStr: string,
 ) {
-  const txn = {
+  const accCurrency = getAccountCurrency(accountId);
+  const txn: Record<string, any> = {
     id: Date.now().toString(),
     categoryId,
     accountId,
@@ -60,6 +61,11 @@ function saveNewTransaction(
     date: date.toISOString(),
     time: timeStr,
   };
+  if (accCurrency.currency && accCurrency.exchangeRate > 0) {
+    txn.currency = accCurrency.currency;
+    txn.exchangeRate = accCurrency.exchangeRate;
+    txn.currencyAmount = parseFloat((amount * accCurrency.exchangeRate).toFixed(2));
+  }
   const existing = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
   existing.unshift(txn);
   localStorage.setItem(lk("app_transactions"), JSON.stringify(existing));
@@ -90,6 +96,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [categoryType, setCategoryType] = useState<"expense" | "income">("expense");
   const [accountId, setAccountId] = useState("");
   const [accountName, setAccountName] = useState("");
+  const [accountCurrency, setAccountCurrency] = useState<{ currency: string; exchangeRate: number }>({ currency: "", exchangeRate: 1 });
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [description, setDescription] = useState("");
@@ -153,6 +160,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const handleAccountSelect = (accId: string, accName: string) => {
     setAccountId(accId);
     setAccountName(accName);
+    setAccountCurrency(getAccountCurrency(accId));
     setShowAccountPicker(false);
     setShowAmountPad(true);
   };
@@ -342,9 +350,20 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             >
               <span className="text-xs text-slate-400 w-20">Amount</span>
               <span className={`text-sm font-semibold ${value > 0 ? signColor : "text-slate-300"}`}>
-                {value > 0 ? `${sign}${cur}${value.toLocaleString()}` : (categoryId && accountId ? T("tap_to_enter") : "—")}
+                {value > 0
+                  ? `${sign}${accountCurrency.currency || cur}${value.toLocaleString()}`
+                  : (categoryId && accountId ? T("tap_to_enter") : "—")}
               </span>
             </button>
+            {/* Currency info row — shown smoothly when foreign currency account selected */}
+            {accountCurrency.currency && (
+              <div className="flex items-center px-4 py-2 bg-amber-50 border-t border-amber-100 transition-all">
+                <span className="text-xs text-amber-600 w-20">{T("acc.exchange_rate_label")}</span>
+                <span className="text-xs text-amber-700 font-medium">
+                  1 {accountCurrency.currency} = {accountCurrency.exchangeRate.toLocaleString()} {cur}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Description */}

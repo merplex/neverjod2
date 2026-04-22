@@ -243,6 +243,17 @@ input, textarea, select {
   }
 }
 
+/* Solari / flip-board ticker animation */
+@keyframes flip-ticker {
+  0%   { transform: perspective(300px) rotateX(-75deg); opacity: 0; }
+  100% { transform: perspective(300px) rotateX(0deg);   opacity: 1; }
+}
+.flip-ticker {
+  animation: flip-ticker 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: top center;
+  display: block;
+}
+
 /* Voice widget marquee */
 @keyframes voice-marquee {
   0%   { transform: translateX(0); }
