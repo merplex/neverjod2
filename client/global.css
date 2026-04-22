@@ -249,7 +249,7 @@ input, textarea, select {
   100% { transform: perspective(300px) rotateX(0deg);   opacity: 1; }
 }
 .flip-ticker {
-  animation: flip-ticker 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: flip-ticker 1s cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: top center;
   display: block;
 }
