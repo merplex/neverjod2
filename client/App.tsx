@@ -14,7 +14,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import OnboardingGuide from "./components/OnboardingGuide";
 
 // Legal pages and reset-password are accessible on desktop too — only block the main app
-const LEGAL_PATHS = ["/privacy", "/terms", "/eula", "/reset-password"];
+const LEGAL_PATHS = ["/privacy", "/terms", "/eula", "/support", "/reset-password"];
 
 function DesktopBlock() {
   const { pathname } = useLocation();
@@ -91,6 +91,7 @@ import RepeatTransactions from "./pages/RepeatTransactions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import Eula from "./pages/Eula";
+import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import BottomNavLayout from "./components/BottomNavLayout";
@@ -203,6 +204,7 @@ function AppContent() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/eula" element={<Eula />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
