@@ -822,16 +822,16 @@ export default function Index() {
                       return (
                         <div key="__voice_status__" className={`w-full h-full rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-center py-1 gap-0.5 overflow-hidden ${isIOSDevice ? "px-1" : "px-2"}`}>
                           <div className="flex items-center gap-1 min-w-0">
-                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
-                            <VoiceMarqueeText text={categoryName || T("filter.category")} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
+                            <span className={`text-xs font-bold flex-shrink-0 ${categoryName ? "text-green-500" : "text-slate-300"}`}>{categoryName ? "✓" : "○"}</span>
+                            <VoiceMarqueeText text={categoryName || T("filter.category")} className={`text-xs text-slate-600 flex-1 min-w-0`} />
                           </div>
                           <div className="flex items-center gap-1 min-w-0">
-                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
-                            <VoiceMarqueeText text={accountName || T("filter.account")} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
+                            <span className={`text-xs font-bold flex-shrink-0 ${accountName ? "text-green-500" : "text-slate-300"}`}>{accountName ? "✓" : "○"}</span>
+                            <VoiceMarqueeText text={accountName || T("filter.account")} className={`text-xs text-slate-600 flex-1 min-w-0`} />
                           </div>
                           <div className="flex items-center gap-1 min-w-0">
-                            <span className={`${isIOSDevice ? "text-[10px]" : "text-xs"} font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
-                            <VoiceMarqueeText text={amount ? `${voiceAmtSym}${amount.toLocaleString()}` : T("filter.amount")} className={`${isIOSDevice ? "text-[10px]" : "text-xs"} text-slate-600 flex-1 min-w-0`} />
+                            <span className={`text-xs font-bold flex-shrink-0 ${amount ? "text-green-500" : "text-slate-300"}`}>{amount ? "✓" : "○"}</span>
+                            <VoiceMarqueeText text={amount ? `${voiceAmtSym}${amount.toLocaleString()}` : T("filter.amount")} className={`text-xs text-slate-600 flex-1 min-w-0`} />
                           </div>
                         </div>
                       );
