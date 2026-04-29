@@ -74,7 +74,25 @@
       "Bash(sed -i '1s/^/import { getCurrencySymbol } from \"..\\\\/utils\\\\/currency\";\\\\n/' C:/Users/User/StudioProjects/neverjod2/client/pages/AllTransactions.tsx)",
       "Bash(sed -i '1s/^/import { getCurrencySymbol } from \"..\\\\/utils\\\\/currency\";\\\\n/' C:/Users/User/StudioProjects/neverjod2/client/pages/Transactions.tsx)",
       "Bash(sed -i '1s/^/import { getCurrencySymbol } from \"..\\\\/utils\\\\/currency\";\\\\n/' C:/Users/User/StudioProjects/neverjod2/client/pages/TransactionDetail.tsx)",
-      "Bash(sed -i '1s/^/import { getCurrencySymbol } from \"..\\\\/utils\\\\/currency\";\\\\n/' C:/Users/User/StudioProjects/neverjod2/client/pages/AccountsManagement.tsx)"
+      "Bash(sed -i '1s/^/import { getCurrencySymbol } from \"..\\\\/utils\\\\/currency\";\\\\n/' C:/Users/User/StudioProjects/neverjod2/client/pages/AccountsManagement.tsx)",
+      "Bash(python3 -c ':*)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" \"C:/Users/User/StudioProjects/neverjod2/android/gradlew\" -p \"C:/Users/User/StudioProjects/neverjod2/android\" assembleDebug)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" \"C:/Users/User/StudioProjects/neverjod2/android/gradlew.bat\" -p \"C:/Users/User/StudioProjects/neverjod2/android\" assembleDebug)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" \"C:/Users/User/StudioProjects/neverjod2/android/gradlew.bat\" -p \"C:/Users/User/StudioProjects/neverjod2/android\" clean assembleDebug)",
+      "Bash(export JAVA_HOME)",
+      "Bash(export PATH)",
+      "Bash(git -C /c/Users/User/StudioProjects/neverjod2 add client/components/TransferModal.tsx client/pages/Settings.tsx client/utils/repeatTransactionService.ts)",
+      "Bash(git -C /c/Users/User/StudioProjects/neverjod2 commit -m ':*)",
+      "Bash(git -C /c/Users/User/StudioProjects/neverjod2 push origin main)",
+      "Bash(git -C /c/Users/User/StudioProjects/neverjod2 add client/pages/Settings.tsx client/utils/syncService.ts)",
+      "Bash(git -C /c/Users/User/StudioProjects/neverjod2 add server/routes/ledgers.ts)",
+      "Bash(git -C /c/Users/User/StudioProjects/neverjod2 add client/utils/i18n.ts client/pages/Index.tsx client/pages/Settings.tsx client/pages/RepeatTransactions.tsx client/components/TransferModal.tsx client/utils/repeatTransactionService.ts)",
+      "Bash(git -C /c/Users/User/StudioProjects/neverjod2 add client/pages/TransactionDetail.tsx client/components/TransferModal.tsx client/utils/repeatTransactionService.ts)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew assembleDebug:*)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./android/gradlew.bat -p android assembleDebug)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew.bat assembleDebug)",
+      "Bash(cp C:/Users/User/StudioProjects/noterealm/android/app/build/outputs/apk/debug/app-debug.apk C:/Users/User/StudioProjects/noterealm/debug/app-debug.apk)",
+      "Bash(cp C:/Users/User/StudioProjects/noterealm/android/app/build/outputs/apk/debug/app-debug.apk C:/Users/User/StudioProjects/noterealm/app-debug.apk)"
     ]
   }
 }

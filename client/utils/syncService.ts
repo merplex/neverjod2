@@ -154,7 +154,6 @@ function normalizeRepeatItem(raw: any): any {
   if ("last_executed" in out) { out.lastExecuted = out.last_executed; delete out.last_executed; }
   if ("amount" in out && typeof out.amount === "string") { out.amount = parseFloat(out.amount) || 0; }
   delete out.user_id;
-  delete out.updated_at;
   return out;
 }
 
@@ -198,14 +197,16 @@ function mergeRepeatTransIntoLocal(serverItems: any[]) {
 
     if (serverById.has(localItem.id)) {
       const serverItem = serverById.get(localItem.id)!;
-      // server wins on everything EXCEPT nextDue/lastExecuted:
-      // if local nextDue is further in the future, we've already fired this repeat locally —
-      // don't let server roll it back (would cause duplicate transactions on next launch)
-      const localNextDue = localItem.nextDue ? new Date(localItem.nextDue).getTime() : 0;
-      const serverNextDue = serverItem.nextDue ? new Date(serverItem.nextDue).getTime() : 0;
+      // last-write-wins for editable fields (description, amount, etc.)
+      const localUpdated = new Date(localItem.updated_at || 0).getTime();
+      const serverUpdated = new Date(serverItem.updated_at || 0).getTime();
+      const base = localUpdated > serverUpdated ? localItem : serverItem;
+      // always use the further nextDue — prevents re-execution if repeat already fired locally
+      const localNextDue = new Date(localItem.nextDue || 0).getTime();
+      const serverNextDue = new Date(serverItem.nextDue || 0).getTime();
       const merged = localNextDue > serverNextDue
-        ? { ...serverItem, nextDue: localItem.nextDue, lastExecuted: localItem.lastExecuted }
-        : serverItem;
+        ? { ...base, nextDue: localItem.nextDue, lastExecuted: localItem.lastExecuted }
+        : { ...base, nextDue: serverItem.nextDue, lastExecuted: serverItem.lastExecuted };
       result.push(merged);
       seenIds.add(localItem.id);
     } else {

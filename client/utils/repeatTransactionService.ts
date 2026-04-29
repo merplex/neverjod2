@@ -82,7 +82,7 @@ export function updateRepeatTransaction(id: string, updates: Partial<Pick<Repeat
   const list = getRepeatTransactions();
   const idx = list.findIndex((r) => r.id === id);
   if (idx === -1) return;
-  list[idx] = { ...list[idx], ...updates };
+  list[idx] = { ...list[idx], ...updates, updated_at: new Date().toISOString() };
   if (updates.repeatOption) {
     list[idx].nextDue = buildInitialNextDue(list[idx]);
   }
@@ -124,6 +124,7 @@ export function updateRepeatTransfer(
     time: updates.time,
     startDate: updates.date.toISOString(),
     ...(updates.toLedgerId ? { toLedgerId: updates.toLedgerId, toLedgerName: updates.toLedgerName } : { toLedgerId: undefined, toLedgerName: undefined }),
+    updated_at: new Date().toISOString(),
   };
   list[idx].nextDue = buildInitialNextDue(list[idx]);
   saveRepeatTransactions(list);
