@@ -162,6 +162,9 @@ function normalizeRepeatItem(raw: any): any {
 // reassign the local item a new unique ID so BOTH coexist — nothing is silently dropped.
 function mergeRepeatTransIntoLocal(serverItems: any[]) {
   const local: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]");
+  // Don't restore items the user has locally deleted but not yet pushed
+  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats")) || "[]");
+  const pendingDeleteIds = new Set(pendingRepeats.map((p: any) => p.id));
   const serverById = new Map<string, any>();
   const deletedIds = new Set<string>();
 
@@ -214,9 +217,9 @@ function mergeRepeatTransIntoLocal(serverItems: any[]) {
       seenIds.add(localItem.id);
     }
   }
-  // Append new server items not yet present locally
+  // Append new server items not yet present locally (skip pending-delete items)
   for (const [id, item] of serverById) {
-    if (!seenIds.has(id)) result.push(item);
+    if (!seenIds.has(id) && !pendingDeleteIds.has(id)) result.push(item);
   }
 
   localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(result));
