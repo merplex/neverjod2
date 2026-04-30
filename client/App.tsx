@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
 import { lk } from "./utils/ledgerStorage";
 import { syncAll } from "./utils/syncService";
+import { CURRENCY_OPTIONS } from "./utils/currency";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot, Root } from "react-dom/client";
@@ -59,11 +60,26 @@ function ThemeProvider() {
     function apply() {
       try {
         const s = JSON.parse(localStorage.getItem(lk("app_settings")) || "{}");
+        let changed = false;
         if (!s.colorTheme) {
-          // First launch — pick a random theme and persist it
           s.colorTheme = ALL_THEMES[Math.floor(Math.random() * ALL_THEMES.length)];
-          localStorage.setItem(lk("app_settings"), JSON.stringify(s));
+          changed = true;
         }
+        const tag = (navigator.language || "en-US").toLowerCase();
+        const match = CURRENCY_OPTIONS.find((c) => c.lang.toLowerCase() === tag);
+        if (!s.language) {
+          s.language = tag.startsWith("th") ? "th" : tag.startsWith("zh") ? "zh" : "en";
+          changed = true;
+        }
+        if (!s.currencySymbol) {
+          s.currencySymbol = match?.symbol || "$";
+          changed = true;
+        }
+        if (!s.voiceLang) {
+          s.voiceLang = match?.lang || "en-US";
+          changed = true;
+        }
+        if (changed) localStorage.setItem(lk("app_settings"), JSON.stringify(s));
         document.documentElement.setAttribute("data-theme", s.colorTheme);
       } catch {}
     }
