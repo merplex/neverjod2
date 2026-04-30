@@ -73,6 +73,7 @@ function ThemeProvider() {
         }
         if (!s.currencySymbol) {
           s.currencySymbol = match?.symbol || "$";
+          s.currencyLang = match?.lang || "en-US";
           changed = true;
         }
         if (!s.voiceLang) {

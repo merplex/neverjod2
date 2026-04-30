@@ -448,7 +448,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       {showFromPicker && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowFromPicker(false)} />
-          <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-xl">
+          <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800">{T("acc.select_source")}</h3>
               <button onClick={() => setShowFromPicker(false)}><X size={18} className="text-slate-400" /></button>
@@ -462,7 +462,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                 >
                   <span className={`text-sm font-semibold ${acc.id === fromId ? "text-theme-700" : "text-slate-800"}`}>{acc.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{cur}{acc.currentBalance.toLocaleString()}</span>
+                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{acc.currency || cur}{acc.currentBalance.toLocaleString()}</span>
                     {acc.id === fromId && <span className="text-theme-600 text-base">✓</span>}
                   </div>
                 </button>
@@ -476,7 +476,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       {showToPicker && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowToPicker(false)} />
-          <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[75vh] flex flex-col shadow-xl">
+          <div className="relative bg-white rounded-2xl w-full max-w-sm max-h-[75vh] flex flex-col shadow-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800">{T("acc.select_dest")}</h3>
               <button onClick={() => setShowToPicker(false)}><X size={18} className="text-slate-400" /></button>
@@ -512,7 +512,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                 >
                   <span className={`text-sm font-semibold ${acc.id === toId && toPickerTab === toLedgerId ? "text-theme-700" : "text-slate-800"}`}>{acc.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{cur}{acc.currentBalance.toLocaleString()}</span>
+                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{acc.currency || cur}{acc.currentBalance.toLocaleString()}</span>
                     {acc.id === toId && toPickerTab === toLedgerId && <span className="text-theme-600 text-base">✓</span>}
                   </div>
                 </button>

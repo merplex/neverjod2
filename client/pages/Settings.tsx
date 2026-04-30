@@ -21,6 +21,7 @@ interface AppSettings {
   voiceAutoStart: boolean;
   voiceLang: string;
   currencySymbol: string;
+  currencyLang?: string;
   cloudBackupEnabled: boolean;
   language: "en" | "th" | "zh";
   colorTheme: ColorTheme;
@@ -33,6 +34,7 @@ const defaultSettings: AppSettings = {
   voiceAutoStart: true,
   voiceLang: "th-TH",
   currencySymbol: "฿",
+  currencyLang: "th-TH",
   cloudBackupEnabled: false,
   language: "th",
   colorTheme: "teal",
@@ -646,22 +648,34 @@ export default function Settings() {
                 className="w-full flex items-center justify-between px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white"
               >
                 <span className="font-semibold text-slate-800">
-                  {CURRENCY_OPTIONS.find((o) => o.symbol === settings.currencySymbol)?.label ?? settings.currencySymbol}
+                  {(
+                    CURRENCY_OPTIONS.find((o) => o.lang === settings.currencyLang)
+                      ?? CURRENCY_OPTIONS.find((o) => o.symbol === settings.currencySymbol)
+                  )?.label ?? settings.currencySymbol}
                 </span>
                 <ChevronDown size={14} className={`text-slate-400 transition-transform ${showCurrencyPicker ? "rotate-180" : ""}`} />
               </button>
               {showCurrencyPicker && (
                 <div className="mt-1 border border-slate-200 rounded-xl overflow-hidden">
-                  {CURRENCY_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.lang}
-                      onClick={() => { update("currencySymbol", opt.symbol); setShowCurrencyPicker(false); }}
-                      className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${opt.symbol === settings.currencySymbol ? "bg-theme-50" : ""}`}
-                    >
-                      <span className={`text-sm font-semibold flex-1 text-left ${opt.symbol === settings.currencySymbol ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
-                      {opt.symbol === settings.currencySymbol && <span className="text-theme-600 text-sm">✓</span>}
-                    </button>
-                  ))}
+                  {CURRENCY_OPTIONS.map((opt) => {
+                    const isSelected = settings.currencyLang
+                      ? opt.lang === settings.currencyLang
+                      : opt.symbol === settings.currencySymbol
+                          && opt === CURRENCY_OPTIONS.find((o) => o.symbol === settings.currencySymbol);
+                    return (
+                      <button
+                        key={opt.lang}
+                        onClick={() => {
+                          setSettings((prev) => ({ ...prev, currencySymbol: opt.symbol, currencyLang: opt.lang }));
+                          setShowCurrencyPicker(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${isSelected ? "bg-theme-50" : ""}`}
+                      >
+                        <span className={`text-sm font-semibold flex-1 text-left ${isSelected ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
+                        {isSelected && <span className="text-theme-600 text-sm">✓</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
