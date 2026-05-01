@@ -18,6 +18,9 @@ export function useSwipeBack() {
 
   useEffect(() => {
     function onTouchStart(e: TouchEvent) {
+      // Don't capture swipe when touching inside an input/textarea (user is selecting text)
+      const target = e.target as HTMLElement;
+      if (target.closest('input, textarea, [contenteditable="true"]')) return;
       // Ignore edge swipes (< 30px from either edge) — those are handled by Android/Capacitor backbutton
       const x = e.touches[0].clientX;
       const screenW = window.innerWidth;

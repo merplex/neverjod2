@@ -707,7 +707,7 @@ export default function Index() {
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate transition-all duration-300">{item.cat?.name || item.id}</span>
                         <span className="text-[12px] font-bold text-white transition-all duration-300">
-                          {item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
+                          {item.amount >= 10_000_000 ? `${(item.amount / 1_000_000).toFixed(1).replace(/\.0$/, '')}M` : item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
                         </span>
                       </div>
                     );
@@ -739,7 +739,7 @@ export default function Index() {
                         </div>
                         <span className="text-[9px] text-white/90 w-full text-center leading-tight truncate transition-all duration-300">{item.cat?.name || item.id}</span>
                         <span className="text-[12px] font-bold text-white transition-all duration-300">
-                          {item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
+                          {item.amount >= 10_000_000 ? `${(item.amount / 1_000_000).toFixed(1).replace(/\.0$/, '')}M` : item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount.toLocaleString()}
                         </span>
                       </div>
                     );
