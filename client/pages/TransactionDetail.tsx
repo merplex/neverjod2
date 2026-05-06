@@ -186,14 +186,18 @@ export default function TransactionDetail() {
   };
 
   const handleDateSelect = (date: Date) => {
-    setCurrentDate(date);
-    updateLocalTransaction(transactionId!, { date: date.toISOString() });
+    const combined = new Date(date);
+    combined.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+    setCurrentDate(combined);
+    updateLocalTransaction(transactionId!, { date: combined.toISOString() });
   };
 
   const handleTimeSelect = (timeDate: Date) => {
     setCurrentTime(timeDate);
     const timeStr = `${timeDate.getHours().toString().padStart(2, "0")}:${timeDate.getMinutes().toString().padStart(2, "0")}`;
-    updateLocalTransaction(transactionId!, { time: timeStr });
+    const combined = new Date(currentDate);
+    combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+    updateLocalTransaction(transactionId!, { time: timeStr, date: combined.toISOString() });
     setShowTimePicker(false);
   };
 

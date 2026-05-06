@@ -234,7 +234,12 @@ export default function AllTransactions() {
   const runningBalances = useMemo(() => {
     const currentBalance: Record<string, number> = {};
     storedAccounts.forEach((acc: any) => { currentBalance[acc.id] = Number(acc.balance) || 0; });
-    const asc = [...allTransactions].sort((a, b) => a.date.getTime() - b.date.getTime() || a.id.localeCompare(b.id));
+    const asc = [...allTransactions].sort((a, b) => {
+      const aDay = a.date.getFullYear() * 10000 + (a.date.getMonth() + 1) * 100 + a.date.getDate();
+      const bDay = b.date.getFullYear() * 10000 + (b.date.getMonth() + 1) * 100 + b.date.getDate();
+      if (aDay !== bDay) return aDay - bDay;
+      return (a.time || "00:00").localeCompare(b.time || "00:00") || a.id.localeCompare(b.id);
+    });
     const map: Record<string, number> = {};
     asc.forEach((t) => {
       currentBalance[t.accountId] = (currentBalance[t.accountId] || 0) + (t.type === "income" ? t.amount : -t.amount);
