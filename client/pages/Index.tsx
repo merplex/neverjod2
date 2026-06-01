@@ -1045,13 +1045,19 @@ export default function Index() {
                           : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
                         ).map((btn) => {
                           if (btn === 'save') return (
-                            <button key="save" onClick={handleConfirm} style={{ touchAction: 'manipulation' }} className="h-full aspect-square justify-self-center bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-full transition-colors active:scale-95 flex items-center justify-center">{T("btn.save")}</button>
+                            <button key="save" onClick={handleConfirm} style={{ touchAction: 'manipulation' }} className="w-full h-full flex items-center justify-center active:opacity-70">
+                              <div className="h-full aspect-square bg-gradient-to-br from-theme-500 to-theme-600 text-white font-bold rounded-full flex items-center justify-center">{T("btn.save")}</div>
+                            </button>
                           );
                           if (btn === '.') return (
-                            <button key="dot" onClick={handleDecimal} style={{ touchAction: 'manipulation' }} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-colors active:scale-95 flex items-center justify-center">.</button>
+                            <button key="dot" onClick={handleDecimal} style={{ touchAction: 'manipulation' }} className="w-full h-full flex items-center justify-center active:opacity-70">
+                              <div className="h-full aspect-square bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full flex items-center justify-center">.</div>
+                            </button>
                           );
                           return (
-                            <button key={btn} onClick={() => handleNumberClick(btn as number)} style={{ touchAction: 'manipulation' }} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-colors active:scale-95 flex items-center justify-center">{btn}</button>
+                            <button key={btn} onClick={() => handleNumberClick(btn as number)} style={{ touchAction: 'manipulation' }} className="w-full h-full flex items-center justify-center active:opacity-70">
+                              <div className="h-full aspect-square bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full flex items-center justify-center">{btn}</div>
+                            </button>
                           );
                         })}
                       </div>
@@ -1065,7 +1071,7 @@ export default function Index() {
                             <button
                               key={op}
                               onClick={() => handleOperator(op)}
-                              className="h-full bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                              className="h-full bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 font-bold text-xl rounded-xl shadow-sm active:opacity-70"
                             >
                               {op === '*' ? '×' : op === '/' ? '÷' : op}
                             </button>
@@ -1074,7 +1080,7 @@ export default function Index() {
                       ) : (
                         <button
                           onClick={() => setIsCalcMode(true)}
-                          className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none"
+                          className="bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 font-bold rounded-lg shadow-sm flex items-center justify-center flex-1 select-none active:opacity-70"
                         >
                           <div className="flex flex-col items-center gap-1">
                             <Calculator size={24} />
@@ -1085,17 +1091,17 @@ export default function Index() {
                       {isCalcMode ? (
                         <button
                           onClick={handleEquals}
-                          className="rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold text-2xl flex-1 bg-gradient-to-br from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white"
+                          className="rounded-lg shadow-sm flex items-center justify-center font-bold text-2xl flex-1 bg-gradient-to-br from-green-400 to-green-500 text-white active:opacity-70"
                         >
                           =
                         </button>
                       ) : (
                         <button
                           onClick={handleToggleLock}
-                          className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${
+                          className={`rounded-lg shadow-sm flex items-center justify-center font-bold flex-1 active:opacity-70 ${
                             isLocked
-                              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white"
-                              : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"
+                              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white"
+                              : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700"
                           }`}
                         >
                           {isLocked ? <Lock size={24} /> : <LockOpen size={24} />}

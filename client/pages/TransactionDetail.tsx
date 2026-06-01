@@ -437,34 +437,48 @@ export default function TransactionDetail() {
               </button>
             </div>
             <div className="overflow-y-auto flex-1">
-              <div className="grid grid-cols-3 divide-x divide-y divide-slate-100 pb-2">
-                {categoriesList.filter((c: any) => c.id !== "nocat").map((cat: any) => {
-                  const Icon = categoryIconMap[cat.id] || (cat.iconId ? categoryIconMap[cat.iconId] : null) || MoreHorizontal;
-                  const locked = overLimitCatIds.has(cat.id);
-                  return locked ? (
-                    <button
-                      key={cat.id}
-                      disabled
-                      className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
-                    >
-                      <Icon size={18} className="text-slate-400" />
-                      <span className="text-xs text-center leading-tight text-slate-400">{cat.name}</span>
-                      <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
-                    </button>
-                  ) : (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleCategorySelect(cat.id, cat.name)}
-                      className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
-                    >
-                      <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
-                      <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
-                        {cat.name}
+              {(["expense", "income"] as const).map((sectionType) => {
+                const sectionCats = categoriesList.filter((c: any) => c.id !== "nocat" && c.type === sectionType);
+                if (sectionCats.length === 0) return null;
+                return (
+                  <div key={sectionType}>
+                    <div className="px-4 py-1.5 bg-slate-50 border-y border-slate-100">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                        {sectionType === "expense" ? "Expense" : "Income"}
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                    <div className="grid grid-cols-3 divide-x divide-y divide-slate-100">
+                      {sectionCats.map((cat: any) => {
+                        const Icon = categoryIconMap[cat.id] || (cat.iconId ? categoryIconMap[cat.iconId] : null) || MoreHorizontal;
+                        const locked = overLimitCatIds.has(cat.id);
+                        return locked ? (
+                          <button
+                            key={cat.id}
+                            disabled
+                            className="py-4 flex flex-col items-center gap-1 opacity-40 cursor-not-allowed relative"
+                          >
+                            <Icon size={18} className="text-slate-400" />
+                            <span className="text-xs text-center leading-tight text-slate-400">{cat.name}</span>
+                            <Lock size={10} className="text-amber-500 absolute top-2 right-2" />
+                          </button>
+                        ) : (
+                          <button
+                            key={cat.id}
+                            onClick={() => handleCategorySelect(cat.id, cat.name)}
+                            className={`py-4 flex flex-col items-center gap-1 hover:bg-slate-50 transition-colors ${cat.id === categoryId ? "bg-theme-50" : ""}`}
+                          >
+                            <Icon size={18} className={cat.id === categoryId ? "text-theme-600" : "text-slate-500"} />
+                            <span className={`text-xs text-center leading-tight ${cat.id === categoryId ? "text-theme-600 font-semibold" : "text-slate-700"}`}>
+                              {cat.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pb-2" />
             </div>
           </div>
         </div>
@@ -562,13 +576,19 @@ export default function TransactionDetail() {
                       : [7, 8, 9, 4, 5, 6, 1, 2, 3, 'save', 0, '.'] as const
                     ).map((btn) => {
                       if (btn === 'save') return (
-                        <button key="save" onClick={handleNumpadSave} className="h-full aspect-square justify-self-center bg-gradient-to-br from-theme-500 to-theme-600 hover:from-theme-600 hover:to-theme-700 text-white font-bold rounded-full transition-all active:scale-95 flex items-center justify-center">Save</button>
+                        <button key="save" onClick={handleNumpadSave} style={{ touchAction: 'manipulation' }} className="w-full h-full flex items-center justify-center active:opacity-70">
+                          <div className="h-full aspect-square bg-gradient-to-br from-theme-500 to-theme-600 text-white font-bold rounded-full flex items-center justify-center">Save</div>
+                        </button>
                       );
                       if (btn === '.') return (
-                        <button key="dot" onClick={handleNumpadDecimal} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-all active:scale-95 flex items-center justify-center">.</button>
+                        <button key="dot" onClick={handleNumpadDecimal} style={{ touchAction: 'manipulation' }} className="w-full h-full flex items-center justify-center active:opacity-70">
+                          <div className="h-full aspect-square bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full flex items-center justify-center">.</div>
+                        </button>
                       );
                       return (
-                        <button key={btn} onClick={() => handleNumpadClick(btn as number)} className="h-full aspect-square justify-self-center bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full transition-all active:scale-95 flex items-center justify-center">{btn}</button>
+                        <button key={btn} onClick={() => handleNumpadClick(btn as number)} style={{ touchAction: 'manipulation' }} className="w-full h-full flex items-center justify-center active:opacity-70">
+                          <div className="h-full aspect-square bg-white border-2 border-theme-700 text-slate-900 font-bold text-xl rounded-full flex items-center justify-center">{btn}</div>
+                        </button>
                       );
                     })}
                   </div>
@@ -581,7 +601,7 @@ export default function TransactionDetail() {
                         <button
                           key={op}
                           onClick={() => handleNumpadOperator(op)}
-                          className="h-full bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold text-xl rounded-xl transition-all active:scale-95 shadow-sm"
+                          className="h-full bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 font-bold text-xl rounded-xl shadow-sm active:opacity-70"
                         >
                           {op === '*' ? '×' : op === '/' ? '÷' : op}
                         </button>
@@ -590,7 +610,7 @@ export default function TransactionDetail() {
                   ) : (
                     <button
                       onClick={() => setIsCalcMode(true)}
-                      className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-700 font-bold rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center flex-1 select-none"
+                      className="bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 font-bold rounded-lg shadow-sm flex items-center justify-center flex-1 select-none active:opacity-70"
                     >
                       <div className="flex flex-col items-center gap-1">
                         <Calculator size={24} />
@@ -601,14 +621,14 @@ export default function TransactionDetail() {
                   {isCalcMode ? (
                     <button
                       onClick={handleNumpadEquals}
-                      className="rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold text-2xl flex-1 bg-gradient-to-br from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white"
+                      className="rounded-lg shadow-sm flex items-center justify-center font-bold text-2xl flex-1 bg-gradient-to-br from-green-400 to-green-500 text-white active:opacity-70"
                     >
                       =
                     </button>
                   ) : (
                     <button
                       onClick={() => setIsNumpadLocked(!isNumpadLocked)}
-                      className={`rounded-lg transition-all active:scale-95 shadow-sm flex items-center justify-center font-bold flex-1 ${isNumpadLocked ? "bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white" : "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700"}`}
+                      className={`rounded-lg shadow-sm flex items-center justify-center font-bold flex-1 active:opacity-70 ${isNumpadLocked ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white" : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700"}`}
                     >
                       {isNumpadLocked ? <Lock size={24} /> : <LockOpen size={24} />}
                     </button>
