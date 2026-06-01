@@ -141,12 +141,12 @@ export async function initDB() {
       SELECT 1 FROM ledgers WHERE ledgers.user_id = users.id AND ledgers.id = 'main'
     )
   `).catch(() => {});
-  // Dev premium: premsak.c@gmail.com — yearly test account
+  // Admin account: always premium, no expiry
   await pool.query(`
     UPDATE users SET
       is_premium = TRUE,
-      plan_type = COALESCE(plan_type, 'yearly'),
-      premium_expires_at = COALESCE(premium_expires_at, NOW() + INTERVAL '1 year')
+      plan_type = 'yearly',
+      premium_expires_at = NULL
     WHERE email = 'premsak.c@gmail.com'
   `).catch(() => {});
 }
