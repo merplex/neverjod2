@@ -127,6 +127,7 @@ export default function Settings() {
   const [cloudEmail, setCloudEmail] = useState<string>(() => localStorage.getItem("cloud_email") || "");
   const [syncAuto, setSyncAuto] = useState<boolean>(() => localStorage.getItem("sync_auto_enabled") === "true");
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "ok" | "error">("idle");
+  const [syncError, setSyncError] = useState<string>("");
   const [syncDirection, setSyncDirection] = useState<"server" | "client" | null>(() => {
     const d = localStorage.getItem("sync_direction");
     return d === "server" || d === "client" ? d : null;
@@ -208,8 +209,9 @@ export default function Settings() {
       setSyncDirection("server");
       setSyncStatus("ok");
       refreshLastSyncTime(false);
-    } catch {
+    } catch (e: any) {
       setSyncStatus("error");
+      setSyncError(e?.message || "unknown");
     }
   };
 
@@ -240,8 +242,9 @@ export default function Settings() {
       setSyncDirection("client");
       setSyncStatus("ok");
       refreshLastSyncTime(true);
-    } catch {
+    } catch (e: any) {
       setSyncStatus("error");
+      setSyncError(e?.message || "unknown");
     }
   };
 
@@ -866,7 +869,7 @@ export default function Settings() {
                   {syncStatus === "syncing"
                     ? T("settings.syncing")
                     : syncStatus === "error"
-                    ? T("settings.sync_failed")
+                    ? `${T("settings.sync_failed")} (${syncError})`
                     : lastSyncTime
                     ? `Sync · ${lastSyncTime} · from ${syncDirection ?? "server"}`
                     : T("settings.sync_now")}

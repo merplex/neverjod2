@@ -454,7 +454,7 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions, ledger_id: ledgerId }),
   });
-  if (!res.ok) throw new Error("Push failed");
+  if (!res.ok) throw new Error(`push:${res.status}`);
 
   // Push succeeded — now commit source promotions to localStorage
   for (const { storageKey, promoted } of promotedSnapshots) {
@@ -484,7 +484,7 @@ export async function syncPull(token: string) {
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ last_sync_at: lastSync, ledger_id: ledgerId }),
   });
-  if (!res.ok) throw new Error("Pull failed");
+  if (!res.ok) throw new Error(`pull:${res.status}`);
 
   const data = await res.json();
   // Categories and accounts: name-based merge so server wins even when IDs differ
