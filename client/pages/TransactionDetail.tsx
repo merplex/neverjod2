@@ -308,7 +308,7 @@ export default function TransactionDetail() {
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-4 pb-3 pt-safe-header flex items-center gap-3 sticky top-0 z-10">
-        <button onClick={() => navigate("/")} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
           <ChevronLeft size={20} className="text-slate-600" />
         </button>
         <h1 className="text-base font-semibold text-slate-800">Transaction Detail</h1>

@@ -85,10 +85,11 @@ function formatTime(d: Date) {
 interface Props {
   onClose: () => void;
   onSaved: () => void;
-  isRepeatMode?: boolean;   // when true: saves a repeat rule, not a single transaction
+  isRepeatMode?: boolean;
+  defaultDate?: Date;
 }
 
-export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = false }: Props) {
+export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = false, defaultDate }: Props) {
   const T = useT();
   const cur = getCurrencySymbol();
   // form state
@@ -100,7 +101,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [accountCurrency, setAccountCurrency] = useState<{ currency: string; exchangeRate: number }>({ currency: "", exchangeRate: 1 });
   const [copyToast, setCopyToast] = useState("");
   const displayLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(defaultDate ?? new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [description, setDescription] = useState("");
 

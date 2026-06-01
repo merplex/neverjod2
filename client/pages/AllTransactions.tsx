@@ -192,11 +192,27 @@ export default function AllTransactions() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchFromUrl = useRef(!!searchParams.get("search"));
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalDefaultDate, setAddModalDefaultDate] = useState<Date | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showNativeTicker, setShowNativeTicker] = useState(true);
   useEffect(() => {
     const t = setInterval(() => setShowNativeTicker((v) => !v), 3000);
     return () => clearInterval(t);
+  }, []);
+
+  // Restore view state + scroll when returning from TransactionDetail
+  useEffect(() => {
+    const saved = sessionStorage.getItem("all_tx_state");
+    if (!saved) return;
+    try {
+      const s = JSON.parse(saved);
+      sessionStorage.removeItem("all_tx_state");
+      if (s.timeRange) setTimeRange(s.timeRange as TimeRange);
+      if (s.customStart) setCustomStart(new Date(s.customStart));
+      if (s.customEnd) setCustomEnd(new Date(s.customEnd));
+      const sy = s.scrollY ?? 0;
+      setTimeout(() => window.scrollTo(0, sy), 100);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -490,14 +506,26 @@ export default function AllTransactions() {
       <div className="max-w-md mx-auto px-4 py-4">
         {Object.entries(grouped).map(([dateStr, transactions]) => (
           <div key={dateStr} className="mb-6">
-            <div className="mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <span className="text-xs font-semibold text-slate-500 uppercase">{dateStr}</span>
+              <button
+                onClick={() => { setAddModalDefaultDate(transactions[0].date); setShowAddModal(true); }}
+                className="text-xs text-theme-500 hover:text-theme-700 font-semibold px-1.5 py-0.5 rounded hover:bg-theme-50 transition-colors"
+              >+</button>
             </div>
             <div className="space-y-2">
               {transactions.map((transaction, index) => (
                 <div
                   key={transaction.id}
-                  onClick={() => navigate(`/account/${transaction.accountId}/transactions/${transaction.id}`)}
+                  onClick={() => {
+                    sessionStorage.setItem("all_tx_state", JSON.stringify({
+                      timeRange,
+                      customStart: customStart?.toISOString() ?? null,
+                      customEnd: customEnd?.toISOString() ?? null,
+                      scrollY: window.scrollY,
+                    }));
+                    navigate(`/account/${transaction.accountId}/transactions/${transaction.id}`);
+                  }}
                   className="cursor-pointer bg-white hover:bg-slate-50 border border-slate-200 rounded-lg p-3 transition-colors"
                 >
                   <div className="flex items-center justify-between">
@@ -575,8 +603,9 @@ export default function AllTransactions() {
       {/* Add Transaction Modal */}
       {showAddModal && (
         <AddTransactionModal
-          onClose={() => setShowAddModal(false)}
-          onSaved={() => setRefreshKey((k) => k + 1)}
+          onClose={() => { setShowAddModal(false); setAddModalDefaultDate(null); }}
+          onSaved={() => { setRefreshKey((k) => k + 1); setAddModalDefaultDate(null); }}
+          defaultDate={addModalDefaultDate ?? undefined}
         />
       )}
     </div>
