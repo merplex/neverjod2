@@ -92,6 +92,7 @@ export default function AccountsManagement() {
   const [showEditIconPicker, setShowEditIconPicker] = useState(false);
   const [keywordError, setKeywordError] = useState("");
   const [editCurrencySymbol, setEditCurrencySymbol] = useState("");
+  const [editCurrencyLang, setEditCurrencyLang] = useState("");
   const [editCurrencyName, setEditCurrencyName] = useState("");
   const [editExchangeRate, setEditExchangeRate] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export default function AccountsManagement() {
   const [newAccKeywords, setNewAccKeywords] = useState("");
   const [newAccKeywordError, setNewAccKeywordError] = useState("");
   const [newAccCurrencySymbol, setNewAccCurrencySymbol] = useState("");
+  const [newAccCurrencyLang, setNewAccCurrencyLang] = useState("");
   const [newAccCurrencyName, setNewAccCurrencyName] = useState("");
   const [newAccExchangeRate, setNewAccExchangeRate] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -213,7 +215,7 @@ export default function AccountsManagement() {
     localStorage.setItem(lk("app_accounts"), JSON.stringify(updated));
     setNewAccName(""); setNewAccType("savings account"); setNewAccBalance("0"); setNewAccIconId("other");
     setNewAccKeywords(""); setNewAccKeywordError("");
-    setNewAccCurrencySymbol(""); setNewAccCurrencyName(""); setNewAccExchangeRate("");
+    setNewAccCurrencySymbol(""); setNewAccCurrencyLang(""); setNewAccCurrencyName(""); setNewAccExchangeRate("");
     setShowAddForm(false);
   };
 
@@ -230,18 +232,22 @@ export default function AccountsManagement() {
     setShowEditIconPicker(false);
     setKeywordError("");
     const mainSym = getCurrencySymbol();
-    const knownSymbols = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym).map((o) => o.symbol);
+    const filteredOpts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
+    const knownSymbols = filteredOpts.map((o) => o.symbol);
     if (account.currency) {
       if (knownSymbols.includes(account.currency)) {
         setEditCurrencySymbol(account.currency);
         setEditCurrencyName(account.currency);
+        const matchedOpt = filteredOpts.find((o) => o.symbol === account.currency);
+        setEditCurrencyLang(matchedOpt?.lang || "");
       } else {
         setEditCurrencySymbol("other");
         setEditCurrencyName(account.currency);
+        setEditCurrencyLang("other");
       }
       setEditExchangeRate(account.exchangeRate?.toString() || "");
     } else {
-      setEditCurrencySymbol(""); setEditCurrencyName(""); setEditExchangeRate("");
+      setEditCurrencySymbol(""); setEditCurrencyLang(""); setEditCurrencyName(""); setEditExchangeRate("");
     }
   };
 
@@ -301,7 +307,7 @@ export default function AccountsManagement() {
     setEditIconId("other");
     setShowEditIconPicker(false);
     setKeywordError("");
-    setEditCurrencySymbol(""); setEditCurrencyName(""); setEditExchangeRate("");
+    setEditCurrencySymbol(""); setEditCurrencyLang(""); setEditCurrencyName(""); setEditExchangeRate("");
   };
 
   const deleteTransactionCount = (accountId: string): number => {
@@ -532,17 +538,24 @@ export default function AccountsManagement() {
                               const opts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
                               return (
                                 <select
-                                  value={editCurrencySymbol}
+                                  value={editCurrencyLang}
                                   onChange={(e) => {
-                                    const val = e.target.value;
-                                    setEditCurrencySymbol(val);
-                                    if (val !== "other" && val !== "") setEditCurrencyName(val);
-                                    else if (val === "") setEditCurrencyName("");
+                                    const lang = e.target.value;
+                                    setEditCurrencyLang(lang);
+                                    if (lang === "") {
+                                      setEditCurrencySymbol(""); setEditCurrencyName("");
+                                    } else if (lang === "other") {
+                                      setEditCurrencySymbol("other"); setEditCurrencyName("");
+                                    } else {
+                                      const opt = CURRENCY_OPTIONS.find((o) => o.lang === lang);
+                                      const sym = opt?.symbol || "";
+                                      setEditCurrencySymbol(sym); setEditCurrencyName(sym);
+                                    }
                                   }}
                                   className="w-36 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm"
                                 >
                                   <option value="">— {mainSym} —</option>
-                                  {opts.map((o) => <option key={o.lang} value={o.symbol}>{o.label}</option>)}
+                                  {opts.map((o) => <option key={o.lang} value={o.lang}>{o.label}</option>)}
                                   <option value="other">{T("acc.currency_other")}</option>
                                 </select>
                               );
@@ -743,17 +756,24 @@ export default function AccountsManagement() {
                         const opts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
                         return (
                           <select
-                            value={newAccCurrencySymbol}
+                            value={newAccCurrencyLang}
                             onChange={(e) => {
-                              const val = e.target.value;
-                              setNewAccCurrencySymbol(val);
-                              if (val !== "other" && val !== "") setNewAccCurrencyName(val);
-                              else if (val === "") setNewAccCurrencyName("");
+                              const lang = e.target.value;
+                              setNewAccCurrencyLang(lang);
+                              if (lang === "") {
+                                setNewAccCurrencySymbol(""); setNewAccCurrencyName("");
+                              } else if (lang === "other") {
+                                setNewAccCurrencySymbol("other"); setNewAccCurrencyName("");
+                              } else {
+                                const opt = CURRENCY_OPTIONS.find((o) => o.lang === lang);
+                                const sym = opt?.symbol || "";
+                                setNewAccCurrencySymbol(sym); setNewAccCurrencyName(sym);
+                              }
                             }}
                             className="w-36 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm"
                           >
                             <option value="">— {mainSym} —</option>
-                            {opts.map((o) => <option key={o.lang} value={o.symbol}>{o.label}</option>)}
+                            {opts.map((o) => <option key={o.lang} value={o.lang}>{o.label}</option>)}
                             <option value="other">{T("acc.currency_other")}</option>
                           </select>
                         );
