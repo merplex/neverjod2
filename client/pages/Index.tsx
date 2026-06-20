@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useT } from "../hooks/useT";
-import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
+import { Calculator, Lock, LockOpen, Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, X, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2, Delete } from "lucide-react";
 import Carousel from "../components/Carousel";
 import Recording from "../components/Recording";
 import VoiceResultConfirmation from "../components/VoiceResultConfirmation";
@@ -1005,7 +1005,7 @@ export default function Index() {
                   <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-3 rounded-lg flex items-center gap-2 flex-shrink-0">
                     <div
                       ref={displayScrollRef}
-                      className="flex-1 overflow-x-auto"
+                      className="flex-1 min-w-0 overflow-x-auto"
                       style={{ scrollbarWidth: "none" }}
                       onTouchStart={() => {
                         displayLongPressTimer.current = setTimeout(handleDisplayLongPress, 500);
@@ -1021,6 +1021,12 @@ export default function Index() {
                         {categoryType === "income" ? "+" : "-"}{selectedAccountCurrency.currency || cur}{display}
                       </div>
                     </div>
+                    <button
+                      onClick={handleDelete}
+                      className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white flex items-center justify-center"
+                    >
+                      <Delete size={20} />
+                    </button>
                     <button
                       onClick={handleClear}
                       className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center"

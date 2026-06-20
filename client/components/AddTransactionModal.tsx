@@ -1,8 +1,8 @@
 import { getCurrencySymbol, getAccountCurrency } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Clipboard } from "@capacitor/clipboard";
-import { X, Calculator, Lock, LockOpen, ChevronRight, ChevronDown } from "lucide-react";
+import { X, Calculator, Lock, LockOpen, ChevronRight, ChevronDown, Delete } from "lucide-react";
 import {
   REPEAT_OPTIONS, RepeatOption,
   addRepeatTransaction, buildInitialNextDue,
@@ -101,6 +101,13 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [accountCurrency, setAccountCurrency] = useState<{ currency: string; exchangeRate: number }>({ currency: "", exchangeRate: 1 });
   const [copyToast, setCopyToast] = useState("");
   const displayLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const displayScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (displayScrollRef.current) {
+      displayScrollRef.current.scrollLeft = displayScrollRef.current.scrollWidth;
+    }
+  }, [display]);
   const [currentDate, setCurrentDate] = useState(defaultDate ?? new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [description, setDescription] = useState("");
@@ -630,7 +637,8 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
             {/* Section B: Display */}
             <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
               <div
-                className="flex-1 overflow-x-auto"
+                ref={displayScrollRef}
+                className="flex-1 min-w-0 overflow-x-auto"
                 style={{ scrollbarWidth: "none" }}
                 onTouchStart={() => { displayLongPressTimer.current = setTimeout(handleDisplayLongPress, 500); }}
                 onTouchEnd={() => { if (displayLongPressTimer.current) { clearTimeout(displayLongPressTimer.current); displayLongPressTimer.current = null; } }}
@@ -640,6 +648,12 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                   {sign}{accountCurrency.currency || cur}{display}
                 </div>
               </div>
+              <button
+                onClick={handleDelete}
+                className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white flex items-center justify-center"
+              >
+                <Delete size={20} />
+              </button>
               <button
                 onClick={() => { setDisplay("0"); setValue(0); setIsCalcMode(false); }}
                 className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center"

@@ -1,8 +1,8 @@
 import { getCurrencySymbol } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight, Trash2, Lock, LockOpen, Calculator, X, Delete } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { getTransaction } from "../utils/transactionData";
 import { markDeleted } from "../utils/syncService";
@@ -131,6 +131,13 @@ export default function TransactionDetail() {
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const displayScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (displayScrollRef.current) {
+      displayScrollRef.current.scrollLeft = displayScrollRef.current.scrollWidth;
+    }
+  }, [numpadDisplay]);
 
   // Load from localStorage
   const [categoriesList] = useState<any[]>(() => {
@@ -557,11 +564,14 @@ export default function TransactionDetail() {
               </div>
               {/* Display */}
               <div className="bg-gradient-to-br from-theme-600 to-theme-700 px-3 py-2.5 rounded-lg flex items-center gap-2 mb-2 flex-shrink-0">
-                <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                <div ref={displayScrollRef} className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                   <div className="text-2xl font-bold font-mono tracking-tight whitespace-nowrap text-white">
                     {sign}{cur}{numpadDisplay}
                   </div>
                 </div>
+                <button onClick={handleNumpadDelete} className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white flex items-center justify-center">
+                  <Delete size={20} />
+                </button>
                 <button onClick={handleNumpadClear} className="w-10 h-10 flex-shrink-0 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white font-bold text-lg flex items-center justify-center">C</button>
                 <button onClick={() => setShowAmountPad(false)} className="p-1.5 hover:bg-theme-500 rounded-lg transition-colors text-white flex-shrink-0">
                   <X size={22} />

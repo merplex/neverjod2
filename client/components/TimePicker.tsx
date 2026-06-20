@@ -8,21 +8,32 @@ interface TimePickerProps {
 }
 
 export default function TimePicker({ value, onChange, onClose }: TimePickerProps) {
-  // Ensure value is a Date object
   const dateValue = value instanceof Date ? value : new Date();
 
   const [hours, setHours] = useState(dateValue.getHours());
   const [minutes, setMinutes] = useState(dateValue.getMinutes());
   const [mode, setMode] = useState<"hours" | "minutes">("hours");
 
-  const handleClockClick = (num: number) => {
-    if (mode === "hours") {
-      setHours(num);
-      setMode("minutes");
-    } else {
-      setMinutes(num * 5);
-      setMode("hours");
-    }
+  // Called only for hour number clicks
+  const handleHourClick = (num: number) => {
+    setHours(num);
+    setMode("minutes");
+  };
+
+  // Handles tap anywhere on SVG in minutes mode
+  const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (mode !== "minutes") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const svgX = (e.clientX - rect.left) * (240 / rect.width);
+    const svgY = (e.clientY - rect.top) * (240 / rect.height);
+    const dx = svgX - 120;
+    const dy = svgY - 120;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 25) return;
+    let angleDeg = Math.atan2(dx, -dy) * (180 / Math.PI);
+    if (angleDeg < 0) angleDeg += 360;
+    const minute = Math.round(angleDeg / 6) % 60;
+    setMinutes(minute);
   };
 
   const handleConfirm = () => {
@@ -66,27 +77,22 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
 
         {/* Clock */}
         <div className="flex justify-center mb-6">
-          <svg viewBox="0 0 240 240" className="w-72 h-72">
+          <svg viewBox="0 0 240 240" className="w-72 h-72" onClick={handleSvgClick} style={{ cursor: mode === "minutes" ? "pointer" : "default" }}>
             {/* Outer clock circle */}
             <circle cx="120" cy="120" r="110" fill="#f1f5f9" stroke="#e2e8f0" strokeWidth="1" />
 
             {/* Inner clock circle */}
             <circle cx="120" cy="120" r="70" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
 
-            {/* Center dot with border */}
+            {/* Center dot */}
             <circle cx="120" cy="120" r="14" fill="none" stroke="#4f46e5" strokeWidth="3" />
             <circle cx="120" cy="120" r="8" fill="#4f46e5" />
 
             {/* Pointer */}
             {mode === "hours" ? (
               <line
-                x1="120"
-                y1="120"
-                x2="120"
-                y2={35}
-                stroke="#4f46e5"
-                strokeWidth="4"
-                strokeLinecap="round"
+                x1="120" y1="120" x2="120" y2={35}
+                stroke="#4f46e5" strokeWidth="4" strokeLinecap="round"
                 style={{
                   transform: `rotate(${(hours / 24) * 360}deg)`,
                   transformOrigin: "120px 120px",
@@ -94,23 +100,17 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                 }}
               />
             ) : (
-              <line
-                x1="120"
-                y1="120"
-                x2="120"
-                y2="25"
-                stroke="#4f46e5"
-                strokeWidth="3"
-                strokeLinecap="round"
-                style={{
-                  transform: `rotate(${minutes * 6}deg)`,
-                  transformOrigin: "120px 120px",
-                  transition: "transform 0.2s",
-                }}
-              />
+              <g style={{
+                transform: `rotate(${minutes * 6}deg)`,
+                transformOrigin: "120px 120px",
+                transition: "transform 0.2s",
+              }}>
+                <line x1="120" y1="120" x2="120" y2="32" stroke="#4f46e5" strokeWidth="3" strokeLinecap="round" />
+                <circle cx="120" cy="32" r="10" fill="#4f46e5" />
+              </g>
             )}
 
-            {/* Hour markers - 24 hours format */}
+            {/* Hour markers */}
             {mode === "hours" ? (
               <>
                 {/* Outer ring: 1-12 */}
@@ -120,22 +120,14 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                   const x = 120 + 95 * Math.sin(angle);
                   const y = 120 - 95 * Math.cos(angle);
                   const isSelected = hours === hour;
-
                   return (
-                    <g key={`outer-${i}`} onClick={() => handleClockClick(hour)}>
+                    <g key={`outer-${i}`} onClick={() => handleHourClick(hour)}>
                       <circle cx={x} cy={y} r="14" fill="transparent" className="cursor-pointer" />
-                      <text
-                        x={x}
-                        y={y}
-                        textAnchor="middle"
-                        dy="0.35em"
-                        fontSize="13"
+                      <text x={x} y={y} textAnchor="middle" dy="0.35em" fontSize="13"
                         fontWeight={isSelected ? "700" : "600"}
                         fill={isSelected ? "#4f46e5" : "#1e293b"}
                         className="cursor-pointer"
-                      >
-                        {hour}
-                      </text>
+                      >{hour}</text>
                     </g>
                   );
                 })}
@@ -147,53 +139,59 @@ export default function TimePicker({ value, onChange, onClose }: TimePickerProps
                   const x = 120 + 55 * Math.sin(angle);
                   const y = 120 - 55 * Math.cos(angle);
                   const isSelected = hours === hour;
-
                   return (
-                    <g key={`inner-${i}`} onClick={() => handleClockClick(hour)}>
+                    <g key={`inner-${i}`} onClick={() => handleHourClick(hour)}>
                       <circle cx={x} cy={y} r="12" fill="transparent" className="cursor-pointer" />
-                      <text
-                        x={x}
-                        y={y}
-                        textAnchor="middle"
-                        dy="0.35em"
-                        fontSize="11"
+                      <text x={x} y={y} textAnchor="middle" dy="0.35em" fontSize="11"
                         fontWeight={isSelected ? "700" : "500"}
                         fill={isSelected ? "#4f46e5" : "#64748b"}
                         className="cursor-pointer"
-                      >
-                        {hour}
-                      </text>
+                      >{hour}</text>
                     </g>
                   );
                 })}
               </>
             ) : (
-              // Show 12 minutes (0, 5, 10, ... 55)
-              Array.from({ length: 12 }).map((_, i) => {
-                const minute = i * 5;
-                const angle = (i * 30) * (Math.PI / 180);
-                const x = 120 + 95 * Math.sin(angle);
-                const y = 120 - 95 * Math.cos(angle);
-                const isSelected = minutes === minute;
+              <>
+                {/* 60 tick marks: long every 5 min, short every 1 min */}
+                {Array.from({ length: 60 }).map((_, i) => {
+                  const rad = i * 6 * (Math.PI / 180);
+                  const isFive = i % 5 === 0;
+                  const r1 = isFive ? 93 : 101;
+                  const r2 = 107;
+                  const x1 = 120 + r1 * Math.sin(rad);
+                  const y1 = 120 - r1 * Math.cos(rad);
+                  const x2 = 120 + r2 * Math.sin(rad);
+                  const y2 = 120 - r2 * Math.cos(rad);
+                  const isSel = minutes === i;
+                  return (
+                    <line key={`tick-${i}`}
+                      x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke={isSel ? "#4f46e5" : isFive ? "#64748b" : "#cbd5e1"}
+                      strokeWidth={isFive ? 2.5 : 1.5}
+                      strokeLinecap="round"
+                    />
+                  );
+                })}
 
-                return (
-                  <g key={`minute-${i}`} onClick={() => handleClockClick(i)}>
-                    <circle cx={x} cy={y} r="14" fill="transparent" className="cursor-pointer" />
-                    <text
-                      x={x}
-                      y={y}
-                      textAnchor="middle"
-                      dy="0.35em"
-                      fontSize="12"
-                      fontWeight={isSelected ? "700" : "600"}
-                      fill={isSelected ? "#4f46e5" : "#1e293b"}
-                      className="cursor-pointer"
+                {/* Minute numbers at 5-min intervals */}
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const minute = i * 5;
+                  const rad = i * 30 * (Math.PI / 180);
+                  const x = 120 + 82 * Math.sin(rad);
+                  const y = 120 - 82 * Math.cos(rad);
+                  const isSel = minutes === minute;
+                  return (
+                    <text key={`min-${i}`}
+                      x={x} y={y} textAnchor="middle" dy="0.35em"
+                      fontSize="10" fontWeight={isSel ? "700" : "500"}
+                      fill={isSel ? "#4f46e5" : "#475569"}
                     >
                       {minute.toString().padStart(2, "0")}
                     </text>
-                  </g>
-                );
-              })
+                  );
+                })}
+              </>
             )}
           </svg>
         </div>
