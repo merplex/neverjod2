@@ -103,11 +103,6 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const displayLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const displayScrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (displayScrollRef.current) {
-      displayScrollRef.current.scrollLeft = displayScrollRef.current.scrollWidth;
-    }
-  }, [display]);
   const [currentDate, setCurrentDate] = useState(defaultDate ?? new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [description, setDescription] = useState("");
@@ -121,6 +116,11 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
 
   // numpad state
   const [display, setDisplay] = useState("0");
+  useEffect(() => {
+    if (displayScrollRef.current) {
+      displayScrollRef.current.scrollLeft = displayScrollRef.current.scrollWidth;
+    }
+  }, [display]);
   const [value, setValue] = useState(0);
   const [numpadSize, setNumpadSize] = useState(70);
   const [isLocked, setIsLocked] = useState(false);
