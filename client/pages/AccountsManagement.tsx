@@ -1,7 +1,7 @@
 import { lk } from "../utils/ledgerStorage";
 import { useState, useRef, useEffect } from "react";
 import { CURRENCY_OPTIONS, getCurrencySymbol } from "../utils/currency";
-import { ChevronLeft, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
+import { ChevronLeft, ChevronDown, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
 import CloudAuthModal from "../components/CloudAuthModal";
 import PremiumModal from "../components/PremiumModal";
 import { markDeleted, syncPush } from "../utils/syncService";
@@ -95,6 +95,8 @@ export default function AccountsManagement() {
   const [editCurrencyLang, setEditCurrencyLang] = useState("");
   const [editCurrencyName, setEditCurrencyName] = useState("");
   const [editExchangeRate, setEditExchangeRate] = useState("");
+  const [showEditCurrencyPicker, setShowEditCurrencyPicker] = useState(false);
+  const [showNewCurrencyPicker, setShowNewCurrencyPicker] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -230,6 +232,7 @@ export default function AccountsManagement() {
     const matchedOpt = accIconOptions.find((o) => o.icon === account.icon);
     setEditIconId(account.iconId || matchedOpt?.id || "other");
     setShowEditIconPicker(false);
+    setShowEditCurrencyPicker(false);
     setKeywordError("");
     const mainSym = getCurrencySymbol();
     const filteredOpts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
@@ -536,28 +539,50 @@ export default function AccountsManagement() {
                             {(() => {
                               const mainSym = getCurrencySymbol();
                               const opts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
+                              const items = [{ lang: "", label: `— ${mainSym} —` }, ...opts, { lang: "other", label: T("acc.currency_other") }];
+                              const selectedLabel = items.find((o) => o.lang === editCurrencyLang)?.label ?? `— ${mainSym} —`;
                               return (
-                                <select
-                                  value={editCurrencyLang}
-                                  onChange={(e) => {
-                                    const lang = e.target.value;
-                                    setEditCurrencyLang(lang);
-                                    if (lang === "") {
-                                      setEditCurrencySymbol(""); setEditCurrencyName("");
-                                    } else if (lang === "other") {
-                                      setEditCurrencySymbol("other"); setEditCurrencyName("");
-                                    } else {
-                                      const opt = CURRENCY_OPTIONS.find((o) => o.lang === lang);
-                                      const sym = opt?.symbol || "";
-                                      setEditCurrencySymbol(sym); setEditCurrencyName(sym);
-                                    }
-                                  }}
-                                  className="w-36 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm"
-                                >
-                                  <option value="">— {mainSym} —</option>
-                                  {opts.map((o) => <option key={o.lang} value={o.lang}>{o.label}</option>)}
-                                  <option value="other">{T("acc.currency_other")}</option>
-                                </select>
+                                <div className="relative w-36 min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowEditCurrencyPicker((v) => !v)}
+                                    className="w-full flex items-center justify-between gap-1 px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                                  >
+                                    <span className="truncate font-semibold text-slate-800 text-left">{selectedLabel}</span>
+                                    <ChevronDown size={14} className={`shrink-0 text-slate-400 transition-transform ${showEditCurrencyPicker ? "rotate-180" : ""}`} />
+                                  </button>
+                                  {showEditCurrencyPicker && (
+                                    <div className="absolute z-20 left-0 mt-1 w-56 max-w-[70vw] border border-slate-200 rounded-xl overflow-hidden bg-white shadow-lg max-h-60 overflow-y-auto">
+                                      {items.map((o) => {
+                                        const isSelected = editCurrencyLang === o.lang;
+                                        return (
+                                          <button
+                                            key={o.lang || "__none"}
+                                            type="button"
+                                            onClick={() => {
+                                              const lang = o.lang;
+                                              setEditCurrencyLang(lang);
+                                              if (lang === "") {
+                                                setEditCurrencySymbol(""); setEditCurrencyName("");
+                                              } else if (lang === "other") {
+                                                setEditCurrencySymbol("other"); setEditCurrencyName("");
+                                              } else {
+                                                const opt = CURRENCY_OPTIONS.find((x) => x.lang === lang);
+                                                const sym = opt?.symbol || "";
+                                                setEditCurrencySymbol(sym); setEditCurrencyName(sym);
+                                              }
+                                              setShowEditCurrencyPicker(false);
+                                            }}
+                                            className={`w-full flex items-center justify-between gap-1 px-3 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${isSelected ? "bg-theme-50" : ""}`}
+                                          >
+                                            <span className={`text-sm font-semibold flex-1 text-left truncate ${isSelected ? "text-theme-700" : "text-slate-800"}`}>{o.label}</span>
+                                            {isSelected && <span className="text-theme-600 text-sm shrink-0">✓</span>}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
                               );
                             })()}
                             <input
@@ -754,28 +779,50 @@ export default function AccountsManagement() {
                       {(() => {
                         const mainSym = getCurrencySymbol();
                         const opts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
+                        const items = [{ lang: "", label: `— ${mainSym} —` }, ...opts, { lang: "other", label: T("acc.currency_other") }];
+                        const selectedLabel = items.find((o) => o.lang === newAccCurrencyLang)?.label ?? `— ${mainSym} —`;
                         return (
-                          <select
-                            value={newAccCurrencyLang}
-                            onChange={(e) => {
-                              const lang = e.target.value;
-                              setNewAccCurrencyLang(lang);
-                              if (lang === "") {
-                                setNewAccCurrencySymbol(""); setNewAccCurrencyName("");
-                              } else if (lang === "other") {
-                                setNewAccCurrencySymbol("other"); setNewAccCurrencyName("");
-                              } else {
-                                const opt = CURRENCY_OPTIONS.find((o) => o.lang === lang);
-                                const sym = opt?.symbol || "";
-                                setNewAccCurrencySymbol(sym); setNewAccCurrencyName(sym);
-                              }
-                            }}
-                            className="w-36 min-w-0 px-2 py-2 border border-slate-300 rounded-lg text-sm"
-                          >
-                            <option value="">— {mainSym} —</option>
-                            {opts.map((o) => <option key={o.lang} value={o.lang}>{o.label}</option>)}
-                            <option value="other">{T("acc.currency_other")}</option>
-                          </select>
+                          <div className="relative w-36 min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => setShowNewCurrencyPicker((v) => !v)}
+                              className="w-full flex items-center justify-between gap-1 px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                            >
+                              <span className="truncate font-semibold text-slate-800 text-left">{selectedLabel}</span>
+                              <ChevronDown size={14} className={`shrink-0 text-slate-400 transition-transform ${showNewCurrencyPicker ? "rotate-180" : ""}`} />
+                            </button>
+                            {showNewCurrencyPicker && (
+                              <div className="absolute z-20 left-0 mt-1 w-56 max-w-[70vw] border border-slate-200 rounded-xl overflow-hidden bg-white shadow-lg max-h-60 overflow-y-auto">
+                                {items.map((o) => {
+                                  const isSelected = newAccCurrencyLang === o.lang;
+                                  return (
+                                    <button
+                                      key={o.lang || "__none"}
+                                      type="button"
+                                      onClick={() => {
+                                        const lang = o.lang;
+                                        setNewAccCurrencyLang(lang);
+                                        if (lang === "") {
+                                          setNewAccCurrencySymbol(""); setNewAccCurrencyName("");
+                                        } else if (lang === "other") {
+                                          setNewAccCurrencySymbol("other"); setNewAccCurrencyName("");
+                                        } else {
+                                          const opt = CURRENCY_OPTIONS.find((x) => x.lang === lang);
+                                          const sym = opt?.symbol || "";
+                                          setNewAccCurrencySymbol(sym); setNewAccCurrencyName(sym);
+                                        }
+                                        setShowNewCurrencyPicker(false);
+                                      }}
+                                      className={`w-full flex items-center justify-between gap-1 px-3 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${isSelected ? "bg-theme-50" : ""}`}
+                                    >
+                                      <span className={`text-sm font-semibold flex-1 text-left truncate ${isSelected ? "text-theme-700" : "text-slate-800"}`}>{o.label}</span>
+                                      {isSelected && <span className="text-theme-600 text-sm shrink-0">✓</span>}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         );
                       })()}
                       <input
