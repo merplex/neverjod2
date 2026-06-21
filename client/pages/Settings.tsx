@@ -993,7 +993,7 @@ export default function Settings() {
                   )}
                 </div>
                 <ul className="space-y-1.5">
-                  {(["premium.feat_keywords", "premium.feat_income_cat", "premium.feat_expense_cat", "premium.feat_accounts", "premium.feat_ledger", "premium.feat_sync"] as const).map((k) => (
+                  {(["premium.feat_keywords", "premium.feat_income_cat", "premium.feat_expense_cat", "premium.feat_accounts", "premium.feat_currency", "premium.feat_ledger", "premium.feat_sync"] as const).map((k) => (
                     <li key={k} className="flex items-center gap-2 text-xs text-slate-600">
                       <Check size={12} className="text-theme-500 flex-shrink-0" />
                       {T(k)}
@@ -1022,7 +1022,7 @@ export default function Settings() {
                   )}
                 </div>
                 <ul className="space-y-1.5">
-                  {(["premium.feat_keywords", "premium.feat_income_cat", "premium.feat_expense_cat", "premium.feat_accounts", "premium.feat_ledger", "premium.feat_sync"] as const).map((k) => (
+                  {(["premium.feat_keywords", "premium.feat_income_cat", "premium.feat_expense_cat", "premium.feat_accounts", "premium.feat_currency", "premium.feat_ledger", "premium.feat_sync"] as const).map((k) => (
                     <li key={k} className="flex items-center gap-2 text-xs text-slate-600">
                       <Check size={12} className="text-amber-500 flex-shrink-0" />
                       {T(k)}
