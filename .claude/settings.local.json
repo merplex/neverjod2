@@ -93,20 +93,14 @@
       "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew.bat assembleDebug)",
       "Bash(cp C:/Users/User/StudioProjects/noterealm/android/app/build/outputs/apk/debug/app-debug.apk C:/Users/User/StudioProjects/noterealm/debug/app-debug.apk)",
       "Bash(cp C:/Users/User/StudioProjects/noterealm/android/app/build/outputs/apk/debug/app-debug.apk C:/Users/User/StudioProjects/noterealm/app-debug.apk)",
-      "Bash(git checkout *)",
-      "Bash(wait *)",
-      "Bash(kill 23764 23766 23782 23783 23806 23807)",
-      "Bash(ps -o pid,pcpu,time,etime,command -p 24638)",
-      "Bash(kill 24596 24598 24614 24615 24638 24639)",
-      "Bash(rm -rf node_modules/.vite node_modules/.cache)",
-      "Bash(node_modules/@esbuild/darwin-arm64/bin/esbuild --version)",
-      "Bash(awk '$2~/^\\(26095|26113|26114|27713|27716\\)$/ {print}')",
-      "Bash(/usr/bin/log show *)",
-      "Bash(ps *)",
-      "Bash(kill 28089 28091 28108 28746)",
-      "Bash(pkill -f \"cap sync\")",
-      "Bash(npx cap *)",
-      "Bash(echo \"started pid=$!\")"
+      "Bash(grep -rn \"\\\\\"k\\\\\"\\\\|'k'\\\\|\\\\`k\\\\`\\\\|+ 'k'\\\\|+ \\\\\"k\\\\\"\\\\|\\\\`\\\\${.*}k\\\\`\\\\|formatNum\\\\|abbrev\\\\|compact\" /c/Users/User/StudioProjects/neverjod2/client/)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd android; .\\\\gradlew assembleDebug 2>&1)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'https://neverjod.com/api/auth/login' -Method POST -Body '{}' -ContentType 'application/json' -TimeoutSec 10 -ErrorAction Stop; Write-Host \"Status: $\\($r.StatusCode\\)\" } catch [System.Net.WebException] { Write-Host \"WebException: $\\($_.Exception.Message\\)\" } catch { Write-Host \"Error: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'https://neverjod.com/api/auth/login' -Method POST -Body '{\"email\":\"test@test.com\",\"password\":\"test\"}' -ContentType 'application/json' -TimeoutSec 15 -ErrorAction Stop; Write-Host \"Status: $\\($r.StatusCode\\)\" } catch [System.Net.WebException] { Write-Host \"Error: $\\($_.Exception.Message\\)\" } catch { Write-Host \"Error: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'https://neverjod.com/api/ping' -Method GET -TimeoutSec 15 -ErrorAction Stop; Write-Host \"Status: $\\($r.StatusCode\\) Body: $\\($r.Content\\)\" } catch [System.Net.WebException] { Write-Host \"Timeout/Network: $\\($_.Exception.Message\\)\" } catch { Write-Host \"Error: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'https://neverjod.com/api/ping' -Method GET -TimeoutSec 10 -ErrorAction Stop; Write-Host \"OK: $\\($r.Content\\)\" } catch { Write-Host \"Error: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(cd \"C:\\\\Users\\\\User\\\\StudioProjects\\\\neverjod2\\\\android\"; $env:JAVA_HOME = \"C:/Program Files/Android/Android Studio/jbr\"; ./gradlew assembleDebug 2>&1 | Select-Object -Last 15)",
+      "PowerShell(Copy-Item *)"
     ]
   }
 }
