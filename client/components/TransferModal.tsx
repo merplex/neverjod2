@@ -21,10 +21,10 @@ function formatTime(d: Date) {
   return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
-function getAccountCurrentBalance(accountId: string, startBalance: number): number {
+function getAccountCurrentBalance(accountId: string, startBalance: number, ledgerId?: string): number {
   try {
-    const txns: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
-    const cats: any[] = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
+    const txns: any[] = JSON.parse(localStorage.getItem(lk("app_transactions", ledgerId)) || "[]");
+    const cats: any[] = JSON.parse(localStorage.getItem(lk("app_categories", ledgerId)) || "[]");
     const catTypeMap: Record<string, string> = {};
     cats.forEach((c: any) => { catTypeMap[c.id] = c.type; });
     const incomeIds = new Set(["salary", "bonus", "freelance", "investment", "rental", "transfer_in"]);
@@ -56,7 +56,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       const stored = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
       return stored
         .filter((a: any) => a && a.id && a.id !== "account_deleted")
-        .map((a: any) => ({ ...a, currentBalance: getAccountCurrentBalance(a.id, Number(a.balance) || 0) }));
+        .map((a: any) => ({ ...a, currentBalance: getAccountCurrentBalance(a.id, Number(a.balance) || 0, activeLedgerId) }));
     } catch { return []; }
   });
 
@@ -83,7 +83,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       const stored = JSON.parse(localStorage.getItem(lk("app_accounts", toPickerTab)) || "[]");
       return stored
         .filter((a: any) => a && a.id && a.id !== "account_deleted")
-        .map((a: any) => ({ ...a, currentBalance: getAccountCurrentBalance(a.id, Number(a.balance) || 0) }));
+        .map((a: any) => ({ ...a, currentBalance: getAccountCurrentBalance(a.id, Number(a.balance) || 0, toPickerTab) }));
     } catch { return []; }
   }, [toPickerTab, activeLedgerId, accounts]);
 
@@ -420,6 +420,13 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
               )}
             </div>
 
+            {/* Warning: same account picked as both From and To (blocks Save) */}
+            {fromId && toId && fromId === toId && !isCrossLedger && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                {T("acc.transfer_same_account_warning")}
+              </p>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-2 pt-1">
               <button
@@ -500,23 +507,34 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
             <div className="overflow-y-auto flex-1">
               {toPickerAccounts.length === 0 ? (
                 <p className="text-center text-sm text-slate-400 py-8">No accounts</p>
-              ) : toPickerAccounts.map((acc) => (
-                <button
-                  key={acc.id}
-                  onClick={() => {
-                    setToId(acc.id);
-                    setToLedgerId(toPickerTab);
-                    setShowToPicker(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${acc.id === toId && toPickerTab === toLedgerId ? "bg-theme-50" : ""}`}
-                >
-                  <span className={`text-sm font-semibold ${acc.id === toId && toPickerTab === toLedgerId ? "text-theme-700" : "text-slate-800"}`}>{acc.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{acc.currency || cur}{acc.currentBalance.toLocaleString()}</span>
-                    {acc.id === toId && toPickerTab === toLedgerId && <span className="text-theme-600 text-base">✓</span>}
-                  </div>
-                </button>
-              ))}
+              ) : toPickerAccounts.map((acc) => {
+                // Same account, same ledger as "From" — invalid destination (can't transfer to self).
+                // Disable it here instead of letting the user pick it and land on a silently-greyed Save button —
+                // this is the exact trap that happens when two ledgers share a same-named/same-id default account.
+                const isInvalidSelf = acc.id === fromId && toPickerTab === activeLedgerId;
+                return (
+                  <button
+                    key={acc.id}
+                    disabled={isInvalidSelf}
+                    onClick={() => {
+                      if (isInvalidSelf) return;
+                      setToId(acc.id);
+                      setToLedgerId(toPickerTab);
+                      setShowToPicker(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-5 py-3.5 transition-colors border-b border-slate-100 last:border-b-0 ${isInvalidSelf ? "opacity-40 cursor-not-allowed" : "hover:bg-slate-50"} ${acc.id === toId && toPickerTab === toLedgerId ? "bg-theme-50" : ""}`}
+                  >
+                    <span className={`text-sm font-semibold ${acc.id === toId && toPickerTab === toLedgerId ? "text-theme-700" : "text-slate-800"}`}>
+                      {acc.name}
+                      {isInvalidSelf && <span className="text-xs font-normal text-slate-400"> ({T("acc.from_account")})</span>}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${acc.currentBalance >= 0 ? "text-slate-400" : "text-red-500"}`}>{acc.currency || cur}{acc.currentBalance.toLocaleString()}</span>
+                      {acc.id === toId && toPickerTab === toLedgerId && <span className="text-theme-600 text-base">✓</span>}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

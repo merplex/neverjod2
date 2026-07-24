@@ -205,10 +205,16 @@ export default function Settings() {
     setSyncStatus("syncing");
     try {
       await syncAll(token, false);
-      localStorage.setItem("sync_direction", "server");
-      setSyncDirection("server");
+      // syncAll() pulls then pushes — by the time it resolves, our local data has just
+      // been pushed successfully, so "now" is the accurate sync time (matches handleSync
+      // and the App.tsx auto-sync, which both stamp "from client" the same way). Using the
+      // pull-time server timestamp here showed a stale date until the next sync ran.
+      const now = new Date().toISOString();
+      localStorage.setItem("last_client_sync_at", now);
+      localStorage.setItem("sync_direction", "client");
+      setSyncDirection("client");
       setSyncStatus("ok");
-      refreshLastSyncTime(false);
+      refreshLastSyncTime(true);
     } catch (e: any) {
       setSyncStatus("error");
       setSyncError(e?.message || "unknown");

@@ -160,6 +160,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "acc.date": "วันที่",
     "acc.time": "เวลา",
     "acc.transfer": "โอน",
+    "acc.transfer_same_account_warning": "บัญชีปลายทางซ้ำกับบัญชีต้นทาง กรุณาเลือกบัญชีอื่น หรือสลับไปเลือกบัญชีในสมุดบัญชีอื่น",
     "txn.repeat": "อัตโนมัติ",
 
     // Repeat Transactions
@@ -483,6 +484,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "acc.date": "Date",
     "acc.time": "Time",
     "acc.transfer": "Transfer",
+    "acc.transfer_same_account_warning": "Destination account is the same as the source. Choose a different account, or switch to another ledger's tab.",
     "txn.repeat": "Repeat",
 
     // Repeat Transactions
@@ -806,6 +808,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "acc.date": "日期",
     "acc.time": "时间",
     "acc.transfer": "转账",
+    "acc.transfer_same_account_warning": "目标账户与来源账户相同，请选择其他账户，或切换到其他账本的标签",
     "txn.repeat": "重复",
 
     // Repeat Transactions
