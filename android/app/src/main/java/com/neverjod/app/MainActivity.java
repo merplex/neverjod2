@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AudioPlugin.class);
+        registerPlugin(IAPPlugin.class);
         super.onCreate(savedInstanceState);
         // Request RECORD_AUDIO at runtime so SpeechRecognition can auto-start
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)

@@ -100,6 +100,8 @@ export default function Settings() {
   const location = useLocation();
   const premiumRef = useRef<HTMLDivElement>(null);
   const isIOS = Capacitor.getPlatform() === "ios";
+  const isAndroid = Capacitor.getPlatform() === "android";
+  const canPurchase = isIOS || isAndroid;
   const isPremium = localStorage.getItem("app_premium") === "true";
   const planType = localStorage.getItem("app_plan_type") as "monthly" | "yearly" | null;
   const premiumExpiresAt = localStorage.getItem("app_premium_expires_at");
@@ -953,7 +955,7 @@ export default function Settings() {
               ) : (
                 <p className="text-xs text-amber-600 mt-1">{T("premium.active_desc")}</p>
               )}
-              {isIOS && (
+              {canPurchase && (
                 <button
                   onClick={handleRestorePurchase}
                   disabled={!!purchaseLoading}
@@ -987,7 +989,7 @@ export default function Settings() {
                     <p className="text-sm font-bold text-slate-800">Premium {T("premium.monthly")}</p>
                     <p className="text-lg font-bold text-theme-600">฿{T("premium.monthly_price")}</p>
                   </div>
-                  {isIOS && (
+                  {canPurchase && (
                     <button
                       onClick={() => handlePurchase("monthly")}
                       disabled={!!purchaseLoading}
@@ -1010,13 +1012,13 @@ export default function Settings() {
 
               {/* Yearly */}
               <div className="relative border-2 border-amber-400 rounded-xl p-4 mb-3">
-                <span className="absolute -top-2.5 right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full leading-none">-47%</span>
+                <span className="absolute -top-2.5 right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full leading-none">-66%</span>
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="text-sm font-bold text-slate-800">Premium {T("premium.yearly")}</p>
                     <p className="text-lg font-bold text-amber-600">฿{T("premium.yearly_price")}</p>
                   </div>
-                  {isIOS && (
+                  {canPurchase && (
                     <button
                       onClick={() => handlePurchase("yearly")}
                       disabled={!!purchaseLoading}
@@ -1041,7 +1043,7 @@ export default function Settings() {
                 <p className="text-xs text-red-500 text-center mb-2">{purchaseError}</p>
               )}
 
-              {isIOS && (
+              {canPurchase && (
                 <button
                   onClick={handleRestorePurchase}
                   disabled={!!purchaseLoading}

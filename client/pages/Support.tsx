@@ -47,6 +47,30 @@ export default function Support() {
           </div>
         </div>
 
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3 text-sm text-slate-700 leading-relaxed">
+          <h2 className="text-base font-bold text-slate-800">ขอลบบัญชีและข้อมูล — NeverJod</h2>
+          <p className="text-slate-600">วิธีขอลบบัญชี NeverJod ของคุณ ทำได้ 2 วิธี:</p>
+          <ul className="space-y-1.5 list-disc list-inside text-slate-600">
+            <li>ในแอป: เข้าสู่ระบบ แล้วไปที่ Settings → เลื่อนลงล่างสุด → กด "ลบบัญชี" → ยืนยันการลบ</li>
+            <li>
+              หรือส่งอีเมลคำขอมาที่{" "}
+              <a href="mailto:support@neverjod.com" className="text-sky-600 font-medium underline">
+                support@neverjod.com
+              </a>{" "}
+              พร้อมระบุอีเมลบัญชีที่ต้องการลบ — เราจะดำเนินการลบให้ภายใน 1–3 วันทำการ
+            </li>
+          </ul>
+          <p className="text-slate-600">
+            <strong>ข้อมูลที่ถูกลบ:</strong> อีเมล รหัสผ่าน รายการรับ-จ่ายทั้งหมด บัญชีและหมวดหมู่
+            ที่ซิงค์ไว้ ประวัติการสมัคร Premium — ลบถาวรทันทีเมื่อดำเนินการเสร็จ
+            ไม่มีการเก็บสำรองข้อมูลไว้หลังจากนั้น
+          </p>
+          <p className="text-slate-600">
+            <strong>ลบข้อมูลบางส่วนโดยไม่ลบทั้งบัญชี:</strong> ทำได้เช่นกัน — คุณลบรายการ
+            รับ-จ่าย บัญชี หรือหมวดหมู่แต่ละรายการได้เองในแอปโดยไม่ต้องลบบัญชีทั้งหมด
+          </p>
+        </div>
+
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4 text-sm text-slate-700 leading-relaxed">
           <h2 className="text-base font-bold text-slate-800">Contact NeverJod</h2>
           <p>
@@ -73,6 +97,31 @@ export default function Support() {
               Typically within 1–3 business days (Mon–Fri).
             </p>
           </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3 text-sm text-slate-700 leading-relaxed">
+          <h2 className="text-base font-bold text-slate-800">Request account &amp; data deletion — NeverJod</h2>
+          <p className="text-slate-600">Two ways to request deletion of your NeverJod account:</p>
+          <ul className="space-y-1.5 list-disc list-inside text-slate-600">
+            <li>In the app: log in, go to Settings → scroll to the bottom → tap "Delete Account" → confirm</li>
+            <li>
+              Or email{" "}
+              <a href="mailto:support@neverjod.com" className="text-sky-600 font-medium underline">
+                support@neverjod.com
+              </a>{" "}
+              with the account email to delete — we'll process it within 1–3 business days.
+            </li>
+          </ul>
+          <p className="text-slate-600">
+            <strong>Data deleted:</strong> email, password, all synced transactions, accounts
+            and categories, and Premium subscription history — deleted permanently and
+            immediately once processed, with no data retained afterward.
+          </p>
+          <p className="text-slate-600">
+            <strong>Partial deletion without deleting your account:</strong> also available —
+            you can delete individual transactions, accounts, or categories yourself in the
+            app without deleting your whole account.
+          </p>
         </div>
       </div>
     </div>

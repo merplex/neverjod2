@@ -1,5 +1,6 @@
 export const API_BASE = (import.meta.env.VITE_API_URL ?? "") + "/api";
 
+import { Capacitor } from "@capacitor/core";
 import { getActiveLedgerId, lk } from "./ledgerStorage";
 
 // --- Auth ---
@@ -73,7 +74,7 @@ export async function apiVerifyPurchase(receipt: string) {
   const res = await fetch(`${API_BASE}/subscription/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ receipt }),
+    body: JSON.stringify({ receipt, platform: Capacitor.getPlatform() }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Verify failed");

@@ -102,7 +102,18 @@
       "PowerShell(cd \"C:\\\\Users\\\\User\\\\StudioProjects\\\\neverjod2\\\\android\"; $env:JAVA_HOME = \"C:/Program Files/Android/Android Studio/jbr\"; ./gradlew assembleDebug 2>&1 | Select-Object -Last 15)",
       "PowerShell(Copy-Item *)",
       "Bash(git log *)",
-      "Bash(jobs)"
+      "Bash(jobs)",
+      "Bash(python3 -c \"print\\(1\\)\")",
+      "Bash(pip show *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:unfoldadmin.com)",
+      "Bash(git restore *)",
+      "WebFetch(domain:neverjod.com)",
+      "Bash(openssl s_client -connect neverjod.com:443 -servername neverjod.com)",
+      "Bash(openssl x509 *)",
+      "WebFetch(domain:neverjod2-production.up.railway.app)",
+      "Bash(mkdir -p debug)",
+      "Bash(cp android/app/build/outputs/apk/debug/app-debug.apk debug/app-debug.apk)"
     ]
   }
 }

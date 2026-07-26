@@ -3,7 +3,8 @@ import "./global.css";
 import { useEffect, useState } from "react";
 import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
 import { lk } from "./utils/ledgerStorage";
-import { syncAll } from "./utils/syncService";
+import { syncAll, apiVerifyPurchase } from "./utils/syncService";
+import { restorePurchases } from "./utils/iap";
 import { CURRENCY_OPTIONS } from "./utils/currency";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -151,6 +152,14 @@ function AppContent() {
           }
         }
       } catch {}
+      // Android has no Google RTDN webhook yet, so premium_expires_at only advances
+      // via this best-effort silent re-verify on launch — otherwise a paying
+      // subscriber would get demoted to free after their first renewal.
+      if ((window as any).Capacitor?.getPlatform?.() === "android" && localStorage.getItem("app_premium") === "true") {
+        restorePurchases()
+          .then(({ receipt }) => receipt && apiVerifyPurchase(receipt))
+          .catch(() => {});
+      }
       if (localStorage.getItem("sync_auto_enabled") === "true") {
         syncAll(token).then(() => {
           if (localStorage.getItem("app_premium") !== "true") return;

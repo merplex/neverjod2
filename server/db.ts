@@ -108,6 +108,9 @@ export async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_type TEXT`).catch(() => {});
   // Migration: add auto_renew — TRUE = will renew, FALSE = cancelled (but may still be active)
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_renew BOOLEAN DEFAULT TRUE`).catch(() => {});
+  // Migration: add store ('apple' | 'google') to disambiguate original_transaction_id namespace
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS store TEXT`).catch(() => {});
+  await pool.query(`UPDATE users SET store = 'apple' WHERE store IS NULL AND original_transaction_id IS NOT NULL`).catch(() => {});
   // Migration: add keywords + icon_id to categories and accounts
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT '[]'`).catch(() => {});
   await pool.query(`ALTER TABLE sync_categories ADD COLUMN IF NOT EXISTS icon_id TEXT`).catch(() => {});
