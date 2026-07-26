@@ -4,7 +4,7 @@ import { CURRENCY_OPTIONS, getCurrencySymbol } from "../utils/currency";
 import { ChevronLeft, ChevronDown, Edit2, ArrowRightLeft, Trash2, GripVertical, Plus, X, Lock } from "lucide-react";
 import CloudAuthModal from "../components/CloudAuthModal";
 import PremiumModal from "../components/PremiumModal";
-import { markDeleted, syncPush } from "../utils/syncService";
+import { markDeleted } from "../utils/syncService";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { useT } from "../hooks/useT";
@@ -142,20 +142,6 @@ export default function AccountsManagement() {
     if (isFirstRenderAcc.current) { isFirstRenderAcc.current = false; return; }
     window.dispatchEvent(new CustomEvent("app-data-updated"));
   }, [accounts]);
-
-  // Free-tier downgrade: strip keywords > 1 per account and push to server
-  useEffect(() => {
-    const premium = localStorage.getItem("app_premium") === "true";
-    if (premium) return;
-    const hasExtra = accounts.some((a) => (a.keywords || []).length > 1);
-    if (!hasExtra) return;
-    const now = new Date().toISOString();
-    const stripped = accounts.map((a) => ({ ...a, keywords: (a.keywords || []).slice(0, 1), updated_at: now }));
-    setAccounts(stripped);
-    localStorage.setItem(lk("app_accounts"), JSON.stringify(stripped));
-    const token = localStorage.getItem("cloud_token");
-    if (token) syncPush(token).catch(() => {});
-  }, []);
 
   // Accounts over free limit (by position in list, excluding account_deleted) — locked when not premium
   const reorderableAccs = accounts.filter((a) => a.id !== "account_deleted");

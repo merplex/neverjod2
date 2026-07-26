@@ -47,6 +47,12 @@ function norm(s: string): string {
   return s.normalize("NFC").toLowerCase();
 }
 
+// Free tier: only the first stored keyword is used for detection. Extra keywords stay saved
+// (never deleted) so they become active again instantly if the user upgrades to premium.
+function activeKeywords(stored: string[], isPremium: boolean): string[] {
+  return isPremium ? stored : stored.slice(0, 1);
+}
+
 // Always include the entity's name as a keyword alongside user-defined keywords
 function buildKeywordMap(
   source: Record<string, { name: string; keywords: string[] }>
@@ -72,7 +78,8 @@ function getCategoriesWithKeywords(): Record<string, { name: string; keywords: s
       const active = isPremium ? reorderable : reorderable.slice(0, FREE_CAT_LIMIT);
       const raw: Record<string, { name: string; keywords: string[] }> = {};
       for (const cat of active) {
-        const stored = cat.keywords && cat.keywords.length > 0 ? cat.keywords : [];
+        const storedAll = cat.keywords && cat.keywords.length > 0 ? cat.keywords : [];
+        const stored = activeKeywords(storedAll, isPremium);
         const fallback = stored.length === 0 ? (builtinCategoryKeywords[cat.id] || []) : [];
         raw[cat.id] = { name: cat.name, keywords: [...stored, ...fallback] };
       }
@@ -95,7 +102,8 @@ function getAccountsWithKeywords(): Record<string, { name: string; keywords: str
       const active = isPremium ? reorderable : reorderable.slice(0, FREE_ACC_LIMIT);
       const raw: Record<string, { name: string; keywords: string[] }> = {};
       for (const acc of active) {
-        const stored = acc.keywords && acc.keywords.length > 0 ? acc.keywords : [];
+        const storedAll = acc.keywords && acc.keywords.length > 0 ? acc.keywords : [];
+        const stored = activeKeywords(storedAll, isPremium);
         const fallback = stored.length === 0 ? (builtinAccountKeywords[acc.id] || []) : [];
         raw[acc.id] = { name: acc.name, keywords: [...stored, ...fallback] };
       }
@@ -732,10 +740,12 @@ export function matchCategoryFromList(
   text: string,
   list: { id: string; name: string; keywords?: string[] }[]
 ): string | undefined {
+  const isPremium = localStorage.getItem("app_premium") === "true";
   const raw: Record<string, { name: string; keywords: string[] }> = {};
   for (const cat of list) {
     if (!cat.id || cat.id === "__voice_status__" || cat.id === "nocat") continue;
-    const stored = cat.keywords && cat.keywords.length > 0 ? cat.keywords : [];
+    const storedAll = cat.keywords && cat.keywords.length > 0 ? cat.keywords : [];
+    const stored = activeKeywords(storedAll, isPremium);
     const fallback = stored.length === 0 ? (builtinCategoryKeywords[cat.id] || []) : [];
     raw[cat.id] = { name: cat.name, keywords: [...stored, ...fallback] };
   }
@@ -754,10 +764,12 @@ export function matchAccountFromList(
   text: string,
   list: { id: string; name: string; keywords?: string[] }[]
 ): string | undefined {
+  const isPremium = localStorage.getItem("app_premium") === "true";
   const raw: Record<string, { name: string; keywords: string[] }> = {};
   for (const acc of list) {
     if (!acc.id || acc.id === "account_deleted") continue;
-    const stored = acc.keywords && acc.keywords.length > 0 ? acc.keywords : [];
+    const storedAll = acc.keywords && acc.keywords.length > 0 ? acc.keywords : [];
+    const stored = activeKeywords(storedAll, isPremium);
     const fallback = stored.length === 0 ? (builtinAccountKeywords[acc.id] || []) : [];
     raw[acc.id] = { name: acc.name, keywords: [...stored, ...fallback] };
   }

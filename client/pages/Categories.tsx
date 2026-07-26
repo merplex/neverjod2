@@ -7,7 +7,7 @@ import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Wind, Plane, ShoppingBag, Dumbbell, Gift, TrendingUp, MoreHorizontal, CreditCard, Wallet, Smartphone, Banknote, Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones, Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2 } from "lucide-react";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
-import { markDeleted, syncPush } from "../utils/syncService";
+import { markDeleted } from "../utils/syncService";
 
 interface Category {
   id: string;
@@ -118,20 +118,6 @@ export default function Categories() {
     if (isFirstRenderCat.current) { isFirstRenderCat.current = false; return; }
     window.dispatchEvent(new CustomEvent("app-data-updated"));
   }, [categories]);
-
-  // Free-tier downgrade: strip keywords > 1 per category and push to server
-  useEffect(() => {
-    const premium = localStorage.getItem("app_premium") === "true";
-    if (premium) return;
-    const hasExtra = categories.some((c) => (c.keywords || []).length > 1);
-    if (!hasExtra) return;
-    const now = new Date().toISOString();
-    const stripped = categories.map((c) => ({ ...c, keywords: (c.keywords || []).slice(0, 1), updated_at: now }));
-    setCategories(stripped);
-    localStorage.setItem(lk("app_categories"), JSON.stringify(stripped));
-    const token = localStorage.getItem("cloud_token");
-    if (token) syncPush(token).catch(() => {});
-  }, []);
 
   // Categories over free limit (by position in list, excluding nocat) — locked when not premium
   const reorderableCats = categories.filter((c) => c.id !== "nocat");
