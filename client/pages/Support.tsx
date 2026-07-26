@@ -66,8 +66,9 @@ export default function Support() {
             ไม่มีการเก็บสำรองข้อมูลไว้หลังจากนั้น
           </p>
           <p className="text-slate-600">
-            <strong>ลบข้อมูลบางส่วนโดยไม่ลบทั้งบัญชี:</strong> ทำได้เช่นกัน — คุณลบรายการ
-            รับ-จ่าย บัญชี หรือหมวดหมู่แต่ละรายการได้เองในแอปโดยไม่ต้องลบบัญชีทั้งหมด
+            <strong>ขอลบข้อมูลบางส่วนโดยไม่ลบทั้งบัญชี:</strong> เปิดรายการรับ-จ่ายที่ต้องการลบ
+            แล้วกด "Delete Transaction" ด้านล่าง หรือไปที่ Settings → จัดการบัญชี/หมวดหมู่
+            แล้วกดไอคอนลบที่รายการนั้น — ทำได้เองทันทีในแอปโดยไม่ต้องติดต่อทีมงาน
           </p>
         </div>
 
@@ -118,9 +119,10 @@ export default function Support() {
             immediately once processed, with no data retained afterward.
           </p>
           <p className="text-slate-600">
-            <strong>Partial deletion without deleting your account:</strong> also available —
-            you can delete individual transactions, accounts, or categories yourself in the
-            app without deleting your whole account.
+            <strong>Request partial data deletion without deleting your account:</strong> open
+            the transaction you want to remove and tap "Delete Transaction", or go to
+            Settings → manage accounts/categories and tap the delete icon on that item —
+            done instantly in the app, no need to contact us.
           </p>
         </div>
       </div>
