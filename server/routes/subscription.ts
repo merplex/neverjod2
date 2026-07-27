@@ -54,7 +54,11 @@ async function verifyGooglePurchase(purchaseToken: string) {
 router.post("/verify", requireAuth, async (req: any, res: Response) => {
   const { receipt, platform } = req.body;
   if (!receipt) return res.status(400).json({ error: "receipt required" });
-  if (platform !== "ios" && platform !== "android") {
+  // Legacy iOS clients built before Android Billing support (pre-2026-07-26)
+  // never send `platform` at all — treat that as "ios" instead of rejecting,
+  // otherwise every purchase/restore from an already-shipped App Store build
+  // fails verification even though Apple already charged the user.
+  if (platform !== undefined && platform !== "ios" && platform !== "android") {
     return res.status(400).json({ error: "invalid platform" });
   }
   const store = platform === "android" ? "google" : "apple";
