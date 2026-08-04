@@ -29,7 +29,7 @@ export async function signInWithGoogle(): Promise<string> {
   await ensureGoogleInitialized();
   const { result } = await SocialLogin.login({
     provider: "google",
-    options: { scopes: ["email", "profile"] },
+    options: {},
   });
   const idToken = (result as any)?.idToken;
   if (!idToken) throw new Error("ไม่ได้รับ Google idToken");
