@@ -124,7 +124,7 @@ function AppContent() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [showGuide, setShowGuide] = useState(() => {
-    try { return !localStorage.getItem("app_onboarding_done"); } catch { return false; }
+    try { return !localStorage.getItem("app_onboarding_done"); } catch { return true; }
   });
 
   useEffect(() => {
