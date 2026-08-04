@@ -113,7 +113,15 @@
       "Bash(openssl x509 *)",
       "WebFetch(domain:neverjod2-production.up.railway.app)",
       "Bash(mkdir -p debug)",
-      "Bash(cp android/app/build/outputs/apk/debug/app-debug.apk debug/app-debug.apk)"
+      "Bash(cp android/app/build/outputs/apk/debug/app-debug.apk debug/app-debug.apk)",
+      "Bash(timeout 15 git ls-remote origin HEAD)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(git ls-remote *)",
+      "Bash(jobs -l)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:capgo.app)",
+      "Bash(plutil *)",
+      "Bash(xcrun simctl *)"
     ]
   }
 }
