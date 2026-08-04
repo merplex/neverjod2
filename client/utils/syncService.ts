@@ -36,6 +36,28 @@ export async function apiLogin(email: string, password: string) {
   return data as AuthResponse;
 }
 
+export async function apiGoogleLogin(idToken: string) {
+  const res = await fetch(`${API_BASE}/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Google sign-in failed");
+  return data as AuthResponse;
+}
+
+export async function apiAppleLogin(identityToken: string) {
+  const res = await fetch(`${API_BASE}/auth/apple`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identityToken }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Apple sign-in failed");
+  return data as AuthResponse;
+}
+
 export async function apiForgotPassword(email: string) {
   const res = await fetch(`${API_BASE}/auth/forgot-password`, {
     method: "POST",

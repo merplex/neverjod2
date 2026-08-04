@@ -8,6 +8,17 @@
 	"ios": {},
 	"packageClassList": [
 		"SignInWithApple",
-		"ClipboardPlugin"
-	]
+		"ClipboardPlugin",
+		"SocialLoginPlugin"
+	],
+	"plugins": {
+		"SocialLogin": {
+			"providers": {
+				"google": true,
+				"facebook": false,
+				"apple": false,
+				"twitter": false
+			}
+		}
+	}
 }

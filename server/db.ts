@@ -144,6 +144,12 @@ export async function initDB() {
       SELECT 1 FROM ledgers WHERE ledgers.user_id = users.id AND ledgers.id = 'main'
     )
   `).catch(() => {});
+  // Migration: social login (Google / Apple) support
+  await pool.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`).catch(() => {});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS provider TEXT`).catch(() => {});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id TEXT`).catch(() => {});
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_provider_provider_id_idx ON users (provider, provider_id) WHERE provider_id IS NOT NULL`).catch(() => {});
+
   // Admin account: always premium, no expiry
   await pool.query(`
     UPDATE users SET

@@ -9,6 +9,16 @@ const config: CapacitorConfig = {
   },
   ios: {},
   packageClassList: ["SignInWithApple", "IAPPlugin"],
+  plugins: {
+    SocialLogin: {
+      providers: {
+        google: true,
+        facebook: false,
+        apple: false,
+        twitter: false,
+      },
+    },
+  },
 };
 
 export default config;

@@ -2,7 +2,10 @@ import { Router, Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
 import { pool, JWT_SECRET } from "../db";
+
+const googleClient = new OAuth2Client();
 
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
@@ -47,6 +50,86 @@ async function sendResetEmail(to: string, resetUrl: string) {
 }
 
 const router = Router();
+
+// Shared helper: build the same auth response shape as /login and /register
+async function buildAuthResponse(user: any) {
+  const now = new Date();
+  if (user.is_premium && user.premium_expires_at && new Date(user.premium_expires_at) < now) {
+    await pool.query("UPDATE users SET is_premium = FALSE WHERE id = $1", [user.id]);
+    user.is_premium = false;
+  }
+
+  await pool.query(
+    "INSERT INTO ledgers (id, user_id, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+    ["main", user.id, "สมุดบัญชีหลัก"]
+  );
+
+  const token = jwt.sign({ userId: user.id, email: user.email, isPremium: user.is_premium }, JWT_SECRET, { expiresIn: "365d" });
+  return {
+    token,
+    email: user.email,
+    isPremium: user.is_premium,
+    planType: user.is_premium ? (user.plan_type ?? null) : null,
+    premiumExpiresAt: user.is_premium ? (user.premium_expires_at ?? null) : null,
+    autoRenew: user.is_premium ? (user.auto_renew ?? true) : true,
+  };
+}
+
+// Find a user by (provider, providerId), else link/create by email
+async function findOrCreateSocialUser(provider: "google" | "apple", providerId: string, email: string | null) {
+  let result = await pool.query(
+    "SELECT id, email, password_hash, is_premium, premium_expires_at, plan_type, auto_renew FROM users WHERE provider = $1 AND provider_id = $2",
+    [provider, providerId]
+  );
+  if (result.rows.length) return result.rows[0];
+
+  if (email) {
+    result = await pool.query(
+      "SELECT id, email, password_hash, is_premium, premium_expires_at, plan_type, auto_renew, provider FROM users WHERE email = $1",
+      [email.toLowerCase()]
+    );
+    if (result.rows.length) {
+      const user = result.rows[0];
+      if (!user.provider) {
+        await pool.query("UPDATE users SET provider = $1, provider_id = $2 WHERE id = $3", [provider, providerId, user.id]);
+      }
+      return user;
+    }
+  }
+
+  const insertEmail = email ? email.toLowerCase() : `${provider}_${providerId}@users.neverjod.com`;
+  result = await pool.query(
+    "INSERT INTO users (email, password_hash, provider, provider_id) VALUES ($1, NULL, $2, $3) RETURNING id, email, password_hash, is_premium, premium_expires_at, plan_type, auto_renew",
+    [insertEmail, provider, providerId]
+  );
+  return result.rows[0];
+}
+
+// Apple public key verification (Sign in with Apple)
+let appleKeysCache: { keys: any[]; fetchedAt: number } | null = null;
+
+async function getApplePublicKey(kid: string) {
+  const now = Date.now();
+  if (!appleKeysCache || now - appleKeysCache.fetchedAt > 24 * 60 * 60 * 1000) {
+    const res = await fetch("https://appleid.apple.com/auth/keys");
+    const data = await res.json();
+    appleKeysCache = { keys: data.keys, fetchedAt: now };
+  }
+  const jwk = appleKeysCache.keys.find((k: any) => k.kid === kid);
+  if (!jwk) throw new Error("Apple public key not found");
+  return crypto.createPublicKey({ key: jwk, format: "jwk" });
+}
+
+async function verifyAppleIdentityToken(identityToken: string, bundleId: string) {
+  const decoded = jwt.decode(identityToken, { complete: true }) as any;
+  if (!decoded?.header?.kid) throw new Error("Invalid Apple token header");
+  const publicKey = await getApplePublicKey(decoded.header.kid);
+  return jwt.verify(identityToken, publicKey, {
+    algorithms: ["RS256"],
+    issuer: "https://appleid.apple.com",
+    audience: bundleId,
+  }) as { sub: string; email?: string };
+}
 
 router.post("/register", async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -120,6 +203,47 @@ router.post("/login", async (req: Request, res: Response) => {
     });
   } catch {
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/google", async (req: Request, res: Response) => {
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ error: "idToken required" });
+
+  const audiences = [
+    process.env.GOOGLE_CLIENT_ID_WEB,
+    process.env.GOOGLE_CLIENT_ID_IOS,
+    process.env.GOOGLE_CLIENT_ID_ANDROID,
+  ].filter((v): v is string => Boolean(v));
+  if (!audiences.length) return res.status(500).json({ error: "Google sign-in not configured" });
+
+  try {
+    const ticket = await googleClient.verifyIdToken({ idToken, audience: audiences });
+    const payload = ticket.getPayload();
+    if (!payload?.sub || !payload.email) return res.status(401).json({ error: "Invalid Google token" });
+
+    const user = await findOrCreateSocialUser("google", payload.sub, payload.email);
+    res.json(await buildAuthResponse(user));
+  } catch (err) {
+    console.error("google auth error:", err);
+    res.status(401).json({ error: "Google sign-in failed" });
+  }
+});
+
+router.post("/apple", async (req: Request, res: Response) => {
+  const { identityToken } = req.body;
+  if (!identityToken) return res.status(400).json({ error: "identityToken required" });
+
+  try {
+    const bundleId = process.env.APPLE_BUNDLE_ID || "com.neverjod.app";
+    const payload = await verifyAppleIdentityToken(identityToken, bundleId);
+    if (!payload?.sub) return res.status(401).json({ error: "Invalid Apple token" });
+
+    const user = await findOrCreateSocialUser("apple", payload.sub, payload.email ?? null);
+    res.json(await buildAuthResponse(user));
+  } catch (err) {
+    console.error("apple auth error:", err);
+    res.status(401).json({ error: "Apple sign-in failed" });
   }
 });
 
