@@ -121,7 +121,15 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:capgo.app)",
       "Bash(plutil *)",
-      "Bash(xcrun simctl *)"
+      "Bash(xcrun simctl *)",
+      "Bash(grep -n \"app.get\\(\\\\\"/\\\\|app.get\\('/health\\\\|/api/health\\\\|healthz\" server/*.ts server/**/*.ts)",
+      "Bash(npm ls *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(where keytool *)",
+      "Bash(java -version)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew bundleRelease)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew :app:compileDebugJavaWithJavac)",
+      "Bash(python *)"
     ]
   }
 }
