@@ -621,7 +621,7 @@ export default function AllTransactions() {
           {/* Search result totals — income/expense of the currently filtered set, transfers excluded */}
           {showSearch && searchQuery.trim() && searchTotals && (searchTotals.income > 0 || searchTotals.expense > 0) && (
             <div className="mt-2 flex items-center justify-end gap-2 pr-3">
-              <span className="text-xs text-slate-400">{T("stats.total_row")}</span>
+              <span className="text-xs text-slate-400">{T("stats.sum_row")}</span>
               {searchTotals.income > 0 && (
                 <span className="text-xs font-semibold text-green-600">+{cur}{searchTotals.income.toLocaleString()}</span>
               )}

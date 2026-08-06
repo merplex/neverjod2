@@ -115,6 +115,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "stats.income_col": "รายรับ",
     "stats.expense_col": "รายจ่าย",
     "stats.total_row": "รวม",
+    "stats.sum_row": "รวมทั้งหมด",
     "stats.no_txn": "ไม่มีรายการในช่วงนี้",
 
     // Auth modal
@@ -443,6 +444,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "stats.income_col": "Income",
     "stats.expense_col": "Expense",
     "stats.total_row": "Total",
+    "stats.sum_row": "Grand Total",
     "stats.no_txn": "No transactions this period",
 
     // Auth modal
@@ -771,6 +773,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "stats.income_col": "收入",
     "stats.expense_col": "支出",
     "stats.total_row": "合计",
+    "stats.sum_row": "总计",
     "stats.no_txn": "本期无交易记录",
 
     // Auth modal
