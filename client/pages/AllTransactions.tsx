@@ -12,6 +12,51 @@ import { getLang } from "../utils/i18n";
 type TimeRange = "custom" | "month" | "all";
 type SortOrder = "asc" | "desc";
 
+// Scrolls text left once (then holds) only when it overflows its container.
+// Re-measures whenever `text` changes; unaffected by unrelated parent re-renders.
+function ScrollingText({ text }: { text: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [distance, setDistance] = useState(0);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const el = textRef.current;
+    if (!container || !el) return;
+    let cancelled = false;
+    setDistance(0);
+    const measure = () => {
+      if (cancelled) return;
+      const overflow = el.scrollWidth - container.clientWidth;
+      setDistance(overflow > 0 ? overflow : 0);
+    };
+    const raf = requestAnimationFrame(measure);
+    // Re-measure once web fonts finish loading — initial measurement can
+    // happen against a fallback font and under/over-estimate the overflow.
+    (document as any).fonts?.ready?.then(measure);
+    return () => { cancelled = true; cancelAnimationFrame(raf); };
+  }, [text]);
+
+  return (
+    <div ref={containerRef} className="min-w-0 flex-1 overflow-hidden">
+      <span
+        ref={textRef}
+        className="inline-block whitespace-nowrap text-xs text-slate-500"
+        style={
+          distance > 0
+            ? ({
+                "--scroll-distance": `-${distance}px`,
+                animation: `desc-scroll-once ${Math.min(8, Math.max(2.5, distance / 40))}s ease-in-out forwards`,
+              } as React.CSSProperties)
+            : undefined
+        }
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
@@ -225,6 +270,13 @@ export default function AllTransactions() {
     try { return JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]"); } catch { return []; }
   }, []);
 
+  // Known account names, used to classify each search token below.
+  const accountNameList = useMemo(() => {
+    const names = new Set<string>();
+    storedAccounts.forEach((a: any) => { if (a.name) names.add(String(a.name).toLowerCase()); });
+    return Array.from(names);
+  }, [storedAccounts]);
+
   useEffect(() => {
     if (showSearch) {
       if (searchFromUrl.current) {
@@ -239,6 +291,13 @@ export default function AllTransactions() {
   }, [showSearch]);
 
   const allTransactions = useMemo(() => getRealTransactionsList(), [refreshKey]);
+
+  // Known category names, used to classify each search token below.
+  const categoryNameList = useMemo(() => {
+    const names = new Set<string>();
+    allTransactions.forEach((t) => { if (t.category) names.add(t.category.toLowerCase()); });
+    return Array.from(names);
+  }, [allTransactions]);
 
   // Running balance per transaction (ascending order, based on start balance + all txns)
   const accountCurrencyMap = useMemo(() => {
@@ -278,25 +337,53 @@ export default function AllTransactions() {
     return `${fmt(customStart)}–${fmt(customEnd)}`;
   }, [customStart, customEnd, T]);
 
+  // Search tokens: space-separated. Each token is classified as an account-name
+  // match, a category-name match, or free text (description/fallback). Tokens in
+  // the same bucket are OR'd together (e.g. "scb kbank" = either account); the
+  // buckets themselves are AND'd together (e.g. account-bucket AND category-bucket).
+  const searchTokenBuckets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const accountTokens: string[] = [];
+    const categoryTokens: string[] = [];
+    const textTokens: string[] = [];
+    q.split(/\s+/).filter(Boolean).forEach((tok) => {
+      if (accountNameList.some((name) => name.includes(tok))) accountTokens.push(tok);
+      else if (categoryNameList.some((name) => name.includes(tok))) categoryTokens.push(tok);
+      else textTokens.push(tok);
+    });
+    return { accountTokens, categoryTokens, textTokens };
+  }, [searchQuery, accountNameList, categoryNameList]);
+
+  const matchesSearch = useMemo(() => {
+    const { accountTokens, categoryTokens, textTokens } = searchTokenBuckets;
+    if (!accountTokens.length && !categoryTokens.length && !textTokens.length) return null;
+    const transferLabel = T("acc.transfer").toLowerCase();
+    const repeatLabel = T("txn.repeat").toLowerCase();
+    return (transaction: (typeof allTransactions)[number]) => {
+      if (accountTokens.length && !accountTokens.some((tok) => transaction.accountName.toLowerCase().includes(tok))) return false;
+      if (categoryTokens.length && !categoryTokens.some((tok) => transaction.category.toLowerCase().includes(tok))) return false;
+      if (textTokens.length) {
+        const allMatch = textTokens.every((tok) => {
+          if (tok === transferLabel) return !!transaction.isTransfer;
+          if (tok === repeatLabel) return !!transaction.isRepeat;
+          return transaction.accountName.toLowerCase().includes(tok) ||
+            transaction.category.toLowerCase().includes(tok) ||
+            transaction.amount.toString().includes(tok) ||
+            (transaction.description || "").toLowerCase().includes(tok);
+        });
+        if (!allMatch) return false;
+      }
+      return true;
+    };
+  }, [searchTokenBuckets, T]);
+
   const filtered = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const q = searchQuery.trim().toLowerCase();
-
 
     return allTransactions.filter((transaction) => {
       if (accountIdFilter && transaction.accountId !== accountIdFilter) return false;
-      if (q) {
-        const transferLabel = T("acc.transfer").toLowerCase();
-        const repeatLabel = T("txn.repeat").toLowerCase();
-        const transferMatch = q === transferLabel && transaction.isTransfer;
-        const repeatMatch = q === repeatLabel && transaction.isRepeat;
-        if (!transferMatch && !repeatMatch &&
-            !transaction.accountName.toLowerCase().includes(q) &&
-            !transaction.category.toLowerCase().includes(q) &&
-            !transaction.amount.toString().includes(q) &&
-            !(transaction.description || "").toLowerCase().includes(q)) return false;
-      }
+      if (matchesSearch && !matchesSearch(transaction)) return false;
       const transactionDate = new Date(
         transaction.date.getFullYear(),
         transaction.date.getMonth(),
@@ -313,7 +400,7 @@ export default function AllTransactions() {
       }
       return true;
     });
-  }, [allTransactions, timeRange, searchQuery, accountIdFilter, customStart, customEnd]);
+  }, [allTransactions, timeRange, matchesSearch, accountIdFilter, customStart, customEnd]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -328,6 +415,20 @@ export default function AllTransactions() {
       return sortOrder === "asc" ? aMinutes - bMinutes : bMinutes - aMinutes;
     });
   }, [filtered, sortOrder]);
+
+  // Income/expense totals of the current search result set (transfers excluded).
+  const searchTotals = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    let income = 0;
+    let expense = 0;
+    sorted.forEach((t) => {
+      if (t.isTransfer) return;
+      const amt = (t as any).currencyAmount ?? t.amount;
+      if (t.type === "income") income += amt;
+      else expense += amt;
+    });
+    return { income, expense };
+  }, [sorted, searchQuery]);
 
   const lang = getLang();
   const MONTH_KEYS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
@@ -350,6 +451,23 @@ export default function AllTransactions() {
     });
     return groups;
   }, [sorted, lang]);
+
+  // Per-day income/expense totals (transfers excluded), for the date-header ticker.
+  const groupedTotals = useMemo(() => {
+    const totals: Record<string, { income: number; expense: number }> = {};
+    Object.entries(grouped).forEach(([dateStr, list]) => {
+      let income = 0;
+      let expense = 0;
+      list.forEach((t) => {
+        if (t.isTransfer) return;
+        const amt = (t as any).currencyAmount ?? t.amount;
+        if (t.type === "income") income += amt;
+        else expense += amt;
+      });
+      totals[dateStr] = { income, expense };
+    });
+    return totals;
+  }, [grouped]);
 
   function selectAccount(id: string | null) {
     if (id) setSearchParams({ accountId: id });
@@ -499,6 +617,19 @@ export default function AllTransactions() {
               )}
             </div>
           )}
+
+          {/* Search result totals — income/expense of the currently filtered set, transfers excluded */}
+          {showSearch && searchQuery.trim() && searchTotals && (searchTotals.income > 0 || searchTotals.expense > 0) && (
+            <div className="mt-2 flex items-center justify-end gap-2 pr-3">
+              <span className="text-xs text-slate-400">{T("stats.total_row")}</span>
+              {searchTotals.income > 0 && (
+                <span className="text-xs font-semibold text-green-600">+{cur}{searchTotals.income.toLocaleString()}</span>
+              )}
+              {searchTotals.expense > 0 && (
+                <span className="text-xs font-semibold text-red-500">-{cur}{searchTotals.expense.toLocaleString()}</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -506,12 +637,37 @@ export default function AllTransactions() {
       <div className="max-w-md mx-auto px-4 py-4">
         {Object.entries(grouped).map(([dateStr, transactions]) => (
           <div key={dateStr} className="mb-6">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase">{dateStr}</span>
-              <button
-                onClick={() => { setAddModalDefaultDate(transactions[0].date); setShowAddModal(true); }}
-                className="text-xs text-theme-500 hover:text-theme-700 font-semibold px-1.5 py-0.5 rounded hover:bg-theme-50 transition-colors"
-              >+</button>
+            <div className="mb-3 flex items-center justify-between gap-2 pr-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-semibold text-slate-500 uppercase truncate">{dateStr}</span>
+                <button
+                  onClick={() => { setAddModalDefaultDate(transactions[0].date); setShowAddModal(true); }}
+                  className="text-xs text-theme-500 hover:text-theme-700 font-semibold px-1.5 py-0.5 rounded hover:bg-theme-50 transition-colors flex-shrink-0"
+                >+</button>
+              </div>
+              {(() => {
+                const { income: dayIncome, expense: dayExpense } = groupedTotals[dateStr] || { income: 0, expense: 0 };
+                if (dayIncome <= 0 && dayExpense <= 0) return null;
+                return (
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-xs text-slate-400">{T("stats.total_row")}</span>
+                    {dayIncome > 0 && dayExpense > 0 ? (
+                      <div className="h-4 overflow-hidden">
+                        <span
+                          key={showNativeTicker ? `day-inc-${dateStr}` : `day-exp-${dateStr}`}
+                          className={`flip-ticker text-xs font-semibold ${showNativeTicker ? "text-green-600" : "text-red-500"}`}
+                        >
+                          {showNativeTicker ? `+${cur}${dayIncome.toLocaleString()}` : `-${cur}${dayExpense.toLocaleString()}`}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className={`text-xs font-semibold ${dayIncome > 0 ? "text-green-600" : "text-red-500"}`}>
+                        {dayIncome > 0 ? "+" : "-"}{cur}{(dayIncome > 0 ? dayIncome : dayExpense).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className="space-y-2">
               {transactions.map((transaction, index) => (
@@ -529,7 +685,7 @@ export default function AllTransactions() {
                   className="cursor-pointer bg-white hover:bg-slate-50 border border-slate-200 rounded-lg p-3 transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>
                         <span
@@ -551,7 +707,15 @@ export default function AllTransactions() {
                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-theme-100 text-theme-600 leading-none flex-shrink-0">{T("txn.repeat")}</span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-500">{transaction.time}</span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs text-slate-500 flex-shrink-0">{transaction.time}</span>
+                        {transaction.description && transaction.description.trim() && (
+                          <>
+                            <span className="text-xs text-slate-300 flex-shrink-0">·</span>
+                            <ScrollingText text={transaction.description} />
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       {transaction.currency && (transaction as any).currencyAmount != null ? (

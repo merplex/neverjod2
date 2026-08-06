@@ -269,3 +269,9 @@ input, textarea, select {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+/* Transaction description marquee — scrolls left once, holds at the end (no loop) */
+@keyframes desc-scroll-once {
+  0%, 15%  { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--scroll-distance)); }
+}
