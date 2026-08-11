@@ -129,7 +129,9 @@
       "Bash(java -version)",
       "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew bundleRelease)",
       "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew :app:compileDebugJavaWithJavac)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(open *)"
     ]
   }
 }

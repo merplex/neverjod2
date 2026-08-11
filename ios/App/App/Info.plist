@@ -36,9 +36,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>NeverJod ต้องการเข้าถึงไมโครโฟนเพื่อบันทึกเสียงและจดรายรับ-รายจ่ายด้วยเสียง</string>
+	<string>NeverJod needs microphone access to record your voice for adding income and expense entries.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>NeverJod ใช้การรู้จำเสียงเพื่อแปลงคำพูดเป็นข้อมูลธุรกรรมทางการเงิน</string>
+	<string>NeverJod uses speech recognition to convert your voice into financial transaction entries.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

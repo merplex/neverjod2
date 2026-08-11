@@ -1,0 +1,2 @@
+"NSMicrophoneUsageDescription" = "NeverJod 需要访问麦克风以录制语音，用于记录收支交易。";
+"NSSpeechRecognitionUsageDescription" = "NeverJod 使用语音识别功能，将您的语音转换为财务交易记录。";

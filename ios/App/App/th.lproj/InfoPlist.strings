@@ -1,0 +1,2 @@
+"NSMicrophoneUsageDescription" = "NeverJod ต้องการเข้าถึงไมโครโฟนเพื่อบันทึกเสียงและจดรายรับ-รายจ่ายด้วยเสียง";
+"NSSpeechRecognitionUsageDescription" = "NeverJod ใช้การรู้จำเสียงเพื่อแปลงคำพูดเป็นข้อมูลธุรกรรมทางการเงิน";

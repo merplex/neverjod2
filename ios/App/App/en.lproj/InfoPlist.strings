@@ -1,0 +1,2 @@
+"NSMicrophoneUsageDescription" = "NeverJod needs microphone access to record your voice for adding income and expense entries.";
+"NSSpeechRecognitionUsageDescription" = "NeverJod uses speech recognition to convert your voice into financial transaction entries.";
