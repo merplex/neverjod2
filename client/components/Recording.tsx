@@ -32,6 +32,14 @@ function readVoiceLang(): string {
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
+// Thai unit words — used to detect pre-normalization ASR text on Android and to
+// score how "complete" a candidate transcript is (more unit words = more complete).
+const THAI_UNIT_RE = /แสน|หมื่น|พัน|ร้อย|สิบ|ล้าน/;
+const THAI_UNIT_RE_G = /แสน|หมื่น|พัน|ร้อย|สิบ|ล้าน/g;
+function countThaiUnits(s: string): number {
+  return (s.match(THAI_UNIT_RE_G) || []).length;
+}
+
 // iOS: accumulate fields across multiple final results (SFSpeechRecognizer splits sentences)
 type MergedVoiceData = { categoryId?: string; accountId?: string; amount?: number; description: string };
 
@@ -51,8 +59,11 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const manualStopRef = useRef(false);
   // iOS only — accumulates best-matched fields across multiple final results
   const iosMergedRef = useRef<MergedVoiceData>({ description: "" });
-  // Android only — last interim result containing Thai unit words (before ASR normalizes to digits)
+  // Android only — most complete interim result containing Thai unit words (before ASR normalizes to digits)
   const androidThaiInterimRef = useRef<string>("");
+  // Android only — unit-word count of androidThaiInterimRef's current text, so a later interim
+  // can't silently overwrite a more complete earlier one with a partial "corrected" guess
+  const androidThaiInterimUnitCountRef = useRef<number>(0);
 
   useEffect(() => { onVoiceInputRef.current = onVoiceInput; }, [onVoiceInput]);
   useEffect(() => { onVoiceEndRef.current = onVoiceEnd; }, [onVoiceEnd]);
@@ -144,6 +155,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       hasSpeechStartedRef.current = false;
       iosMergedRef.current = { description: "" };
       androidThaiInterimRef.current = "";
+      androidThaiInterimUnitCountRef.current = 0;
     };
 
     recognition.onresult = (event: any) => {
@@ -188,29 +200,46 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
           // Android ASR normalizes Thai number words to digits in the FINAL result
           // (e.g. "สามหมื่นสองร้อยห้าสิบ" → "3250" instead of "30250").
           // Interim results arrive BEFORE normalization and still contain Thai unit words.
-          // So we capture the last interim that has Thai units and use it for amount parsing.
-          const hasThaiUnits = /แสน|หมื่น|พัน|ร้อย|สิบ|ล้าน/.test(transcriptPart);
+          // So we capture interims that have Thai units and use them for amount parsing.
+          const hasThaiUnits = THAI_UNIT_RE.test(transcriptPart);
           if (!isFinal) {
             if (hasThaiUnits) {
-              androidThaiInterimRef.current = transcriptPart;
-              console.log("[voice] Android interim Thai:", transcriptPart);
+              const unitCount = countThaiUnits(transcriptPart);
+              // Keep the MOST COMPLETE interim seen so far (most unit words), not just the
+              // latest one — ASR sometimes revises a fuller hypothesis ("...หมื่นแปดร้อย") down
+              // to a partial one ("...หมื่นแปด") right before finalizing, and a naive "latest wins"
+              // policy would silently lose the more accurate earlier guess.
+              if (unitCount >= androidThaiInterimUnitCountRef.current) {
+                androidThaiInterimRef.current = transcriptPart;
+                androidThaiInterimUnitCountRef.current = unitCount;
+              }
+              console.log("[voice] Android interim Thai:", transcriptPart, "| units:", unitCount);
             }
             continue;
           }
           // Check all alternatives for Thai unit words — Android normalizes the top result
-          // to digits but may still provide the original Thai text as a lower-ranked alternative
+          // to digits but may still provide the original Thai text as a lower-ranked alternative.
+          // Pick the alternative with the MOST unit words (most complete), not just the first
+          // one that happens to contain any Thai text.
           const resultItem = event.results[i];
           let thaiAlt: string | undefined;
+          let thaiAltUnitCount = 0;
           for (let k = 0; k < resultItem.length; k++) {
             const alt = resultItem[k].transcript;
-            if (/แสน|หมื่น|พัน|ร้อย|สิบ|ล้าน/.test(alt)) { thaiAlt = alt; break; }
+            const c = countThaiUnits(alt);
+            if (c > thaiAltUnitCount) { thaiAlt = alt; thaiAltUnitCount = c; }
           }
           console.log("[voice] final:", transcriptPart, "| alternatives:", Array.from({ length: resultItem.length }, (_, k) => resultItem[k].transcript));
           hasSpeechStartedRef.current = true;
           if (onTranscriptRef.current) onTranscriptRef.current(transcriptPart);
-          // Priority: Thai alternative > Thai interim > final digit text
-          const textForAmount = thaiAlt ?? androidThaiInterimRef.current ?? transcriptPart;
+          // Priority: whichever candidate (final alternative vs captured interim) is more
+          // complete — i.e. has more Thai unit words — since either can independently be the
+          // one that preserved a unit word the other lost.
+          const textForAmount = thaiAltUnitCount >= androidThaiInterimUnitCountRef.current
+            ? (thaiAlt ?? androidThaiInterimRef.current ?? transcriptPart)
+            : (androidThaiInterimRef.current ?? thaiAlt ?? transcriptPart);
           androidThaiInterimRef.current = "";
+          androidThaiInterimUnitCountRef.current = 0;
           const voiceData = parseVoiceInput(transcriptPart);
           const amountFromThai = parseVoiceInput(textForAmount).amount;
           const merged = { ...voiceData, amount: amountFromThai ?? voiceData.amount };
