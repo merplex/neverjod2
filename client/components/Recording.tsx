@@ -69,37 +69,21 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   // Auto-start when startTrigger increments
   useEffect(() => {
     if (!startTrigger || !recognitionRef.current || isListeningRef.current) return;
-
-    hasSpeechStartedRef.current = false;
-    iosMergedRef.current = { description: "" };
-    setIsListening(true);
-    isListeningRef.current = true;
-
-    const doStart = () => {
-      try { recognitionRef.current.start(); } catch (e) {
-        console.error("[voice] auto-start failed:", (e as Error).message);
+    try {
+      hasSpeechStartedRef.current = false;
+      iosMergedRef.current = { description: "" };
+      setIsListening(true);
+      isListeningRef.current = true;
+      // Call start() directly — getUserMedia() here has no user-gesture behind it (this effect
+      // fires from app-open/page-return, not a tap), so on Android it can silently hang/reject
+      // without ever reaching recognition.start(), leaving auto-start dead until a manual press.
+      try { recognitionRef.current.start(); } catch {
         setIsListening(false);
         isListeningRef.current = false;
       }
-    };
-
-    if (isIOSDevice) {
-      // iOS: call start() directly — getUserMedia breaks gesture context in WKWebView
-      doStart();
-    } else {
-      // Android: pre-grant mic permission before starting recognition (same as manual toggle —
-      // calling recognition.start() directly here is unreliable without this warm-up)
-      if (navigator.mediaDevices?.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(stream => { stream.getTracks().forEach(t => t.stop()); doStart(); })
-          .catch(err => {
-            console.error("[voice] auto-start mic denied:", err.name);
-            setIsListening(false);
-            isListeningRef.current = false;
-          });
-      } else {
-        doStart();
-      }
+    } catch {
+      setIsListening(false);
+      isListeningRef.current = false;
     }
   }, [startTrigger]);
 
