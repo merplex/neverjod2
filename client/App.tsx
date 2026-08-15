@@ -5,6 +5,7 @@ import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
 import { lk } from "./utils/ledgerStorage";
 import { syncAll, apiVerifyPurchase } from "./utils/syncService";
 import { restorePurchases } from "./utils/iap";
+import { App as CapacitorApp } from "@capacitor/app";
 import { CURRENCY_OPTIONS } from "./utils/currency";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -181,32 +182,48 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        // Save current page and hide timestamp for restore logic
-        sessionStorage.setItem("last_path", window.location.pathname);
-        sessionStorage.setItem("last_hide_at", Date.now().toString());
-      } else if (document.visibilityState === "visible") {
-        const lastHideAt = sessionStorage.getItem("last_hide_at");
-        const elapsed = lastHideAt ? Date.now() - parseInt(lastHideAt) : 0;
-        // Away > 1 minute → go home
-        if (elapsed >= 60_000) {
-          navigate("/", { replace: true });
-        }
-        const token = localStorage.getItem("cloud_token");
-        if (token && localStorage.getItem("sync_auto_enabled") === "true") {
-          syncAll(token).then(() => {
-            if (localStorage.getItem("app_premium") !== "true") return;
-            const now = new Date().toISOString();
-            localStorage.setItem("sync_direction", "client");
-            localStorage.setItem("last_client_sync_at", now);
-            window.dispatchEvent(new CustomEvent("sync-updated"));
-          }).catch(() => {});
-        }
+    const onHidden = () => {
+      // Save current page and hide timestamp for restore logic
+      sessionStorage.setItem("last_path", window.location.pathname);
+      sessionStorage.setItem("last_hide_at", Date.now().toString());
+    };
+    const onResume = () => {
+      const lastHideAt = sessionStorage.getItem("last_hide_at");
+      const elapsed = lastHideAt ? Date.now() - parseInt(lastHideAt) : 0;
+      // Away > 1 minute → go home
+      if (elapsed >= 60_000) {
+        navigate("/", { replace: true });
+      }
+      const token = localStorage.getItem("cloud_token");
+      if (token && localStorage.getItem("sync_auto_enabled") === "true") {
+        syncAll(token).then(() => {
+          if (localStorage.getItem("app_premium") !== "true") return;
+          const now = new Date().toISOString();
+          localStorage.setItem("sync_direction", "client");
+          localStorage.setItem("last_client_sync_at", now);
+          window.dispatchEvent(new CustomEvent("sync-updated"));
+        }).catch(() => {});
       }
     };
+    // BOTH document.visibilitychange (standard web event) AND Capacitor's native
+    // App.appStateChange (backed by Android's onResume/onPause) — on some OEM Android builds
+    // (observed on MIUI) visibilitychange silently stops firing on resume after the WebView has
+    // sat backgrounded for a few minutes, while the native lifecycle callback still fires
+    // reliably since the OS dispatches it directly rather than routing through the (possibly
+    // throttled) WebView JS event loop.
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") onHidden();
+      else if (document.visibilityState === "visible") onResume();
+    };
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
+    const appStateListener = CapacitorApp.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) onResume();
+      else onHidden();
+    });
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      appStateListener.then((l) => l.remove());
+    };
   }, []);
 
   useEffect(() => {

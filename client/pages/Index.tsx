@@ -10,6 +10,7 @@ import { getCurrencySymbol, getAccountCurrency } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { LANG_LOCALE } from "../utils/i18n";
 import { Clipboard } from "@capacitor/clipboard";
+import { App } from "@capacitor/app";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -292,15 +293,30 @@ export default function Index() {
     };
   }, []);
 
-  // Restart voice when app comes back to foreground while on home page
+  // Restart voice when app comes back to foreground while on home page.
+  // Uses BOTH document.visibilitychange (standard web event) AND Capacitor's native
+  // App.appStateChange (backed by Android's onResume/onPause) — on some OEM Android builds
+  // (observed on MIUI) visibilitychange silently stops firing on resume after the WebView has
+  // sat backgrounded for a few minutes, while the native lifecycle callback still fires reliably
+  // since the OS itself dispatches it rather than routing through the (possibly throttled)
+  // WebView JS event loop.
   useEffect(() => {
     const onResume = () => {
-      if (document.visibilityState === "visible" && currentPage === "category" && voiceAutoStart) {
+      if (currentPage === "category" && voiceAutoStart) {
         setVoiceStartTrigger((n) => n + 1);
       }
     };
-    document.addEventListener("visibilitychange", onResume);
-    return () => document.removeEventListener("visibilitychange", onResume);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") onResume();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    const appStateListener = App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) onResume();
+    });
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      appStateListener.then((l) => l.remove());
+    };
   }, [currentPage, voiceAutoStart]);
 
   // Refresh categories/accounts from localStorage when sync completes (no page reload needed)
