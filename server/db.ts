@@ -149,6 +149,9 @@ export async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS provider TEXT`).catch(() => {});
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id TEXT`).catch(() => {});
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_provider_provider_id_idx ON users (provider, provider_id) WHERE provider_id IS NOT NULL`).catch(() => {});
+  // Migration: per-ledger settings blob (theme/language/currency/etc.) for cloud sync
+  await pool.query(`ALTER TABLE ledgers ADD COLUMN IF NOT EXISTS settings JSONB`).catch(() => {});
+  await pool.query(`ALTER TABLE ledgers ADD COLUMN IF NOT EXISTS settings_updated_at TIMESTAMPTZ`).catch(() => {});
 
   // Admin account: always premium, no expiry
   await pool.query(`

@@ -27,6 +27,7 @@ interface AppSettings {
   colorTheme: ColorTheme;
   swipeBackDirection: "right" | "left";
   monthResetDay: number;
+  updatedAt?: string;
 }
 
 const defaultSettings: AppSettings = {
@@ -182,7 +183,7 @@ export default function Settings() {
   }, [cloudToken]);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value, updatedAt: new Date().toISOString() }));
   };
 
   const handleAuthSuccess = async (isPremium: boolean) => {
@@ -343,9 +344,16 @@ export default function Settings() {
     setLedgers(list);
   };
 
-  const handleSwitchLedger = (id: string) => {
+  const handleSwitchLedger = async (id: string) => {
     if (id === activeLedger) return;
     setActiveLedgerId(id);
+    // Pull this ledger's data before reloading — auto-sync on app launch only runs when the
+    // "sync อัตโนมัติ" toggle is on, so a fresh device switching into a ledger for the first
+    // time would otherwise reload into empty seed defaults instead of the real synced data.
+    if (cloudToken && isPremium) {
+      setLedgerLoading(true);
+      try { await syncAll(cloudToken, false); } catch {}
+    }
     window.location.reload();
   };
 
@@ -453,7 +461,8 @@ export default function Settings() {
                   <>
                     <button
                       onClick={() => handleSwitchLedger(l.id)}
-                      className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${activeLedger === l.id ? "bg-theme-100 text-theme-700" : "bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
+                      disabled={ledgerLoading}
+                      className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ${activeLedger === l.id ? "bg-theme-100 text-theme-700" : "bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
                     >
                       {activeLedger === l.id && <Check size={14} className="text-theme-600 flex-shrink-0" />}
                       <span className="truncate">{l.name}</span>

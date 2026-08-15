@@ -43,6 +43,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const recognitionRef = useRef<any>(null);
+  const createRecognitionRef = useRef<(() => any) | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isListeningRef = useRef(false);
   const speechStartTimeoutRef = useRef<NodeJS.Timeout>();
@@ -78,12 +79,53 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       iosMergedRef.current = { description: "" };
       setIsListening(true);
       isListeningRef.current = true;
-      // Call start() directly — getUserMedia() here has no user-gesture behind it (this effect
-      // fires from app-open/page-return, not a tap), so on Android it can silently hang/reject
-      // without ever reaching recognition.start(), leaving auto-start dead until a manual press.
-      try { recognitionRef.current.start(); } catch {
-        setIsListening(false);
-        isListeningRef.current = false;
+
+      // Rebuild a fresh SpeechRecognition instance before starting — see createRecognition()
+      // comment below for why the long-lived one goes stale after extended backgrounding.
+      if (createRecognitionRef.current) createRecognitionRef.current();
+
+      const doStart = () => {
+        try { recognitionRef.current.start(); } catch (e) {
+          console.error("[voice] auto-start failed:", (e as Error).message);
+          setIsListening(false);
+          isListeningRef.current = false;
+        }
+      };
+
+      if (isIOSDevice) {
+        // iOS: call start() directly — getUserMedia breaks gesture context in WKWebView
+        doStart();
+      } else if (navigator.mediaDevices?.getUserMedia) {
+        // Android: re-warm the mic session via getUserMedia before recognition.start().
+        // Needed after a long background stint (~20-30min+), where Android tears down the
+        // mic/audio-focus session and calling recognition.start() directly throws immediately,
+        // leaving auto-start dead until a manual press. But getUserMedia() here has no real
+        // user-gesture behind it (this effect fires from app-open/page-return, not a tap), so on
+        // Android it can occasionally hang without ever resolving/rejecting — race it against a
+        // timeout and fall back to a direct start() so a cold app-open never gets stuck.
+        let settled = false;
+        const fallbackTimer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          doStart();
+        }, 1500);
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            stream.getTracks().forEach(t => t.stop());
+            if (settled) return;
+            settled = true;
+            clearTimeout(fallbackTimer);
+            doStart();
+          })
+          .catch(err => {
+            console.error("[voice] auto-start mic warm-up failed:", err.name);
+            if (settled) return;
+            settled = true;
+            clearTimeout(fallbackTimer);
+            doStart();
+          });
+      } else {
+        doStart();
       }
     } catch {
       setIsListening(false);
@@ -115,6 +157,12 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       }, readSilenceDelay());
     };
 
+    // Builds a fresh SpeechRecognition instance and wires up all handlers, then stores it in
+    // recognitionRef. Called once on mount, and again right before every auto-start — after the
+    // app sits backgrounded for ~20-30min+, Android tears down the old instance's internal
+    // engine connection, and reusing that stale object makes start() throw immediately (even
+    // right after a successful getUserMedia warm-up). A brand new instance sidesteps that.
+    const createRecognition = () => {
     // ── Language ─────────────────────────────────────────────────────────────
     // Both iOS and Android read language from Settings
     const lang = readVoiceLang();
@@ -249,19 +297,24 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       isListeningRef.current = false;
     };
 
-    recognitionRef.current = recognition;
+      recognitionRef.current = recognition;
+      return recognition;
+    };
+
+    createRecognitionRef.current = createRecognition;
+    createRecognition();
 
     const handleBlur = () => {
-      if (isListeningRef.current && recognition) {
+      if (isListeningRef.current && recognitionRef.current) {
         manualStopRef.current = true;
-        recognition.stop();
+        recognitionRef.current.stop();
       }
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden" && isListeningRef.current && recognition) {
+      if (document.visibilityState === "hidden" && isListeningRef.current && recognitionRef.current) {
         manualStopRef.current = true;
-        recognition.stop();
+        recognitionRef.current.stop();
       }
     };
 
@@ -272,7 +325,7 @@ export default function Recording({ onTranscript, onVoiceInput, onVoiceEnd, star
       manualStopRef.current = true;
       window.removeEventListener("blur", handleBlur);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (recognition) recognition.stop();
+      if (recognitionRef.current) recognitionRef.current.stop();
       if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
     };
   }, []);

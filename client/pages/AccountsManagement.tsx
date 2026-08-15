@@ -53,8 +53,11 @@ export default function AccountsManagement() {
                 revolut: CreditCard, wise: Wallet, stripe: CreditCard, paypal: Banknote,
               };
               if (legacyAccIconMap[acc.id]) return { ...acc, icon: legacyAccIconMap[acc.id] };
-              // Custom account — resolve icon by type string or fall back to MoreHorizontal
-              if (!acc.id.startsWith("custom_acc_")) return null;
+              // Any other ID (custom_acc_, synced-from-server, or a merge-collision id like
+              // local_<ts>_N) — resolve icon by type string, falling back to MoreHorizontal.
+              // Never drop the item: an unrecognized ID must still be visible/deletable here,
+              // otherwise it becomes a permanent ghost that Stats.tsx (which reads storage
+              // unfiltered) still shows but the user has no way to remove.
               const iconMap: Record<string, React.ComponentType<any>> = {
                 creditcard: CreditCard, card: CreditCard, wallet: Wallet, cash: Banknote,
                 invest: TrendingUp, salary: TrendingUp, phone: Smartphone, other: MoreHorizontal,

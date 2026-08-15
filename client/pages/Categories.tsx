@@ -69,8 +69,12 @@ export default function Categories() {
                 internet: Zap, hobby: Music, pets: Heart, childcare: Gift, loan: FileText,
               };
               if (legacyCatIconMap[cat.id]) return { ...cat, icon: legacyCatIconMap[cat.id] };
-              if (!cat.id.startsWith("custom_")) return null;
-              const iconEntry = iconOptions.find((o) => o.id === cat.iconId) || iconOptions[iconOptions.length - 1];
+              // Any other ID (custom_, synced-from-server, or a merge-collision id like
+              // local_<ts>_N) — resolve by iconId, falling back to a generic icon. Never drop
+              // the item: an unrecognized ID must still be visible/deletable here, otherwise it
+              // becomes a permanent ghost that Stats.tsx (which reads storage unfiltered) still
+              // shows but the user has no way to remove.
+              const iconEntry = iconOptions.find((o) => o.id === cat.iconId) || iconOptions.find((o) => o.id === "other")!;
               return { ...cat, icon: iconEntry.icon };
             }
             return { ...cat, icon: defaultCat.icon };

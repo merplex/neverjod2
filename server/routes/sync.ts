@@ -46,11 +46,16 @@ async function premiumMiddleware(req: Request, res: Response, next: NextFunction
 // Client sends local data; server upserts with last-write-wins
 router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const { categories = [], accounts = [], transactions = [], repeatTransactions = [], ledger_id = "main" } = req.body;
+  const { categories = [], accounts = [], transactions = [], repeatTransactions = [], settings = null, settings_updated_at = null, ledger_id = "main" } = req.body;
 
   try {
     // Categories + Accounts in parallel
     await Promise.all([
+      ...(settings ? [pool.query(
+        `UPDATE ledgers SET settings = $1, settings_updated_at = $2
+         WHERE id = $3 AND user_id = $4 AND (settings_updated_at IS NULL OR settings_updated_at < $2)`,
+        [JSON.stringify(settings), settings_updated_at, ledger_id, userId]
+      )] : []),
       ...categories.map((cat: any) =>
         pool.query(
           `INSERT INTO sync_categories (id, user_id, name, type, icon, icon_id, keywords, sort_order, ledger_id, updated_at, deleted_at)
@@ -172,7 +177,7 @@ router.post("/pull", authMiddleware, premiumMiddleware, async (req: Request, res
   const since = last_sync_at ? new Date(last_sync_at) : new Date(0);
 
   try {
-    const [cats, accs, txns, repeats, userRow, lastPushRow] = await Promise.all([
+    const [cats, accs, txns, repeats, userRow, lastPushRow, ledgerRow] = await Promise.all([
       pool.query(
         "SELECT * FROM sync_categories WHERE user_id = $1 AND ledger_id = $2 AND updated_at > $3",
         [userId, ledger_id, since]
@@ -202,6 +207,10 @@ router.post("/pull", authMiddleware, premiumMiddleware, async (req: Request, res
         ) t`,
         [userId, ledger_id]
       ),
+      pool.query(
+        "SELECT settings, settings_updated_at FROM ledgers WHERE id = $1 AND user_id = $2",
+        [ledger_id, userId]
+      ),
     ]);
 
     res.json({
@@ -209,6 +218,8 @@ router.post("/pull", authMiddleware, premiumMiddleware, async (req: Request, res
       accounts: accs.rows,
       transactions: txns.rows,
       repeatTransactions: repeats.rows,
+      settings: ledgerRow.rows[0]?.settings ?? null,
+      settingsUpdatedAt: ledgerRow.rows[0]?.settings_updated_at ?? null,
       isPremium: userRow.rows[0]?.is_premium ?? false,
       planType: userRow.rows[0]?.is_premium ? (userRow.rows[0]?.plan_type ?? null) : null,
       premiumExpiresAt: userRow.rows[0]?.is_premium ? (userRow.rows[0]?.premium_expires_at ?? null) : null,

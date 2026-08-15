@@ -472,10 +472,21 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
     now
   );
 
+  // Settings (theme/language/currency/etc.) are a single per-ledger blob, not a list — same
+  // first-sync epoch-stamp trick as categories/accounts so a freshly-installed device's
+  // still-default settings never clobber a real settings blob already on the server.
+  let settings: any = null;
+  try { settings = JSON.parse(localStorage.getItem(lk("app_settings")) || "null"); } catch {}
+  const settingsUpdatedAt = isFirstSync ? new Date(0).toISOString() : (settings?.updatedAt || now);
+
   const res = await fetch(`${API_BASE}/sync/push`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions, ledger_id: ledgerId }),
+    body: JSON.stringify({
+      categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions,
+      settings, settings_updated_at: settingsUpdatedAt,
+      ledger_id: ledgerId,
+    }),
   });
   if (!res.ok) throw new Error(`push:${res.status}`);
 
@@ -523,6 +534,16 @@ export async function syncPull(token: string) {
   if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions);
   // Repeat transactions: ID-based merge (server wins; local-only items preserved)
   if (data.repeatTransactions?.length) mergeRepeatTransIntoLocal(data.repeatTransactions);
+  // Settings: single blob, last-write-wins by timestamp (server never clobbers a newer local edit)
+  if (data.settings) {
+    let local: any = null;
+    try { local = JSON.parse(localStorage.getItem(lk("app_settings")) || "null"); } catch {}
+    const localStamp = local?.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+    const serverStamp = data.settingsUpdatedAt ? new Date(data.settingsUpdatedAt).getTime() : 0;
+    if (serverStamp > localStamp) {
+      localStorage.setItem(lk("app_settings"), JSON.stringify(data.settings));
+    }
+  }
   // Always refresh premium status from server (handles DB changes without re-login)
   if (typeof data.isPremium === "boolean") {
     localStorage.setItem("app_premium", data.isPremium ? "true" : "false");
