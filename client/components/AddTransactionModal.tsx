@@ -78,6 +78,9 @@ function formatDate(d: Date) {
     " (" + d.toLocaleDateString("en-US", { weekday: "short" }) + ")";
 }
 function formatTime(d: Date) {
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}:${d.getSeconds().toString().padStart(2, "0")}`;
+}
+function formatTimeDisplay(d: Date) {
   return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
@@ -367,7 +370,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                 className="flex items-center gap-2 px-4 py-3 hover:bg-slate-50 transition-colors"
               >
                 <span className="text-xs text-slate-400">Time</span>
-                <span className="text-sm font-medium text-slate-800">{formatTime(currentTime)}</span>
+                <span className="text-sm font-medium text-slate-800">{formatTimeDisplay(currentTime)}</span>
               </button>
             </div>
 

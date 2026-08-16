@@ -322,7 +322,7 @@ export default function Transactions() {
                                 {transaction.category}
                               </p>
                               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                                {transaction.time}
+                                {transaction.time?.slice(0, 5)}
                               </span>
                             </div>
                             <p className="text-xs text-slate-600">

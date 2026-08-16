@@ -686,7 +686,7 @@ export default function Settings() {
                       <button
                         key={opt.lang}
                         onClick={() => {
-                          setSettings((prev) => ({ ...prev, currencySymbol: opt.symbol, currencyLang: opt.lang }));
+                          setSettings((prev) => ({ ...prev, currencySymbol: opt.symbol, currencyLang: opt.lang, updatedAt: new Date().toISOString() }));
                           setShowCurrencyPicker(false);
                         }}
                         className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${isSelected ? "bg-theme-50" : ""}`}

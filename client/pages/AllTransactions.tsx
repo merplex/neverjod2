@@ -708,7 +708,7 @@ export default function AllTransactions() {
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-xs text-slate-500 flex-shrink-0">{transaction.time}</span>
+                        <span className="text-xs text-slate-500 flex-shrink-0">{transaction.time?.slice(0, 5)}</span>
                         {transaction.description && transaction.description.trim() && (
                           <>
                             <span className="text-xs text-slate-300 flex-shrink-0">·</span>

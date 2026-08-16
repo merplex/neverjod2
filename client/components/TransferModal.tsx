@@ -18,6 +18,9 @@ interface TransferModalProps {
 }
 
 function formatTime(d: Date) {
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}:${d.getSeconds().toString().padStart(2, "0")}`;
+}
+function formatTimeDisplay(d: Date) {
   return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
@@ -387,7 +390,7 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
                   onClick={() => setShowTimePicker(true)}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:bg-slate-50 transition-colors whitespace-nowrap"
                 >
-                  {formatTime(time)}
+                  {formatTimeDisplay(time)}
                 </button>
               </div>
             </div>
