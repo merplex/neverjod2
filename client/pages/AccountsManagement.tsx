@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronDown, Edit2, ArrowRightLeft, Trash2, GripVertical, 
 import CloudAuthModal from "../components/CloudAuthModal";
 import PremiumModal from "../components/PremiumModal";
 import { markDeleted } from "../utils/syncService";
+import { pushBackHandler, popBackHandler } from "../utils/backHandlerStack";
 import { useNavigate } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { useT } from "../hooks/useT";
@@ -169,17 +170,21 @@ export default function AccountsManagement() {
 
     // Validate: keywords must not already exist in other accounts or categories
     const storedCategories = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
+    const dupMessages: string[] = [];
     for (const kw of keywords) {
       const dupAcc = accounts.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setNewAccKeywordError(T("acc.keyword_duplicate", { kw, name: dupAcc.name }));
-        return;
+        dupMessages.push(T("acc.keyword_duplicate", { kw, name: dupAcc.name }));
+        continue;
       }
       const dupCat = storedCategories.find((c: any) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setNewAccKeywordError(T("acc.keyword_duplicate", { kw, name: dupCat.name }));
-        return;
+        dupMessages.push(T("acc.keyword_duplicate", { kw, name: dupCat.name }));
       }
+    }
+    if (dupMessages.length > 0) {
+      setNewAccKeywordError(dupMessages.join("\n"));
+      return;
     }
 
     const iconEntry = accIconOptions.find((o) => o.id === newAccIconId) || accIconOptions[accIconOptions.length - 1];
@@ -258,17 +263,21 @@ export default function AccountsManagement() {
     const otherAccs = accounts.filter((a) => a.id !== editingId);
     const storedCategories = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
 
+    const dupMessages: string[] = [];
     for (const kw of keywords) {
       const dupAcc = otherAccs.find((a) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setKeywordError(T("acc.keyword_duplicate", { kw, name: dupAcc.name }));
-        return;
+        dupMessages.push(T("acc.keyword_duplicate", { kw, name: dupAcc.name }));
+        continue;
       }
       const dupCat = storedCategories.find((c: any) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setKeywordError(T("acc.keyword_duplicate", { kw, name: dupCat.name }));
-        return;
+        dupMessages.push(T("acc.keyword_duplicate", { kw, name: dupCat.name }));
       }
+    }
+    if (dupMessages.length > 0) {
+      setKeywordError(dupMessages.join("\n"));
+      return;
     }
 
     setKeywordError("");
@@ -301,6 +310,22 @@ export default function AccountsManagement() {
     setKeywordError("");
     setEditCurrencySymbol(""); setEditCurrencyLang(""); setEditCurrencyName(""); setEditExchangeRate("");
   };
+
+  // While a modal/edit form is open, claim the Android back gesture to close it
+  // instead of letting BottomNavLayout navigate to "/" and discard unsaved input.
+  useEffect(() => {
+    if (!deleteConfirmId && !showPremiumModal && !showCloudAuth && !showTransferModal && !showAddForm && !editingId) return;
+    const handler = () => {
+      if (deleteConfirmId) { setDeleteConfirmId(null); return; }
+      if (showPremiumModal) { setShowPremiumModal(false); return; }
+      if (showCloudAuth) { setShowCloudAuth(false); return; }
+      if (showTransferModal) { setShowTransferModal(false); return; }
+      if (showAddForm) { setShowAddForm(false); return; }
+      if (editingId) { cancelEdit(); return; }
+    };
+    pushBackHandler(handler);
+    return () => popBackHandler(handler);
+  }, [deleteConfirmId, showPremiumModal, showCloudAuth, showTransferModal, showAddForm, editingId]);
 
   const deleteTransactionCount = (accountId: string): number => {
     try {
@@ -604,10 +629,10 @@ export default function AccountsManagement() {
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
-                        className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
+                        className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
                         placeholder={T("acc.keywords_placeholder")}
                       />
-                      {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
+                      {keywordError && <p className="text-xs text-red-500 mt-1 whitespace-pre-line">{keywordError}</p>}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -844,10 +869,10 @@ export default function AccountsManagement() {
                   type="text"
                   value={newAccKeywords}
                   onChange={(e) => { setNewAccKeywords(e.target.value); setNewAccKeywordError(""); }}
-                  className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}
+                  className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${newAccKeywordError ? "border-red-400" : "border-slate-300"}`}
                   placeholder="กสิกร, kbank, เขียว"
                 />
-                {newAccKeywordError && <p className="text-xs text-red-500 mt-1">{newAccKeywordError}</p>}
+                {newAccKeywordError && <p className="text-xs text-red-500 mt-1 whitespace-pre-line">{newAccKeywordError}</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>

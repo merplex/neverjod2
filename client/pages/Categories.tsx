@@ -8,6 +8,7 @@ import { Utensils, Bus, Music, ShoppingCart, FileText, Heart, BookOpen, Zap, Win
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
 import { markDeleted } from "../utils/syncService";
+import { pushBackHandler, popBackHandler } from "../utils/backHandlerStack";
 
 interface Category {
   id: string;
@@ -146,17 +147,21 @@ export default function Categories() {
 
     // Validate: keywords must not already exist in other categories or accounts
     const storedAccounts = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
+    const dupMessages: string[] = [];
     for (const kw of keywords) {
       const dupCat = categories.find((c) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setNewKeywordError(T("cat.keyword_duplicate", { kw, name: dupCat.name }));
-        return;
+        dupMessages.push(T("cat.keyword_duplicate", { kw, name: dupCat.name }));
+        continue;
       }
       const dupAcc = storedAccounts.find((a: any) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setNewKeywordError(T("cat.keyword_duplicate", { kw, name: dupAcc.name }));
-        return;
+        dupMessages.push(T("cat.keyword_duplicate", { kw, name: dupAcc.name }));
       }
+    }
+    if (dupMessages.length > 0) {
+      setNewKeywordError(dupMessages.join("\n"));
+      return;
     }
 
     const iconEntry = iconOptions.find((o) => o.id === newIconId) || iconOptions[iconOptions.length - 1];
@@ -196,17 +201,21 @@ export default function Categories() {
     const otherCats = categories.filter((c) => c.id !== editingId);
     const storedAccounts = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
 
+    const dupMessages: string[] = [];
     for (const kw of keywords) {
       const dupCat = otherCats.find((c) => (c.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupCat) {
-        setKeywordError(T("cat.keyword_duplicate", { kw, name: dupCat.name }));
-        return;
+        dupMessages.push(T("cat.keyword_duplicate", { kw, name: dupCat.name }));
+        continue;
       }
       const dupAcc = storedAccounts.find((a: any) => (a.keywords || []).map((k: string) => k.toLowerCase()).includes(kw));
       if (dupAcc) {
-        setKeywordError(T("cat.keyword_duplicate", { kw, name: dupAcc.name }));
-        return;
+        dupMessages.push(T("cat.keyword_duplicate", { kw, name: dupAcc.name }));
       }
+    }
+    if (dupMessages.length > 0) {
+      setKeywordError(dupMessages.join("\n"));
+      return;
     }
 
     setKeywordError("");
@@ -230,6 +239,21 @@ export default function Categories() {
     setShowEditIconPicker(false);
     setKeywordError("");
   };
+
+  // While a modal/edit form is open, claim the Android back gesture to close it
+  // instead of letting BottomNavLayout navigate to "/" and discard unsaved input.
+  useEffect(() => {
+    if (!deleteConfirmId && !showPremiumModal && !showCloudAuth && !showAddForm && !editingId) return;
+    const handler = () => {
+      if (deleteConfirmId) { setDeleteConfirmId(null); return; }
+      if (showPremiumModal) { setShowPremiumModal(false); return; }
+      if (showCloudAuth) { setShowCloudAuth(false); return; }
+      if (showAddForm) { setShowAddForm(false); return; }
+      if (editingId) { cancelEdit(); return; }
+    };
+    pushBackHandler(handler);
+    return () => popBackHandler(handler);
+  }, [deleteConfirmId, showPremiumModal, showCloudAuth, showAddForm, editingId]);
 
   const deleteTransactionCount = (catId: string): number => {
     try {
@@ -451,10 +475,10 @@ export default function Categories() {
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
-                        className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
+                        className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
                         placeholder={T("cat.keywords_placeholder")}
                       />
-                      {keywordError && <p className="text-xs text-red-500 mt-1">{keywordError}</p>}
+                      {keywordError && <p className="text-xs text-red-500 mt-1 whitespace-pre-line">{keywordError}</p>}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -590,10 +614,10 @@ export default function Categories() {
                   type="text"
                   value={newKeywords}
                   onChange={(e) => { setNewKeywords(e.target.value); setNewKeywordError(""); }}
-                  className={`w-full mt-1 px-3 py-2 border rounded-lg text-sm ${newKeywordError ? "border-red-400" : "border-slate-300"}`}
+                  className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${newKeywordError ? "border-red-400" : "border-slate-300"}`}
                   placeholder="ค่าเดินทาง, ค่ารถ, รถไฟฟ้า"
                 />
-                {newKeywordError && <p className="text-xs text-red-500 mt-1">{newKeywordError}</p>}
+                {newKeywordError && <p className="text-xs text-red-500 mt-1 whitespace-pre-line">{newKeywordError}</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-2 block">Icon</label>
