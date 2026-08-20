@@ -112,6 +112,7 @@ export default function AccountsManagement() {
   const newAccKeywordsInputRef = useRef<HTMLInputElement | null>(null);
   const stickyHeaderRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [navHeight, setNavHeight] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
@@ -158,6 +159,19 @@ export default function AccountsManagement() {
     const el = stickyHeaderRef.current;
     if (!el) return;
     const update = () => setHeaderHeight(el.getBoundingClientRect().height);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Same idea for the fixed bottom nav bar (rendered by BottomNavLayout, a parent of
+  // this page) — it's a fixed overlay the browser's focus-scroll logic doesn't know
+  // about, so a field sitting behind it looks "already visible" and never scrolls up.
+  useEffect(() => {
+    const el = document.querySelector(".fixed.bottom-0") as HTMLElement | null;
+    if (!el) return;
+    const update = () => setNavHeight(el.getBoundingClientRect().height);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
@@ -495,7 +509,7 @@ export default function AccountsManagement() {
               <div
                 key={account.id}
                 ref={(el) => { itemRefs.current[account.id] = el; }}
-                style={{ scrollMarginTop: headerHeight }}
+                style={{ scrollMarginTop: headerHeight, scrollMarginBottom: navHeight }}
                 className={`bg-white rounded-lg border p-4 transition-all select-none ${
                   isOverLimitAcc(account.id)
                     ? "border-amber-200 bg-amber-50/30"
@@ -523,7 +537,7 @@ export default function AccountsManagement() {
                           // where it should stop.
                           setTimeout(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }), 350);
                         }}
-                          style={{ scrollMarginTop: headerHeight }}
+                          style={{ scrollMarginTop: headerHeight, scrollMarginBottom: navHeight }}
                           className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
                         />
                         <button
@@ -676,7 +690,7 @@ export default function AccountsManagement() {
                           // where it should stop.
                           setTimeout(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }), 350);
                         }}
-                        style={{ scrollMarginTop: headerHeight }}
+                        style={{ scrollMarginTop: headerHeight, scrollMarginBottom: navHeight }}
                         className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
                         placeholder={T("acc.keywords_placeholder")}
                       />
