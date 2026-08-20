@@ -515,6 +515,7 @@ export default function AccountsManagement() {
                           type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
+                          onFocus={(e) => e.currentTarget.scrollIntoView({ block: "nearest", behavior: "smooth" })}
                           style={{ scrollMarginTop: headerHeight }}
                           className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
                         />
@@ -660,6 +661,7 @@ export default function AccountsManagement() {
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
+                        onFocus={(e) => e.currentTarget.scrollIntoView({ block: "nearest", behavior: "smooth" })}
                         style={{ scrollMarginTop: headerHeight }}
                         className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
                         placeholder={T("acc.keywords_placeholder")}

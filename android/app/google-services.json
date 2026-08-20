@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1030510349986",
+    "project_id": "neverjod-f39b0",
+    "storage_bucket": "neverjod-f39b0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1030510349986:android:7f13caf7f395dfa9e491fb",
+        "android_client_info": {
+          "package_name": "com.neverjod.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUBG4lJgwcjKqbxZH9mr2X2Mw0VufTlSg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
