@@ -468,7 +468,14 @@ export default function Categories() {
                           type="text"
                           value={isProtected(category.id) ? category.name : editName}
                           onChange={(e) => !isProtected(category.id) && setEditName(e.target.value)}
-                          onFocus={(e) => e.currentTarget.scrollIntoView({ block: "nearest", behavior: "smooth" })}
+                          onFocus={(e) => {
+                          const el = e.currentTarget;
+                          // Let the native keyboard-open auto-scroll (which ignores our CSS
+                          // scroll-margin-top) finish first, then correct afterward — doing
+                          // this immediately races the native scroll and can overshoot past
+                          // where it should stop.
+                          setTimeout(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }), 350);
+                        }}
                           readOnly={isProtected(category.id)}
                           style={{ scrollMarginTop: headerHeight }}
                           className={`flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm ${isProtected(category.id) ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}
@@ -511,7 +518,14 @@ export default function Categories() {
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
-                        onFocus={(e) => e.currentTarget.scrollIntoView({ block: "nearest", behavior: "smooth" })}
+                        onFocus={(e) => {
+                          const el = e.currentTarget;
+                          // Let the native keyboard-open auto-scroll (which ignores our CSS
+                          // scroll-margin-top) finish first, then correct afterward — doing
+                          // this immediately races the native scroll and can overshoot past
+                          // where it should stop.
+                          setTimeout(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }), 350);
+                        }}
                         style={{ scrollMarginTop: headerHeight }}
                         className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
                         placeholder={T("cat.keywords_placeholder")}
