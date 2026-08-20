@@ -108,6 +108,8 @@ export default function AccountsManagement() {
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPointerY = useRef(0);
   const dragBoundsRef = useRef({ top: 80, bottom: window.innerHeight - 80 });
+  const editKeywordsInputRef = useRef<HTMLInputElement | null>(null);
+  const newAccKeywordsInputRef = useRef<HTMLInputElement | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
@@ -183,7 +185,9 @@ export default function AccountsManagement() {
       }
     }
     if (dupMessages.length > 0) {
+      // Keep the keyboard/focus in the field — see comment in Categories.tsx's handleAddCategory.
       setNewAccKeywordError(dupMessages.join("\n"));
+      newAccKeywordsInputRef.current?.focus();
       return;
     }
 
@@ -218,34 +222,41 @@ export default function AccountsManagement() {
   const [showTransferModal, setShowTransferModal] = useState(false);
 
   const startEditing = (account: Account & { iconId?: string; currency?: string; exchangeRate?: number }) => {
-    setEditingId(account.id);
-    setEditName(account.name);
-    setEditType(account.type);
-    setEditBalance(account.balance?.toString() || "0");
-    setEditKeywords((account.keywords || []).join(", "));
-    const matchedOpt = accIconOptions.find((o) => o.icon === account.icon);
-    setEditIconId(account.iconId || matchedOpt?.id || "other");
-    setShowEditIconPicker(false);
-    setShowEditCurrencyPicker(false);
-    setKeywordError("");
-    const mainSym = getCurrencySymbol();
-    const filteredOpts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
-    const knownSymbols = filteredOpts.map((o) => o.symbol);
-    if (account.currency) {
-      if (knownSymbols.includes(account.currency)) {
-        setEditCurrencySymbol(account.currency);
-        setEditCurrencyName(account.currency);
-        const matchedOpt = filteredOpts.find((o) => o.symbol === account.currency);
-        setEditCurrencyLang(matchedOpt?.lang || "");
+    // Defer to the next tick — opening the edit form is a big, synchronous layout
+    // change (the card expands with new inputs). Doing it inside the tap's own click
+    // handler can leave the Android WebView's touch/gesture state machine confused
+    // about whether that tap "ended", which then misroutes the user's very next tap
+    // (e.g. into the newly-shown keyword input) into an unrelated system back-gesture.
+    setTimeout(() => {
+      setEditingId(account.id);
+      setEditName(account.name);
+      setEditType(account.type);
+      setEditBalance(account.balance?.toString() || "0");
+      setEditKeywords((account.keywords || []).join(", "));
+      const matchedOpt = accIconOptions.find((o) => o.icon === account.icon);
+      setEditIconId(account.iconId || matchedOpt?.id || "other");
+      setShowEditIconPicker(false);
+      setShowEditCurrencyPicker(false);
+      setKeywordError("");
+      const mainSym = getCurrencySymbol();
+      const filteredOpts = CURRENCY_OPTIONS.filter((o) => o.symbol !== mainSym);
+      const knownSymbols = filteredOpts.map((o) => o.symbol);
+      if (account.currency) {
+        if (knownSymbols.includes(account.currency)) {
+          setEditCurrencySymbol(account.currency);
+          setEditCurrencyName(account.currency);
+          const matchedOpt = filteredOpts.find((o) => o.symbol === account.currency);
+          setEditCurrencyLang(matchedOpt?.lang || "");
+        } else {
+          setEditCurrencySymbol("other");
+          setEditCurrencyName(account.currency);
+          setEditCurrencyLang("other");
+        }
+        setEditExchangeRate(account.exchangeRate?.toString() || "");
       } else {
-        setEditCurrencySymbol("other");
-        setEditCurrencyName(account.currency);
-        setEditCurrencyLang("other");
+        setEditCurrencySymbol(""); setEditCurrencyLang(""); setEditCurrencyName(""); setEditExchangeRate("");
       }
-      setEditExchangeRate(account.exchangeRate?.toString() || "");
-    } else {
-      setEditCurrencySymbol(""); setEditCurrencyLang(""); setEditCurrencyName(""); setEditExchangeRate("");
-    }
+    }, 0);
   };
 
   const saveEdit = () => {
@@ -276,7 +287,9 @@ export default function AccountsManagement() {
       }
     }
     if (dupMessages.length > 0) {
+      // Keep the keyboard/focus in the field — see comment in Categories.tsx's handleAddCategory.
       setKeywordError(dupMessages.join("\n"));
+      editKeywordsInputRef.current?.focus();
       return;
     }
 
@@ -626,6 +639,7 @@ export default function AccountsManagement() {
                     <div>
                       <label className="text-xs font-semibold text-slate-600">{T("acc.keywords_label")}</label>
                       <input
+                        ref={editKeywordsInputRef}
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
@@ -866,6 +880,7 @@ export default function AccountsManagement() {
               <div>
                 <label className="text-xs font-semibold text-slate-600">{T("acc.keywords_label")}</label>
                 <input
+                  ref={newAccKeywordsInputRef}
                   type="text"
                   value={newAccKeywords}
                   onChange={(e) => { setNewAccKeywords(e.target.value); setNewAccKeywordError(""); }}

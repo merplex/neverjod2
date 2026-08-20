@@ -18,6 +18,13 @@ export function useSwipeBack() {
 
   useEffect(() => {
     function onTouchStart(e: TouchEvent) {
+      // Always clear any stale start point from a previous touch first — a tap that ends
+      // via an early return below (e.g. too short to count as a swipe) never reached the
+      // reset at the bottom of onTouchEnd, so its coordinates would otherwise linger and
+      // get diffed against this unrelated touch, producing a phantom long "swipe".
+      touchStartX.current = null;
+      touchStartY.current = null;
+
       // Don't capture swipe when touching inside an input/textarea (user is selecting text)
       const target = e.target as HTMLElement;
       if (target.closest('input, textarea, [contenteditable="true"]')) return;
@@ -31,8 +38,15 @@ export function useSwipeBack() {
 
     function onTouchEnd(e: TouchEvent) {
       if (touchStartX.current === null || touchStartY.current === null) return;
-      const dx = e.changedTouches[0].clientX - touchStartX.current;
-      const dy = e.changedTouches[0].clientY - touchStartY.current;
+      const startX = touchStartX.current;
+      const startY = touchStartY.current;
+      // Reset immediately — everything below only reads the local startX/startY copies,
+      // so this touch's coordinates can never leak into a later, unrelated touch.
+      touchStartX.current = null;
+      touchStartY.current = null;
+
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
 
       // Ignore if more vertical than horizontal
       if (Math.abs(dy) > Math.abs(dx)) return;
@@ -44,9 +58,6 @@ export function useSwipeBack() {
       if ((direction === "right" && isSwipeRight) || (direction === "left" && !isSwipeRight)) {
         navigate("/");
       }
-
-      touchStartX.current = null;
-      touchStartY.current = null;
     }
 
     document.addEventListener("touchstart", onTouchStart, { passive: true });

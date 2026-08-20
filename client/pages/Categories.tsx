@@ -106,6 +106,8 @@ export default function Categories() {
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPointerY = useRef(0);
   const dragBoundsRef = useRef({ top: 80, bottom: window.innerHeight - 80 });
+  const editKeywordsInputRef = useRef<HTMLInputElement | null>(null);
+  const newKeywordsInputRef = useRef<HTMLInputElement | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIconId, setNewIconId] = useState("other");
@@ -161,6 +163,12 @@ export default function Categories() {
     }
     if (dupMessages.length > 0) {
       setNewKeywordError(dupMessages.join("\n"));
+      // Keep the keyboard open and focus in the keyword field so the user can fix the
+      // duplicate immediately. Tapping Save shifts focus to the button, which starts
+      // dismissing the keyboard — if that animation is still mid-flight when the user's
+      // next tap lands, the Android WebView can misroute it into a system back-gesture.
+      // Re-focusing here keeps the field active so there's no stray tap to misroute.
+      newKeywordsInputRef.current?.focus();
       return;
     }
 
@@ -177,13 +185,20 @@ export default function Categories() {
   const isProtected = (id: string) => id === "nocat";
 
   const startEditing = (category: Category & { iconId?: string }) => {
-    setEditingId(category.id);
-    setEditName(category.name);
-    setEditKeywords((category.keywords || []).join(", "));
-    const matchedOpt = iconOptions.find((o) => o.icon === category.icon);
-    setEditIconId(category.iconId || matchedOpt?.id || "other");
-    setShowEditIconPicker(false);
-    setKeywordError("");
+    // Defer to the next tick — opening the edit form is a big, synchronous layout
+    // change (the card expands with new inputs). Doing it inside the tap's own click
+    // handler can leave the Android WebView's touch/gesture state machine confused
+    // about whether that tap "ended", which then misroutes the user's very next tap
+    // (e.g. into the newly-shown keyword input) into an unrelated system back-gesture.
+    setTimeout(() => {
+      setEditingId(category.id);
+      setEditName(category.name);
+      setEditKeywords((category.keywords || []).join(", "));
+      const matchedOpt = iconOptions.find((o) => o.icon === category.icon);
+      setEditIconId(category.iconId || matchedOpt?.id || "other");
+      setShowEditIconPicker(false);
+      setKeywordError("");
+    }, 0);
   };
 
   const saveEdit = () => {
@@ -214,7 +229,9 @@ export default function Categories() {
       }
     }
     if (dupMessages.length > 0) {
+      // Keep the keyboard/focus in the field — see comment in handleAddCategory above.
       setKeywordError(dupMessages.join("\n"));
+      editKeywordsInputRef.current?.focus();
       return;
     }
 
@@ -472,6 +489,7 @@ export default function Categories() {
                     <div>
                       <label className="text-xs font-semibold text-slate-600">{T("cat.keywords_label")}</label>
                       <input
+                        ref={editKeywordsInputRef}
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
@@ -611,6 +629,7 @@ export default function Categories() {
               <div>
                 <label className="text-xs font-semibold text-slate-600">{T("cat.keywords_label")}</label>
                 <input
+                  ref={newKeywordsInputRef}
                   type="text"
                   value={newKeywords}
                   onChange={(e) => { setNewKeywords(e.target.value); setNewKeywordError(""); }}
