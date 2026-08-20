@@ -108,6 +108,8 @@ export default function Categories() {
   const dragBoundsRef = useRef({ top: 80, bottom: window.innerHeight - 80 });
   const editKeywordsInputRef = useRef<HTMLInputElement | null>(null);
   const newKeywordsInputRef = useRef<HTMLInputElement | null>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIconId, setNewIconId] = useState("other");
@@ -125,6 +127,19 @@ export default function Categories() {
     if (isFirstRenderCat.current) { isFirstRenderCat.current = false; return; }
     window.dispatchEvent(new CustomEvent("app-data-updated"));
   }, [categories]);
+
+  // Track the sticky header's height so focused inputs reserve room for it when the
+  // keyboard opening auto-scrolls them into view — otherwise the header can end up
+  // covering the input instead of scrolling stopping just below it.
+  useEffect(() => {
+    const el = stickyHeaderRef.current;
+    if (!el) return;
+    const update = () => setHeaderHeight(el.getBoundingClientRect().height);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Categories over free limit (by position in list, excluding nocat) — locked when not premium
   const reorderableCats = categories.filter((c) => c.id !== "nocat");
@@ -360,7 +375,7 @@ export default function Categories() {
   return (
     <div className="min-h-screen bg-slate-50 pb-safe-content">
       {/* Sticky header + tab controls wrapper */}
-      <div className="sticky top-0 z-10">
+      <div ref={stickyHeaderRef} className="sticky top-0 z-10">
       {/* Header */}
       <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
@@ -430,6 +445,7 @@ export default function Categories() {
               <div
                 key={category.id}
                 ref={(el) => { itemRefs.current[category.id] = el; }}
+                style={{ scrollMarginTop: headerHeight }}
                 className={`bg-white rounded-lg border p-4 transition-all select-none ${
                   isOverLimitCat(category.id)
                     ? "border-amber-200 bg-amber-50/30"
@@ -453,6 +469,7 @@ export default function Categories() {
                           value={isProtected(category.id) ? category.name : editName}
                           onChange={(e) => !isProtected(category.id) && setEditName(e.target.value)}
                           readOnly={isProtected(category.id)}
+                          style={{ scrollMarginTop: headerHeight }}
                           className={`flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm ${isProtected(category.id) ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}
                         />
                         {!isProtected(category.id) && (
@@ -493,6 +510,7 @@ export default function Categories() {
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
+                        style={{ scrollMarginTop: headerHeight }}
                         className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
                         placeholder={T("cat.keywords_placeholder")}
                       />

@@ -110,6 +110,8 @@ export default function AccountsManagement() {
   const dragBoundsRef = useRef({ top: 80, bottom: window.innerHeight - 80 });
   const editKeywordsInputRef = useRef<HTMLInputElement | null>(null);
   const newAccKeywordsInputRef = useRef<HTMLInputElement | null>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState("savings account");
@@ -148,6 +150,19 @@ export default function AccountsManagement() {
     if (isFirstRenderAcc.current) { isFirstRenderAcc.current = false; return; }
     window.dispatchEvent(new CustomEvent("app-data-updated"));
   }, [accounts]);
+
+  // Track the sticky header's height so focused inputs reserve room for it when the
+  // keyboard opening auto-scrolls them into view — otherwise the header can end up
+  // covering the input instead of scrolling stopping just below it.
+  useEffect(() => {
+    const el = stickyHeaderRef.current;
+    if (!el) return;
+    const update = () => setHeaderHeight(el.getBoundingClientRect().height);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Accounts over free limit (by position in list, excluding account_deleted) — locked when not premium
   const reorderableAccs = accounts.filter((a) => a.id !== "account_deleted");
@@ -430,7 +445,7 @@ export default function AccountsManagement() {
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header sticky top-0 z-10">
+      <div ref={stickyHeaderRef} className="bg-gradient-to-br from-theme-600 to-theme-700 text-white px-4 pb-4 pt-safe-header sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
@@ -480,6 +495,7 @@ export default function AccountsManagement() {
               <div
                 key={account.id}
                 ref={(el) => { itemRefs.current[account.id] = el; }}
+                style={{ scrollMarginTop: headerHeight }}
                 className={`bg-white rounded-lg border p-4 transition-all select-none ${
                   isOverLimitAcc(account.id)
                     ? "border-amber-200 bg-amber-50/30"
@@ -499,6 +515,7 @@ export default function AccountsManagement() {
                           type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
+                          style={{ scrollMarginTop: headerHeight }}
                           className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
                         />
                         <button
@@ -643,6 +660,7 @@ export default function AccountsManagement() {
                         type="text"
                         value={editKeywords}
                         onChange={(e) => { setEditKeywords(e.target.value); setKeywordError(""); }}
+                        style={{ scrollMarginTop: headerHeight }}
                         className={`w-full mt-1 pl-3 pr-10 py-2 border rounded-lg text-sm ${keywordError ? "border-red-400" : "border-slate-300"}`}
                         placeholder={T("acc.keywords_placeholder")}
                       />
