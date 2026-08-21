@@ -60,7 +60,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
         pool.query(
           `INSERT INTO sync_categories (id, user_id, name, type, icon, icon_id, keywords, sort_order, ledger_id, updated_at, deleted_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-           ON CONFLICT (id, user_id) DO UPDATE
+           ON CONFLICT (id, user_id, ledger_id) DO UPDATE
              SET name = EXCLUDED.name, type = EXCLUDED.type, icon = EXCLUDED.icon,
                  icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
                  sort_order = EXCLUDED.sort_order, ledger_id = EXCLUDED.ledger_id,
@@ -74,7 +74,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
         pool.query(
           `INSERT INTO sync_accounts (id, user_id, name, type, start_balance, icon, icon_id, keywords, sort_order, ledger_id, currency, exchange_rate, updated_at, deleted_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-           ON CONFLICT (id, user_id) DO UPDATE
+           ON CONFLICT (id, user_id, ledger_id) DO UPDATE
              SET name = EXCLUDED.name, type = EXCLUDED.type, start_balance = EXCLUDED.start_balance,
                  icon = EXCLUDED.icon, icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
                  sort_order = EXCLUDED.sort_order, ledger_id = EXCLUDED.ledger_id,
@@ -108,7 +108,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
             `INSERT INTO sync_transactions
                (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, is_repeat, repeat_id, currency, exchange_rate, currency_amount, updated_at, deleted_at)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
-             ON CONFLICT (id, user_id) DO UPDATE
+             ON CONFLICT (id, user_id, ledger_id) DO UPDATE
                SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                    amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
                    date = EXCLUDED.date, time = EXCLUDED.time, ledger_id = EXCLUDED.ledger_id,
@@ -138,7 +138,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
               category_type, repeat_option, day_of_month, weekday, month_of_year, time,
               start_date, next_due, last_executed, ledger_id, updated_at, deleted_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
-           ON CONFLICT (id, user_id) DO UPDATE
+           ON CONFLICT (id, user_id, ledger_id) DO UPDATE
              SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                  category_name = EXCLUDED.category_name, account_name = EXCLUDED.account_name,
                  amount = EXCLUDED.amount, description = EXCLUDED.description,

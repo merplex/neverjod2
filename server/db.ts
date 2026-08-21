@@ -29,27 +29,30 @@ export async function initDB() {
     `CREATE TABLE IF NOT EXISTS sync_categories (
       id TEXT NOT NULL,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ledger_id TEXT NOT NULL DEFAULT 'main',
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       icon TEXT,
       updated_at TIMESTAMPTZ NOT NULL,
       deleted_at TIMESTAMPTZ,
-      PRIMARY KEY (id, user_id)
+      PRIMARY KEY (id, user_id, ledger_id)
     )`,
     `CREATE TABLE IF NOT EXISTS sync_accounts (
       id TEXT NOT NULL,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ledger_id TEXT NOT NULL DEFAULT 'main',
       name TEXT NOT NULL,
       type TEXT,
       start_balance NUMERIC DEFAULT 0,
       icon TEXT,
       updated_at TIMESTAMPTZ NOT NULL,
       deleted_at TIMESTAMPTZ,
-      PRIMARY KEY (id, user_id)
+      PRIMARY KEY (id, user_id, ledger_id)
     )`,
     `CREATE TABLE IF NOT EXISTS sync_transactions (
       id TEXT NOT NULL,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ledger_id TEXT NOT NULL DEFAULT 'main',
       category_id TEXT,
       account_id TEXT,
       amount NUMERIC NOT NULL,
@@ -60,11 +63,12 @@ export async function initDB() {
       fingerprint TEXT,
       updated_at TIMESTAMPTZ NOT NULL,
       deleted_at TIMESTAMPTZ,
-      PRIMARY KEY (id, user_id)
+      PRIMARY KEY (id, user_id, ledger_id)
     )`,
     `CREATE TABLE IF NOT EXISTS sync_repeat_transactions (
       id TEXT NOT NULL,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ledger_id TEXT NOT NULL DEFAULT 'main',
       category_id TEXT,
       account_id TEXT,
       category_name TEXT,
@@ -82,7 +86,7 @@ export async function initDB() {
       last_executed TEXT,
       updated_at TIMESTAMPTZ NOT NULL,
       deleted_at TIMESTAMPTZ,
-      PRIMARY KEY (id, user_id)
+      PRIMARY KEY (id, user_id, ledger_id)
     )`,
     `CREATE TABLE IF NOT EXISTS password_reset_tokens (
       id SERIAL PRIMARY KEY,
@@ -124,6 +128,25 @@ export async function initDB() {
   await pool.query(`ALTER TABLE sync_accounts ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
   await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
   await pool.query(`ALTER TABLE sync_repeat_transactions ADD COLUMN IF NOT EXISTS ledger_id TEXT NOT NULL DEFAULT 'main'`).catch(() => {});
+  // Migration: widen PRIMARY KEY to include ledger_id — previously (id, user_id) only, which meant
+  // an id colliding across two ledgers (e.g. stale local data still tagged as already-synced) would
+  // silently steal the row's ledger_id on the next push instead of coexisting as a separate row.
+  // Guarded to only run while the constraint is still the old 2-column form, so it's a no-op on
+  // every boot after the first successful migration (no needless DDL/lock on repeat deploys).
+  for (const t of ["sync_categories", "sync_accounts", "sync_transactions", "sync_repeat_transactions"]) {
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint
+          WHERE conname = '${t}_pkey' AND array_length(conkey, 1) = 2
+        ) THEN
+          ALTER TABLE ${t} DROP CONSTRAINT ${t}_pkey;
+          ALTER TABLE ${t} ADD PRIMARY KEY (id, user_id, ledger_id);
+        END IF;
+      END $$;
+    `).catch(() => {});
+  }
   // Migration: add cross_ledger_ref for cross-ledger transfers
   await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS cross_ledger_ref TEXT`).catch(() => {});
   // Migration: add is_repeat and repeat_id to preserve Repeat badge through sync
