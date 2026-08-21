@@ -3,7 +3,7 @@ import "./global.css";
 import { useEffect, useState } from "react";
 import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
 import { lk } from "./utils/ledgerStorage";
-import { syncAll, apiVerifyPurchase } from "./utils/syncService";
+import { syncAll, syncPush, apiVerifyPurchase } from "./utils/syncService";
 import { restorePurchases } from "./utils/iap";
 import { App as CapacitorApp } from "@capacitor/app";
 import { CURRENCY_OPTIONS } from "./utils/currency";
@@ -161,11 +161,30 @@ function AppContent() {
           .then(({ receipt }) => receipt && apiVerifyPurchase(receipt))
           .catch(() => {});
       }
-      if (localStorage.getItem("sync_auto_enabled") === "true") {
+      // Just switched AWAY from a ledger on the Settings page — flush whatever local edits it had
+      // pending (e.g. a transaction added seconds before switching) now that we're safely past the
+      // reload, with no unload deadline to race against. Its localStorage keys are untouched by the
+      // switch (each ledger has its own key namespace), so this pushes correctly by explicit ID
+      // regardless of which ledger is active now.
+      const ledgerToFlush = sessionStorage.getItem("ledger_flush_pending");
+      if (ledgerToFlush) {
+        sessionStorage.removeItem("ledger_flush_pending");
+        if (localStorage.getItem("app_premium") === "true") {
+          syncPush(token, false, undefined, ledgerToFlush).catch(() => {});
+        }
+      }
+      // Just switched ledger on the Settings page — Settings.tsx reloads immediately for a snappy
+      // switch and defers the actual cloud pull to here, so it runs in the background after boot
+      // instead of blocking the switch for 2-3s.
+      const ledgerJustSwitched = sessionStorage.getItem("ledger_switch_sync_pending") === "1";
+      if (ledgerJustSwitched) sessionStorage.removeItem("ledger_switch_sync_pending");
+      if (ledgerJustSwitched || localStorage.getItem("sync_auto_enabled") === "true") {
         syncAll(token).then(() => {
           if (localStorage.getItem("app_premium") !== "true") return;
-          // Refresh data in-place after first sync (no reload — avoids resetting app state/mic)
-          if (!sessionStorage.getItem("synced_once")) {
+          // Refresh data in-place once synced (no reload — avoids resetting app state/mic).
+          // Always refresh after a ledger switch since the pulled data belongs to the new ledger;
+          // otherwise only refresh once per session to avoid clobbering in-progress local edits.
+          if (ledgerJustSwitched || !sessionStorage.getItem("synced_once")) {
             sessionStorage.setItem("synced_once", "1");
             window.dispatchEvent(new CustomEvent("sync-data-refresh"));
           }

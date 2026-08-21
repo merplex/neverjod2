@@ -114,13 +114,13 @@ export function markDeleted(type: "category" | "account" | "transaction", item: 
   }
 }
 
-function flushPendingDeletes() {
-  localStorage.removeItem(lk("app_pending_deletes"));
-  localStorage.removeItem(lk("app_pending_deletes_repeats"));
+function flushPendingDeletes(ledgerId?: string) {
+  localStorage.removeItem(lk("app_pending_deletes", ledgerId));
+  localStorage.removeItem(lk("app_pending_deletes_repeats", ledgerId));
 }
 
-function getPendingDeletes(): { categories: any[]; accounts: any[]; transactions: any[] } {
-  const pending: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes")) || "[]");
+function getPendingDeletes(ledgerId?: string): { categories: any[]; accounts: any[]; transactions: any[] } {
+  const pending: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes", ledgerId)) || "[]");
   return {
     categories: pending.filter((p) => p._type === "category"),
     accounts: pending.filter((p) => p._type === "account"),
@@ -411,9 +411,13 @@ function updateTransactionRefs(
 // force=true: stamp everything with now (manual sync — user asserts their data is truth)
 // force=false: use existing timestamp or epoch (auto sync — server data wins if newer)
 // isFirstSync: passed in from syncAll so pull (which sets last_sync_at) doesn't flip the flag
-export async function syncPush(token: string, force = false, isFirstSync?: boolean) {
+// ledgerId: defaults to the currently active ledger; pass explicitly to flush a ledger the user
+// has already switched away from (its localStorage keys are untouched by the switch, so this
+// works regardless of which ledger is active now — see handleSwitchLedger).
+export async function syncPush(token: string, force = false, isFirstSync?: boolean, ledgerId?: string) {
   if (localStorage.getItem("app_premium") !== "true") return false;
   const now = new Date().toISOString();
+  ledgerId = ledgerId ?? getActiveLedgerId();
 
   // On the very first sync (no last_sync_at), we do NOT know which local
   // categories/accounts are genuinely user-created vs. fresh-install defaults.
@@ -423,20 +427,19 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   // Transactions are still stamped with `now` since they are always new data.
   // NOTE: caller (syncAll) captures this flag BEFORE pull runs, so pull setting
   // last_sync_at doesn't accidentally flip first-sync detection.
-  if (isFirstSync === undefined) isFirstSync = !localStorage.getItem(lk("last_sync_at"));
+  if (isFirstSync === undefined) isFirstSync = !localStorage.getItem(lk("last_sync_at", ledgerId));
   const catAccStamp = isFirstSync ? new Date(0).toISOString() : now;
 
   // Build promoted payloads in memory only — do NOT write to localStorage yet.
   // Source promotion is applied to localStorage only after a successful push so that a
   // failed push (server down) does not permanently flip source:"local" → "server" for
   // items the server never received.
-  const ledgerId = getActiveLedgerId();
   const pinnedCatId = "nocat";
   const pinnedAccId = "account_deleted";
 
   const promotedSnapshots: { storageKey: string; promoted: any[] }[] = [];
   for (const [key, pinnedId] of [["app_categories", pinnedCatId], ["app_accounts", pinnedAccId]] as const) {
-    const storageKey = lk(key);
+    const storageKey = lk(key, ledgerId);
     const items: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
     let orderIdx = 0;
     const promoted = items.map((i) => {
@@ -447,12 +450,12 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
     promotedSnapshots.push({ storageKey, promoted });
   }
 
-  const rawRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]");
+  const rawRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions", ledgerId)) || "[]");
   const promotedRepeats = rawRepeats.map((r) => r.source === "local" ? { ...r, source: "server" } : r);
 
   const categories = promotedSnapshots[0].promoted.map((c) => ({ ...c, updated_at: catAccStamp }));
   const accounts   = promotedSnapshots[1].promoted.map((a) => ({ ...a, updated_at: catAccStamp }));
-  const transactions = (JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]") as any[])
+  const transactions = (JSON.parse(localStorage.getItem(lk("app_transactions", ledgerId)) || "[]") as any[])
     .map((tx) => {
       const cat = categories.find((c) => c.id === tx.categoryId);
       const type = tx.type || cat?.type || "expense";
@@ -460,12 +463,12 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
     });
 
   // Merge soft-delete tombstones
-  const pending = getPendingDeletes();
+  const pending = getPendingDeletes(ledgerId);
   const allCategories = mergeWithTombstones(categories, pending.categories, now);
   const allAccounts = mergeWithTombstones(accounts, pending.accounts, now);
   const allTransactions = mergeWithTombstones(transactions, pending.transactions, now);
 
-  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats")) || "[]");
+  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats", ledgerId)) || "[]");
   const allRepeatTransactions = mergeWithTombstones(
     promotedRepeats.map((r) => ({ ...r, updated_at: catAccStamp })),
     pendingRepeats,
@@ -476,7 +479,7 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   // first-sync epoch-stamp trick as categories/accounts so a freshly-installed device's
   // still-default settings never clobber a real settings blob already on the server.
   let settings: any = null;
-  try { settings = JSON.parse(localStorage.getItem(lk("app_settings")) || "null"); } catch {}
+  try { settings = JSON.parse(localStorage.getItem(lk("app_settings", ledgerId)) || "null"); } catch {}
   const settingsUpdatedAt = isFirstSync ? new Date(0).toISOString() : (settings?.updatedAt || now);
 
   const res = await fetch(`${API_BASE}/sync/push`, {
@@ -494,8 +497,8 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   for (const { storageKey, promoted } of promotedSnapshots) {
     localStorage.setItem(storageKey, JSON.stringify(promoted));
   }
-  localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(promotedRepeats));
-  flushPendingDeletes();
+  localStorage.setItem(lk("app_repeat_transactions", ledgerId), JSON.stringify(promotedRepeats));
+  flushPendingDeletes(ledgerId);
   return true;
 }
 

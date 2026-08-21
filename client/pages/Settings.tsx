@@ -4,7 +4,7 @@ import { CURRENCY_OPTIONS } from "../utils/currency";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { Capacitor } from "@capacitor/core";
-import { syncAll, apiListLedgers, apiCreateLedger, apiRenameLedger, apiDeleteLedger, apiDeleteAccount, apiVerifyPurchase } from "../utils/syncService";
+import { syncAll, syncPush, apiListLedgers, apiCreateLedger, apiRenameLedger, apiDeleteLedger, apiDeleteAccount, apiVerifyPurchase } from "../utils/syncService";
 import { lk, getActiveLedgerId, setActiveLedgerId } from "../utils/ledgerStorage";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
@@ -344,15 +344,24 @@ export default function Settings() {
     setLedgers(list);
   };
 
-  const handleSwitchLedger = async (id: string) => {
+  const handleSwitchLedger = (id: string) => {
     if (id === activeLedger) return;
-    setActiveLedgerId(id);
-    // Pull this ledger's data before reloading — auto-sync on app launch only runs when the
-    // "sync อัตโนมัติ" toggle is on, so a fresh device switching into a ledger for the first
-    // time would otherwise reload into empty seed defaults instead of the real synced data.
     if (cloudToken && isPremium) {
-      setLedgerLoading(true);
-      try { await syncAll(cloudToken, false); } catch {}
+      // Flag the ledger we're LEAVING for a background push after reload — e.g. a transaction
+      // just added seconds ago that no auto-sync has run for yet. Its localStorage keys are
+      // untouched by switching (each ledger has its own key namespace, see lk()), so App.tsx can
+      // push it explicitly by ID once we're safely past the reload — no race against page unload,
+      // and no wait here since this fires after the new page has already loaded.
+      sessionStorage.setItem("ledger_flush_pending", activeLedger);
+    }
+    setActiveLedgerId(id);
+    // Reload immediately with whatever this ledger already has in local storage — feels instant.
+    // Pulling from cloud before reload used to block for 2-3s; instead we flag a pending sync that
+    // App.tsx runs in the background right after boot (bypassing the "sync อัตโนมัติ" toggle, since
+    // a fresh device switching into a ledger for the first time still needs one guaranteed pull to
+    // avoid showing empty seed defaults) and refreshes the UI in place once it lands.
+    if (cloudToken && isPremium) {
+      sessionStorage.setItem("ledger_switch_sync_pending", "1");
     }
     window.location.reload();
   };
