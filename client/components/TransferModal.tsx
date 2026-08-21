@@ -54,14 +54,27 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
   });
 
   // Load accounts (current ledger)
-  const [accounts] = useState<any[]>(() => {
+  const loadAccounts = (): any[] => {
     try {
       const stored = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
       return stored
         .filter((a: any) => a && a.id && a.id !== "account_deleted")
         .map((a: any) => ({ ...a, currentBalance: getAccountCurrentBalance(a.id, Number(a.balance) || 0, activeLedgerId) }));
     } catch { return []; }
-  });
+  };
+  const [accounts, setAccounts] = useState<any[]>(loadAccounts);
+
+  // Self-heal if this modal was mounted before a ledger switch / sync finished
+  // populating localStorage — re-read once sync (or another screen) writes data.
+  useEffect(() => {
+    const handler = () => setAccounts(loadAccounts());
+    window.addEventListener("sync-data-refresh", handler);
+    window.addEventListener("app-data-updated", handler);
+    return () => {
+      window.removeEventListener("sync-data-refresh", handler);
+      window.removeEventListener("app-data-updated", handler);
+    };
+  }, []);
 
   const [fromId, setFromId] = useState<string | null>(null);
   const [toId, setToId] = useState<string | null>(null);

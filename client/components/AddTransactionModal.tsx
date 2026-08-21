@@ -137,18 +137,35 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
   const [isCalcMode, setIsCalcMode] = useState(false);
 
   // data from localStorage
-  const [categoriesList] = useState<any[]>(() => {
+  const loadCategories = (): any[] => {
     try {
       const stored = JSON.parse(localStorage.getItem(lk("app_categories")) || "[]");
       return stored.length ? stored : [];
     } catch { return []; }
-  });
-  const [accountsList] = useState<any[]>(() => {
+  };
+  const loadAccounts = (): any[] => {
     try {
       const stored = JSON.parse(localStorage.getItem(lk("app_accounts")) || "[]");
       return stored.filter((a: any) => a.id !== "account_deleted");
     } catch { return []; }
-  });
+  };
+  const [categoriesList, setCategoriesList] = useState<any[]>(loadCategories);
+  const [accountsList, setAccountsList] = useState<any[]>(loadAccounts);
+
+  // Self-heal if this modal was mounted before a ledger switch / sync finished
+  // populating localStorage — re-read once sync (or another screen) writes data.
+  useEffect(() => {
+    const handler = () => {
+      setCategoriesList(loadCategories());
+      setAccountsList(loadAccounts());
+    };
+    window.addEventListener("sync-data-refresh", handler);
+    window.addEventListener("app-data-updated", handler);
+    return () => {
+      window.removeEventListener("sync-data-refresh", handler);
+      window.removeEventListener("app-data-updated", handler);
+    };
+  }, []);
 
   const isPremium = localStorage.getItem("app_premium") === "true";
   const overLimitCatIds = new Set<string>(
