@@ -131,7 +131,13 @@
       "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew :app:compileDebugJavaWithJavac)",
       "Bash(python *)",
       "Bash(python3 *)",
-      "Bash(open *)"
+      "Bash(open *)",
+      "Bash(git merge *)",
+      "Bash(cd *)",
+      "Bash(git checkout *)",
+      "Bash(keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android -keypass android)",
+      "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/keytool\" -list -v -keystore \"/c/Users/User/.android/debug.keystore\" -alias androiddebugkey -storepass android -keypass android)",
+      "Bash(grep -i \"\\\\.aab$\")"
     ]
   }
 }
