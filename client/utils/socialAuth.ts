@@ -25,15 +25,41 @@ function ensureGoogleInitialized() {
   return googleInitPromise;
 }
 
-export async function signInWithGoogle(): Promise<string> {
+// Module-scoped lock (survives modal close/reopen, unlike React state) so a
+// second tap can never start a second native Google sign-in flow while one
+// is still pending. Firing two concurrent flows is what makes the native
+// account picker show up twice and return CANCELED (error 16), wedging the
+// Credential Manager until the app process is killed.
+let googleLoginInFlight: Promise<string> | null = null;
+
+async function performGoogleSignIn(): Promise<string> {
   await ensureGoogleInitialized();
-  const { result } = await SocialLogin.login({
-    provider: "google",
-    options: {},
+  try {
+    const { result } = await SocialLogin.login({
+      provider: "google",
+      options: {},
+    });
+    const idToken = (result as any)?.idToken;
+    if (!idToken) throw new Error("ไม่ได้รับ Google idToken");
+    return idToken;
+  } catch (err) {
+    // Best-effort: clear native session state on failure so a retry starts
+    // clean instead of inheriting a half-open Credential Manager request.
+    try {
+      await SocialLogin.logout({ provider: "google" });
+    } catch {
+      // ignore - logout is just cleanup, original error is what matters
+    }
+    throw err;
+  }
+}
+
+export function signInWithGoogle(): Promise<string> {
+  if (googleLoginInFlight) return googleLoginInFlight;
+  googleLoginInFlight = performGoogleSignIn().finally(() => {
+    googleLoginInFlight = null;
   });
-  const idToken = (result as any)?.idToken;
-  if (!idToken) throw new Error("ไม่ได้รับ Google idToken");
-  return idToken;
+  return googleLoginInFlight;
 }
 
 export async function signInWithApple(): Promise<string> {
