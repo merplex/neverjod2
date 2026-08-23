@@ -13,6 +13,8 @@ interface Props {
   onClose: () => void;
 }
 
+const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url);
+
 export default function OnboardingGuide({ onClose }: Props) {
   const [slides, setSlides] = useState<string[]>(FALLBACK_SLIDES);
   const [index, setIndex] = useState(0);
@@ -47,14 +49,26 @@ export default function OnboardingGuide({ onClose }: Props) {
           </button>
         </div>
 
-        {/* Image */}
+        {/* Image / Video */}
         <div className="flex-1 flex items-center justify-center px-4 pb-2 min-h-0">
-          <img
-            key={index}
-            src={slides[index]}
-            alt={`guide-${index + 1}`}
-            className="w-full h-full object-contain rounded-xl"
-          />
+          {isVideo(slides[index]) ? (
+            <video
+              key={index}
+              src={slides[index]}
+              className="w-full h-full object-contain rounded-xl"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              key={index}
+              src={slides[index]}
+              alt={`guide-${index + 1}`}
+              className="w-full h-full object-contain rounded-xl"
+            />
+          )}
         </div>
 
         {/* Dots */}
