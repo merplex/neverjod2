@@ -256,6 +256,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "filter.custom": "กำหนดเอง",
     "filter.month": "เดือน",
     "filter.all": "ทั้งหมด",
+    "search.txnPlaceholder": "ใช้เว้นวรรคเพื่อช่วยค้นหา หมวดหมู่ บัญชี...",
 
     // Sort
     "sort.descending": "มากไปน้อย",
@@ -585,6 +586,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "filter.custom": "Custom",
     "filter.month": "Month",
     "filter.all": "All",
+    "search.txnPlaceholder": "Use spaces to help search category, account...",
 
     // Sort
     "sort.descending": "Descending",
@@ -914,6 +916,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "filter.custom": "自定义",
     "filter.month": "月",
     "filter.all": "全部",
+    "search.txnPlaceholder": "使用空格帮助搜索 类别、账户...",
 
     // Sort
     "sort.descending": "降序",

@@ -607,7 +607,7 @@ export default function AllTransactions() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ค้นหา account หรือ category..."
+                placeholder={T("search.txnPlaceholder")}
                 className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
               />
               {searchQuery && (
