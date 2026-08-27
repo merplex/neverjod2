@@ -1,4 +1,4 @@
-import { getCurrencySymbol } from "../utils/currency";
+import { getCurrencySymbol, getAccountCurrency } from "../utils/currency";
 import { lk } from "../utils/ledgerStorage";
 import { useState, useEffect } from "react";
 import { X, CheckCircle, AlertCircle, XCircle } from "lucide-react";
@@ -6,6 +6,7 @@ import { X, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 interface VoiceResultConfirmationProps {
   categoryName?: string;
   accountName?: string;
+  accountId?: string;
   amount?: number;
   transcript?: string;
   isSuccess: boolean;
@@ -25,6 +26,7 @@ function readConfirmDelay(): number {
 export default function VoiceResultConfirmation({
   categoryName,
   accountName,
+  accountId,
   amount,
   transcript,
   isSuccess,
@@ -34,6 +36,7 @@ export default function VoiceResultConfirmation({
   onClose,
 }: VoiceResultConfirmationProps) {
   const [countdown, setCountdown] = useState(() => readConfirmDelay());
+  const amountSymbol = (accountId ? getAccountCurrency(accountId).currency : "") || getCurrencySymbol();
 
   useEffect(() => {
     if (!isSuccess || !accountName) return;
@@ -102,7 +105,7 @@ export default function VoiceResultConfirmation({
               {amount && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-slate-600">Amount:</span>
-                  <span className="text-sm font-bold text-green-600">{getCurrencySymbol()}{amount}</span>
+                  <span className="text-sm font-bold text-green-600">{amountSymbol}{amount}</span>
                 </div>
               )}
             </div>

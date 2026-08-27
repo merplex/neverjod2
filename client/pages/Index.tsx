@@ -818,6 +818,7 @@ export default function Index() {
                   </div>
                 </div>
                 <Carousel
+                  key={categoryType}
                   items={(() => {
                     const filtered = categoriesList.filter((c) => c.type === categoryType);
                     return [
@@ -1143,6 +1144,7 @@ export default function Index() {
         <VoiceResultConfirmation
           categoryName={voiceResultData.categoryName}
           accountName={voiceResultData.accountName}
+          accountId={voiceResultData.accountId}
           amount={voiceResultData.amount}
           transcript={voiceResultData.transcript}
           isSuccess={voiceResultData.isSuccess}
