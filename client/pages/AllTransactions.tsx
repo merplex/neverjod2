@@ -416,9 +416,11 @@ export default function AllTransactions() {
     });
   }, [filtered, sortOrder]);
 
-  // Income/expense totals of the current search result set (transfers excluded).
-  const searchTotals = useMemo(() => {
-    if (!searchQuery.trim()) return null;
+  // Income/expense totals of the currently filtered result set (transfers
+  // excluded). Shown whenever a narrowing filter is active — a search query or
+  // an account filter (dropdown / tapped account name).
+  const filterTotals = useMemo(() => {
+    if (!searchQuery.trim() && !accountIdFilter) return null;
     let income = 0;
     let expense = 0;
     sorted.forEach((t) => {
@@ -428,7 +430,7 @@ export default function AllTransactions() {
       else expense += amt;
     });
     return { income, expense };
-  }, [sorted, searchQuery]);
+  }, [sorted, searchQuery, accountIdFilter]);
 
   const lang = getLang();
   const MONTH_KEYS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
@@ -473,6 +475,22 @@ export default function AllTransactions() {
     if (id) setSearchParams({ accountId: id });
     else setSearchParams({});
     setShowAccountGrid(false);
+  }
+
+  // Opening search while an account is selected in the dropdown folds that
+  // account into the search box as a token (and clears the dropdown filter), so
+  // it unifies with anything else the user types — OR another account, AND a
+  // category — and the grand-total row follows the combined result set.
+  function toggleSearch() {
+    if (!showSearch) {
+      if (accountIdFilter && !searchQuery.trim()) {
+        setSearchQuery(selectedAccountName);
+        setSearchParams({});
+      }
+      setShowSearch(true);
+    } else {
+      setShowSearch(false);
+    }
   }
 
   function handleCustomSelect(start: Date, end: Date) {
@@ -522,7 +540,7 @@ export default function AllTransactions() {
               </button>
             )}
             <button
-              onClick={() => setShowSearch((v) => !v)}
+              onClick={toggleSearch}
               className={`flex-shrink-0 p-2 rounded-lg transition-colors ${showSearch ? "bg-theme-400" : "hover:bg-theme-500"}`}
             >
               <Search size={20} />
@@ -618,15 +636,15 @@ export default function AllTransactions() {
             </div>
           )}
 
-          {/* Search result totals — income/expense of the currently filtered set, transfers excluded */}
-          {showSearch && searchQuery.trim() && searchTotals && (searchTotals.income > 0 || searchTotals.expense > 0) && (
+          {/* Filter result totals — income/expense of the currently filtered set, transfers excluded */}
+          {filterTotals && (filterTotals.income > 0 || filterTotals.expense > 0) && (
             <div className="mt-2 flex items-center justify-end gap-2 pr-3">
               <span className="text-xs text-slate-400">{T("stats.sum_row")}</span>
-              {searchTotals.income > 0 && (
-                <span className="text-xs font-semibold text-green-600">+{cur}{searchTotals.income.toLocaleString()}</span>
+              {filterTotals.income > 0 && (
+                <span className="text-xs font-semibold text-green-600">+{cur}{filterTotals.income.toLocaleString()}</span>
               )}
-              {searchTotals.expense > 0 && (
-                <span className="text-xs font-semibold text-red-500">-{cur}{searchTotals.expense.toLocaleString()}</span>
+              {filterTotals.expense > 0 && (
+                <span className="text-xs font-semibold text-red-500">-{cur}{filterTotals.expense.toLocaleString()}</span>
               )}
             </div>
           )}
