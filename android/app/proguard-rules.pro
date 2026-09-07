@@ -1,21 +1,45 @@
 # Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# See http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep crash-report line numbers, hide original source file name
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ---------------------------------------------------------------------------
+# Capacitor bridge / WebView JS interface
+# (Capacitor's own consumer rules keep @CapacitorPlugin classes; these are
+#  extra safety for the JS bridge and our custom native code.)
+# ---------------------------------------------------------------------------
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keep class * extends android.webkit.WebChromeClient { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Our custom Capacitor plugins + Activity (referenced via reflection / manifest)
+-keep class com.neverjod.app.** { *; }
+
+# ---------------------------------------------------------------------------
+# Google Play Billing (ships consumer rules; kept explicitly for safety)
+# ---------------------------------------------------------------------------
+-keep class com.android.billingclient.api.** { *; }
+-dontwarn com.android.billingclient.**
+
+# ---------------------------------------------------------------------------
+# @capgo/capacitor-social-login transitive deps
+# androidbrowserhelper (TWA/Custom Tabs fallback for Google Sign-In) uses
+# reflection; keep it so the OAuth fallback path never breaks.
+# ---------------------------------------------------------------------------
+-keep class com.google.androidbrowserhelper.** { *; }
+-dontwarn com.google.androidbrowserhelper.**
+
+# Optional social-login providers that are NOT bundled in this build
+-dontwarn com.facebook.**
+-dontwarn com.twitter.**
+
+# okhttp / okio (used by social-login OAuth2 token endpoints)
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
