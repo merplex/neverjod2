@@ -8,6 +8,7 @@
 	"ios": {},
 	"packageClassList": [
 		"SignInWithApple",
+		"AppPlugin",
 		"ClipboardPlugin",
 		"SocialLoginPlugin"
 	],
