@@ -25,13 +25,64 @@ function getRawTransaction(id: string): any {
   } catch { return null; }
 }
 
+// Both legs of a transfer share date/time/value — mirror those edits onto the paired leg.
+// Same currency: amounts stay equal and the rate follows the edited leg.
+// Different currency: the paired amount is scaled by how much the edited leg's main-currency
+// value changed (amount × rate), so both legs stay worth the same in main currency.
+function pairLegUpdates(leg: any, edited: any, updates: any): any | null {
+  const u: any = {};
+  if ("date" in updates) u.date = updates.date;
+  if ("time" in updates) u.time = updates.time;
+  if ("amount" in updates || "exchangeRate" in updates) {
+    const oldAmt = parseFloat(edited.amount) || 0;
+    const legAmt = parseFloat(leg.amount) || 0;
+    const newAmt = "amount" in updates ? updates.amount : oldAmt;
+    if ((leg.currency || "") === (edited.currency || "")) {
+      if ("amount" in updates) u.amount = updates.amount;
+      if ("exchangeRate" in updates) u.exchangeRate = updates.exchangeRate;
+    } else if (oldAmt > 0) {
+      const oldRate = edited.currency ? (Number(edited.exchangeRate) || 1) : 1;
+      const newRate = edited.currency && "exchangeRate" in updates ? updates.exchangeRate : oldRate;
+      u.amount = parseFloat((legAmt * (newAmt * newRate) / (oldAmt * oldRate)).toFixed(4));
+    }
+    const rate = Number(u.exchangeRate ?? leg.exchangeRate) || 0;
+    if (leg.currency && rate > 0 && ("amount" in u || "exchangeRate" in u)) {
+      u.currencyAmount = parseFloat(((u.amount ?? legAmt) * rate).toFixed(2));
+    }
+  }
+  return Object.keys(u).length ? u : null;
+}
+
 function updateLocalTransaction(id: string, updates: any) {
   try {
     const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
     const idx = txns.findIndex((t: any) => t.id === id);
-    if (idx !== -1) {
-      txns[idx] = { ...txns[idx], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
+    if (idx === -1) return;
+    const edited = txns[idx];
+    const stamp = new Date().toISOString();
+    txns[idx] = { ...edited, ...updates, updated_at: stamp };
+    // Same-ledger paired leg
+    if (edited.transferRef) {
+      txns.forEach((t: any, i: number) => {
+        if (i === idx || t.transferRef !== edited.transferRef) return;
+        const u = pairLegUpdates(t, edited, updates);
+        if (u) txns[i] = { ...t, ...u, updated_at: stamp };
+      });
+    }
+    localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
+    // Cross-ledger: paired leg lives in the other ledger's storage (pushed when that ledger syncs)
+    if (edited.transferRef && edited.pairLedgerId) {
+      const otherKey = lk("app_transactions", edited.pairLedgerId);
+      const otherTxns: any[] = JSON.parse(localStorage.getItem(otherKey) || "[]");
+      let changed = false;
+      const next = otherTxns.map((t: any) => {
+        if (t.transferRef !== edited.transferRef) return t;
+        const u = pairLegUpdates(t, edited, updates);
+        if (!u) return t;
+        changed = true;
+        return { ...t, ...u, updated_at: stamp };
+      });
+      if (changed) localStorage.setItem(otherKey, JSON.stringify(next));
     }
   } catch {}
 }
@@ -53,7 +104,7 @@ function deleteLocalTransaction(id: string) {
       const otherKey = lk("app_transactions", tx.pairLedgerId);
       const otherTxns: any[] = JSON.parse(localStorage.getItem(otherKey) || "[]");
       const toRemove = otherTxns.filter((t: any) => t.transferRef === tx.transferRef);
-      toRemove.forEach((t: any) => markDeleted("transaction", t));
+      toRemove.forEach((t: any) => markDeleted("transaction", t, tx.pairLedgerId));
       localStorage.setItem(otherKey, JSON.stringify(otherTxns.filter((t: any) => t.transferRef !== tx.transferRef)));
     }
   } catch {}

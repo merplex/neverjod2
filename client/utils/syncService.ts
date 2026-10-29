@@ -105,8 +105,10 @@ export async function apiVerifyPurchase(receipt: string) {
 
 // --- Soft-delete tombstone helpers ---
 
-export function markDeleted(type: "category" | "account" | "transaction", item: any) {
-  const key = lk("app_pending_deletes");
+// ledgerId: defaults to the active ledger; pass explicitly when deleting an item that lives in
+// another ledger (e.g. the paired leg of a cross-ledger transfer) so its tombstone is pushed there.
+export function markDeleted(type: "category" | "account" | "transaction", item: any, ledgerId?: string) {
+  const key = lk("app_pending_deletes", ledgerId);
   const pending: any[] = JSON.parse(localStorage.getItem(key) || "[]");
   if (!pending.find((p) => p._type === type && p.id === item.id)) {
     pending.push({ ...item, _type: type, deleted_at: new Date().toISOString() });
@@ -183,10 +185,10 @@ function normalizeRepeatItem(raw: any): any {
 // Merge repeat transactions (ID-based; server wins on conflict; local-only items preserved)
 // Same ID-collision rule as cat/acc: if a source="local" item clashes with a server item,
 // reassign the local item a new unique ID so BOTH coexist — nothing is silently dropped.
-function mergeRepeatTransIntoLocal(serverItems: any[]) {
-  const local: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]");
+function mergeRepeatTransIntoLocal(serverItems: any[], ledgerId?: string) {
+  const local: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions", ledgerId)) || "[]");
   // Don't restore items the user has locally deleted but not yet pushed
-  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats")) || "[]");
+  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats", ledgerId)) || "[]");
   const pendingDeleteIds = new Set(pendingRepeats.map((p: any) => p.id));
   const serverById = new Map<string, any>();
   const deletedIds = new Set<string>();
@@ -245,18 +247,18 @@ function mergeRepeatTransIntoLocal(serverItems: any[]) {
     if (!seenIds.has(id) && !pendingDeleteIds.has(id)) result.push(item);
   }
 
-  localStorage.setItem(lk("app_repeat_transactions"), JSON.stringify(result));
+  localStorage.setItem(lk("app_repeat_transactions", ledgerId), JSON.stringify(result));
 }
 
 // Merge transactions (ID-based, server wins on conflict)
-function mergeIntoLocal(storageKey: string, serverItems: any[]) {
-  const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey)) || "[]");
+function mergeIntoLocal(storageKey: string, serverItems: any[], ledgerId?: string) {
+  const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey, ledgerId)) || "[]");
   const localMap = new Map(local.map((item) => [item.id, item]));
 
   // Do not restore items that the user has locally deleted (pending push to server).
   // Only relevant for the transactions store; skip the Set build for other keys.
   const pendingDeleteIds = storageKey === "app_transactions"
-    ? new Set(getPendingDeletes().transactions.map((p: any) => p.id))
+    ? new Set(getPendingDeletes(ledgerId).transactions.map((p: any) => p.id))
     : new Set<string>();
 
   for (const raw of serverItems) {
@@ -277,7 +279,7 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
       }
     }
   }
-  localStorage.setItem(lk(storageKey), JSON.stringify(Array.from(localMap.values())));
+  localStorage.setItem(lk(storageKey, ledgerId), JSON.stringify(Array.from(localMap.values())));
 }
 
 // Source-based merge for categories and accounts.
@@ -293,9 +295,10 @@ function mergeIntoLocal(storageKey: string, serverItems: any[]) {
 // Returns a map of { oldLocalId → newId } for all ID changes.
 function mergeCategOrAccIntoLocal(
   storageKey: string,
-  serverItems: any[]
+  serverItems: any[],
+  ledgerId?: string
 ): Map<string, string> {
-  const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey)) || "[]");
+  const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey, ledgerId)) || "[]");
   const normalized = serverItems.map(normalizeServerItem);
   const serverLive = normalized.filter((i) => !i.deleted_at);
   const deletedIds = new Set(normalized.filter((i) => i.deleted_at).map((i) => i.id));
@@ -384,7 +387,7 @@ function mergeCategOrAccIntoLocal(
   const finalItems = pinnedItem
     ? [...localItems, ...syncedItems, pinnedItem]
     : [...localItems, ...syncedItems];
-  localStorage.setItem(lk(storageKey), JSON.stringify(finalItems));
+  localStorage.setItem(lk(storageKey, ledgerId), JSON.stringify(finalItems));
   return idReplacements;
 }
 
@@ -392,10 +395,11 @@ function mergeCategOrAccIntoLocal(
 // to point to the new (server) IDs when a local item was replaced by a server item.
 function updateTransactionRefs(
   catIdMap: Map<string, string>,
-  accIdMap: Map<string, string>
+  accIdMap: Map<string, string>,
+  ledgerId?: string
 ) {
   if (catIdMap.size === 0 && accIdMap.size === 0) return;
-  const transactions: any[] = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
+  const transactions: any[] = JSON.parse(localStorage.getItem(lk("app_transactions", ledgerId)) || "[]");
   let changed = false;
   const updated = transactions.map((tx) => {
     let newTx = { ...tx };
@@ -403,7 +407,7 @@ function updateTransactionRefs(
     if (accIdMap.has(tx.accountId))  { newTx.accountId  = accIdMap.get(tx.accountId)!;  changed = true; }
     return newTx;
   });
-  if (changed) localStorage.setItem(lk("app_transactions"), JSON.stringify(updated));
+  if (changed) localStorage.setItem(lk("app_transactions", ledgerId), JSON.stringify(updated));
 }
 
 // --- Push local data to server ---
@@ -512,10 +516,12 @@ function mergeWithTombstones(live: any[], tombstones: any[], now: string): any[]
 
 // --- Pull server data to local ---
 
-export async function syncPull(token: string) {
+// ledgerId: defaults to the active ledger; pass explicitly to pull a ledger that isn't open
+// (its data lands in that ledger's own localStorage keys, the active ledger is untouched).
+export async function syncPull(token: string, ledgerId?: string) {
   if (localStorage.getItem("app_premium") !== "true") return false;
-  const ledgerId = getActiveLedgerId();
-  const lastSync = localStorage.getItem(lk("last_sync_at")) || null;
+  ledgerId = ledgerId ?? getActiveLedgerId();
+  const lastSync = localStorage.getItem(lk("last_sync_at", ledgerId)) || null;
   const res = await fetch(`${API_BASE}/sync/pull`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -526,25 +532,25 @@ export async function syncPull(token: string) {
   const data = await res.json();
   // Categories and accounts: name-based merge so server wins even when IDs differ
   const catIdMap = data.categories?.length
-    ? mergeCategOrAccIntoLocal("app_categories", data.categories)
+    ? mergeCategOrAccIntoLocal("app_categories", data.categories, ledgerId)
     : new Map<string, string>();
   const accIdMap = data.accounts?.length
-    ? mergeCategOrAccIntoLocal("app_accounts", data.accounts)
+    ? mergeCategOrAccIntoLocal("app_accounts", data.accounts, ledgerId)
     : new Map<string, string>();
   // If any local IDs were replaced by server IDs, update transaction references first
-  updateTransactionRefs(catIdMap, accIdMap);
+  updateTransactionRefs(catIdMap, accIdMap, ledgerId);
   // Transactions: ID-based merge (fingerprint dedup handled server-side)
-  if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions);
+  if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions, ledgerId);
   // Repeat transactions: ID-based merge (server wins; local-only items preserved)
-  if (data.repeatTransactions?.length) mergeRepeatTransIntoLocal(data.repeatTransactions);
+  if (data.repeatTransactions?.length) mergeRepeatTransIntoLocal(data.repeatTransactions, ledgerId);
   // Settings: single blob, last-write-wins by timestamp (server never clobbers a newer local edit)
   if (data.settings) {
     let local: any = null;
-    try { local = JSON.parse(localStorage.getItem(lk("app_settings")) || "null"); } catch {}
+    try { local = JSON.parse(localStorage.getItem(lk("app_settings", ledgerId)) || "null"); } catch {}
     const localStamp = local?.updatedAt ? new Date(local.updatedAt).getTime() : 0;
     const serverStamp = data.settingsUpdatedAt ? new Date(data.settingsUpdatedAt).getTime() : 0;
     if (serverStamp > localStamp) {
-      localStorage.setItem(lk("app_settings"), JSON.stringify(data.settings));
+      localStorage.setItem(lk("app_settings", ledgerId), JSON.stringify(data.settings));
     }
   }
   // Always refresh premium status from server (handles DB changes without re-login)
@@ -558,8 +564,8 @@ export async function syncPull(token: string) {
   if (typeof data.autoRenew === "boolean") {
     localStorage.setItem("app_auto_renew", data.autoRenew ? "true" : "false");
   }
-  localStorage.setItem(lk("last_sync_at"), data.server_time);
-  if (data.last_push_at) localStorage.setItem(lk("last_push_at"), data.last_push_at);
+  localStorage.setItem(lk("last_sync_at", ledgerId), data.server_time);
+  if (data.last_push_at) localStorage.setItem(lk("last_push_at", ledgerId), data.last_push_at);
   return true;
 }
 
@@ -611,9 +617,37 @@ export async function apiDeleteLedger(token: string, id: string): Promise<void> 
 // Push second: promote remaining source="local" items to server.
 // isFirstSync is captured BEFORE pull so that pull setting last_sync_at doesn't
 // accidentally make push think it's a non-first sync and use `now` as timestamp.
+// Syncs EVERY ledger, not just the open one — e.g. the incoming leg of a cross-ledger transfer
+// is written straight into the other ledger's storage and must reach the server without the
+// user having to open that ledger. Active ledger goes first so its errors surface as before.
 export async function syncAll(token: string, force = false): Promise<void> {
   if (localStorage.getItem("app_premium") !== "true") return;
-  const isFirstSync = !localStorage.getItem(lk("last_sync_at"));
-  await syncPull(token);
-  await syncPush(token, force, isFirstSync);
+  const activeId = getActiveLedgerId();
+  await syncLedger(token, force, activeId);
+
+  const otherIds = (await getAllLedgerIds(token)).filter((id) => id !== activeId);
+  let firstError: unknown = null;
+  for (const id of otherIds) {
+    try { await syncLedger(token, force, id); }
+    catch (e) { firstError = firstError ?? e; }
+  }
+  if (firstError) throw firstError;
+}
+
+async function syncLedger(token: string, force: boolean, ledgerId: string) {
+  const isFirstSync = !localStorage.getItem(lk("last_sync_at", ledgerId));
+  await syncPull(token, ledgerId);
+  await syncPush(token, force, isFirstSync, ledgerId);
+}
+
+// Server list is the source of truth (a fresh device may not have opened Settings yet to cache
+// it); fall back to the locally cached list when offline. "main" is never stored on the server.
+async function getAllLedgerIds(token: string): Promise<string[]> {
+  let ids: string[] = [];
+  try {
+    ids = (await apiListLedgers(token)).map((l) => l.id);
+  } catch {
+    try { ids = (JSON.parse(localStorage.getItem("app_ledgers") || "[]") as any[]).map((l) => l.id); } catch {}
+  }
+  return Array.from(new Set(["main", ...ids]));
 }

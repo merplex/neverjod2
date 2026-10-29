@@ -214,6 +214,17 @@ export function buildInitialNextDue(rt: Omit<RepeatTransaction, "nextDue">): str
   return next.toISOString();
 }
 
+// Currency + rate (to main currency) of an account, read at execution time so a repeat transfer
+// uses the account's current rate — same source TransferModal pre-fills from.
+function accountCurrency(accountId: string, ledgerId?: string): { currency: string; rate: number } {
+  try {
+    const accs: any[] = JSON.parse(localStorage.getItem(lk("app_accounts", ledgerId)) || "[]");
+    const acc = accs.find((a) => a.id === accountId);
+    const rate = Number(acc?.exchangeRate) || 0;
+    return acc?.currency && rate > 0 ? { currency: acc.currency, rate } : { currency: "", rate: 0 };
+  } catch { return { currency: "", rate: 0 }; }
+}
+
 /** Check all repeat transactions; create any that are due; update nextDue. Returns true if any were created. */
 export function checkAndExecuteRepeats(): boolean {
   const now = new Date();
@@ -236,12 +247,18 @@ export function checkAndExecuteRepeats(): boolean {
 
       if (rt.isTransfer) {
         const transferRef = `transfer_${id}`;
+        // rt.amount is in the from-account's units; convert via main currency for the to-leg
+        const fromCur = accountCurrency(rt.fromAccountId || rt.accountId);
+        const toCur = accountCurrency(rt.toAccountId || "", rt.toLedgerId);
+        const mainAmt = fromCur.currency ? rt.amount * fromCur.rate : rt.amount;
+        const inAmount = parseFloat((toCur.currency ? mainAmt / toCur.rate : mainAmt).toFixed(4));
         // transfer_out → current (from) ledger
         txns.unshift({
           id: `${id}_out`,
           categoryId: "transfer_out",
           accountId: rt.fromAccountId || rt.accountId,
           amount: rt.amount,
+          ...(fromCur.currency ? { currency: fromCur.currency, exchangeRate: fromCur.rate, currencyAmount: parseFloat((rt.amount * fromCur.rate).toFixed(2)) } : {}),
           description: `→ ${rt.toAccountName}`,
           date: nextDue.toISOString(),
           time: rt.time,
@@ -265,7 +282,8 @@ export function checkAndExecuteRepeats(): boolean {
           id: `${id}_in`,
           categoryId: "transfer_in",
           accountId: rt.toAccountId || "",
-          amount: rt.amount,
+          amount: inAmount,
+          ...(toCur.currency ? { currency: toCur.currency, exchangeRate: toCur.rate, currencyAmount: parseFloat((inAmount * toCur.rate).toFixed(2)) } : {}),
           description: `← ${rt.fromAccountName || rt.accountName}`,
           date: nextDue.toISOString(),
           time: rt.time,

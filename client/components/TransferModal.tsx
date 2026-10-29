@@ -238,7 +238,9 @@ export default function TransferModal({ editRepeatId, onClose, onSaved }: Transf
       const toTxnsKey = isCrossLedger ? lk("app_transactions", toLedgerId) : lk("app_transactions");
       const txnsIn: any[] = JSON.parse(localStorage.getItem(toTxnsKey) || "[]");
       const fromLedgerName = ledgers.find((l) => l.id === activeLedgerId)?.name || "";
-      const inAmount = toCurrency ? parseFloat(receiveAmount.toFixed(4)) : parsedAmount;
+      // receiveAmount is already in the destination account's units (converted whenever either
+      // side is foreign) — using parsedAmount for a main-currency destination dropped the conversion.
+      const inAmount = parseFloat(receiveAmount.toFixed(4));
       const inCurrencyFields = toCurrency && toRate > 0
         ? { currency: toCurrency, exchangeRate: toRate, currencyAmount: parseFloat((inAmount * toRate).toFixed(2)) }
         : {};
