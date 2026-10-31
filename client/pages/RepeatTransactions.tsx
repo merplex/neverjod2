@@ -1,5 +1,5 @@
 import { getCurrencySymbol } from "../utils/currency";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Trash2, RefreshCw, Pencil, X } from "lucide-react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
@@ -27,7 +27,38 @@ function repeatLabel(rt: RepeatTransaction): string {
 
 function formatNextDue(isoStr: string): string {
   const d = new Date(isoStr);
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
+  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })} ${time}`;
+}
+
+// Frequencies where the anchor month matters (not just the day-of-month)
+const MULTI_MONTH: RepeatOption[] = ["bimonthly", "quarterly", "quadmonthly", "semiannual", "annual"];
+
+function toDateInput(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Build the new schedule anchor date from the edit form, based on the current nextDue. */
+function buildEditAnchor(
+  rt: RepeatTransaction, option: RepeatOption, weekday: number, day: number, dateStr: string
+): { date: Date; dayOfMonth?: number } {
+  const base = new Date(rt.nextDue);
+  base.setHours(0, 0, 0, 0);
+  if (option === "weekly" || option === "biweekly") {
+    const date = new Date(base);
+    date.setDate(date.getDate() + ((weekday - base.getDay() + 7) % 7));
+    return { date };
+  }
+  if (option === "monthly") {
+    const last = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+    return { date: new Date(base.getFullYear(), base.getMonth(), Math.min(day, last)), dayOfMonth: day };
+  }
+  if (MULTI_MONTH.includes(option)) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const date = y && m && d ? new Date(y, m - 1, d) : base;
+    return { date, dayOfMonth: date.getDate() };
+  }
+  return { date: base };
 }
 
 export default function RepeatTransactions() {
@@ -45,12 +76,21 @@ export default function RepeatTransactions() {
   const [editDesc, setEditDesc] = useState("");
   const [editRepeatOption, setEditRepeatOption] = useState<RepeatOption>("monthly");
   const [showEditRepeatPicker, setShowEditRepeatPicker] = useState(false);
+  const [editTime, setEditTime] = useState("09:00");
+  const [editWeekday, setEditWeekday] = useState(0);
+  const [editDay, setEditDay] = useState(1);
+  const [editDate, setEditDate] = useState("");
 
   const openEdit = (rt: RepeatTransaction) => {
+    const due = new Date(rt.nextDue);
     setEditId(rt.id);
     setEditAmount(rt.amount.toString());
     setEditDesc(rt.description || "");
     setEditRepeatOption(rt.repeatOption);
+    setEditTime(rt.time);
+    setEditWeekday(due.getDay());
+    setEditDay(rt.dayOfMonth || due.getDate());
+    setEditDate(toDateInput(due));
     setShowEditRepeatPicker(false);
   };
 
@@ -58,12 +98,31 @@ export default function RepeatTransactions() {
     if (!editId) return;
     const amount = parseFloat(editAmount);
     if (!amount || amount <= 0) return;
-    updateRepeatTransaction(editId, { amount, description: editDesc, repeatOption: editRepeatOption });
+    const rt = list.find((r) => r.id === editId);
+    if (!rt) return;
+    const anchor = buildEditAnchor(rt, editRepeatOption, editWeekday, editDay, editDate);
+    const scheduleChanged =
+      editRepeatOption !== rt.repeatOption ||
+      editTime !== rt.time ||
+      toDateInput(anchor.date) !== toDateInput(new Date(rt.nextDue)) ||
+      (anchor.dayOfMonth !== undefined && anchor.dayOfMonth !== rt.dayOfMonth);
+    updateRepeatTransaction(
+      editId,
+      { amount, description: editDesc, repeatOption: editRepeatOption },
+      scheduleChanged ? { ...anchor, time: editTime || rt.time } : undefined
+    );
     setEditId(null);
     refresh();
   };
 
   const refresh = () => setList(sortedRepeats());
+
+  // Due repeats run on page switch / app resume — keep nextDue shown here current
+  useEffect(() => {
+    const handler = () => refresh();
+    window.addEventListener("repeats-updated", handler);
+    return () => window.removeEventListener("repeats-updated", handler);
+  }, []);
 
   const handleDelete = (id: string) => {
     deleteRepeatTransaction(id);
@@ -231,6 +290,57 @@ export default function RepeatTransactions() {
                   ))}
                 </div>
               )}
+            </div>
+            {/* Schedule: weekday / day-of-month / date, depending on frequency */}
+            <div className="flex gap-2">
+              {(editRepeatOption === "weekly" || editRepeatOption === "biweekly") && (
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.weekday")}</label>
+                  <select
+                    value={editWeekday}
+                    onChange={(e) => setEditWeekday(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                      <option key={d} value={d}>{T(`day.full.${d}`)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {editRepeatOption === "monthly" && (
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.day_of_month")}</label>
+                  <select
+                    value={editDay}
+                    onChange={(e) => setEditDay(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
+                  >
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {MULTI_MONTH.includes(editRepeatOption) && (
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.next_date")}</label>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
+                  />
+                </div>
+              )}
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.time")}</label>
+                <input
+                  type="time"
+                  value={editTime}
+                  onChange={(e) => setEditTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
+                />
+              </div>
             </div>
             <button
               onClick={handleEditSave}

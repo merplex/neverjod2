@@ -78,13 +78,38 @@ export function deleteRepeatTransaction(id: string) {
   }
   saveRepeatTransactions(list.filter((r) => r.id !== id));
 }
-export function updateRepeatTransaction(id: string, updates: Partial<Pick<RepeatTransaction, "amount" | "description" | "repeatOption">>) {
+export function updateRepeatTransaction(
+  id: string,
+  updates: Partial<Pick<RepeatTransaction, "amount" | "description" | "repeatOption">>,
+  // New schedule anchor — only pass when the schedule actually changed, so pending
+  // (not-yet-executed) occurrences aren't skipped by recomputing nextDue
+  schedule?: { date: Date; time: string; dayOfMonth?: number }
+) {
   const list = getRepeatTransactions();
   const idx = list.findIndex((r) => r.id === id);
   if (idx === -1) return;
+  const optionChanged = !!updates.repeatOption && updates.repeatOption !== list[idx].repeatOption;
   list[idx] = { ...list[idx], ...updates, updated_at: new Date().toISOString() };
-  if (updates.repeatOption) {
-    list[idx].nextDue = buildInitialNextDue(list[idx]);
+  if (schedule) {
+    list[idx] = {
+      ...list[idx],
+      dayOfMonth: schedule.dayOfMonth ?? schedule.date.getDate(),
+      weekday: schedule.date.getDay(),
+      monthOfYear: schedule.date.getMonth(),
+      time: schedule.time,
+      startDate: schedule.date.toISOString(),
+    };
+  }
+  if (schedule || optionChanged) {
+    let next = new Date(buildInitialNextDue(list[idx]));
+    // Don't re-run an occurrence that was already executed
+    const last = list[idx].lastExecuted ? new Date(list[idx].lastExecuted!) : null;
+    let safety = 0;
+    while (last && next <= last && safety < 400) {
+      safety++;
+      next = calcNextDue(list[idx], next);
+    }
+    list[idx].nextDue = next.toISOString();
   }
   saveRepeatTransactions(list);
 }
@@ -228,17 +253,16 @@ function accountCurrency(accountId: string, ledgerId?: string): { currency: stri
 /** Check all repeat transactions; create any that are due; update nextDue. Returns true if any were created. */
 export function checkAndExecuteRepeats(): boolean {
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const repeats = getRepeatTransactions();
   let changed = false;
 
   for (const rt of repeats) {
     let nextDue = new Date(rt.nextDue);
-    let nextDueDay = new Date(nextDue.getFullYear(), nextDue.getMonth(), nextDue.getDate());
 
+    // Due once the scheduled date AND time have passed
     let safety = 0;
-    while (nextDueDay <= todayStart && safety < 400) {
+    while (nextDue <= now && safety < 400) {
       safety++;
 
       // create the transaction(s)
@@ -311,7 +335,6 @@ export function checkAndExecuteRepeats(): boolean {
 
       rt.lastExecuted = nextDue.toISOString();
       nextDue = calcNextDue(rt, nextDue);
-      nextDueDay = new Date(nextDue.getFullYear(), nextDue.getMonth(), nextDue.getDate());
       changed = true;
     }
     rt.nextDue = nextDue.toISOString();

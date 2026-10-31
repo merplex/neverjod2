@@ -131,7 +131,6 @@ function AppContent() {
   useEffect(() => {
     // Don't redirect if user opened a legal page directly
     if (LEGAL_PATHS.some((p) => pathname.startsWith(p))) return;
-    if (checkAndExecuteRepeats()) window.dispatchEvent(new CustomEvent("repeats-updated"));
     // Restore last page if app was briefly hidden (< 1 min), else go home
     const lastPath = sessionStorage.getItem("last_path");
     const lastHideAt = sessionStorage.getItem("last_hide_at");
@@ -200,6 +199,12 @@ function AppContent() {
     }
   }, []);
 
+  // Run due repeat transactions on launch and every page switch
+  useEffect(() => {
+    if (LEGAL_PATHS.some((p) => pathname.startsWith(p))) return;
+    if (checkAndExecuteRepeats()) window.dispatchEvent(new CustomEvent("repeats-updated"));
+  }, [pathname]);
+
   useEffect(() => {
     const onHidden = () => {
       // Save current page and hide timestamp for restore logic
@@ -213,6 +218,7 @@ function AppContent() {
       if (elapsed >= 60_000) {
         navigate("/", { replace: true });
       }
+      if (checkAndExecuteRepeats()) window.dispatchEvent(new CustomEvent("repeats-updated"));
       const token = localStorage.getItem("cloud_token");
       if (token && localStorage.getItem("sync_auto_enabled") === "true") {
         syncAll(token).then(() => {

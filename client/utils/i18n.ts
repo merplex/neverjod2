@@ -177,6 +177,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "repeat.amount": "จำนวนเงิน",
     "repeat.note": "หมายเหตุ",
     "repeat.frequency": "ความถี่",
+    "repeat.weekday": "ทุกวัน",
+    "repeat.day_of_month": "ทุกวันที่",
+    "repeat.next_date": "รอบถัดไป",
+    "repeat.time": "เวลา",
     "repeat.delete_confirm": "ลบ repeat transaction นี้?",
     "repeat.delete_hint": "transaction ที่สร้างไปแล้วจะไม่ถูกลบ",
 
@@ -507,6 +511,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "repeat.amount": "Amount",
     "repeat.note": "Note",
     "repeat.frequency": "Frequency",
+    "repeat.weekday": "Every",
+    "repeat.day_of_month": "On day",
+    "repeat.next_date": "Next date",
+    "repeat.time": "Time",
     "repeat.delete_confirm": "Delete this repeat transaction?",
     "repeat.delete_hint": "Already created transactions will not be deleted.",
 
@@ -837,6 +845,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "repeat.amount": "金额",
     "repeat.note": "备注",
     "repeat.frequency": "频率",
+    "repeat.weekday": "每周",
+    "repeat.day_of_month": "每月日期",
+    "repeat.next_date": "下次日期",
+    "repeat.time": "时间",
     "repeat.delete_confirm": "删除此重复交易？",
     "repeat.delete_hint": "已创建的交易不会被删除",
 
