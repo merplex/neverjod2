@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { HardDrive, Loader2, Cloud, CloudOff, RotateCcw, Trash2 } from "lucide-react";
+import { HardDrive, Loader2, Cloud, Smartphone, RotateCcw, Trash2 } from "lucide-react";
 import { useT } from "../hooks/useT";
 import {
-  listBackups, createBackup, deleteBackup, restoreBackup, syncBackupsToCloud, cloudEnabled, backupLedgerIds,
-  MAX_BACKUPS, type DeviceBackup,
+  listBackups, createBackup, deleteBackup, restoreBackup, syncBackupsToCloud, cloudEnabled,
+  MAX_BACKUPS, type BackupEntry,
 } from "../utils/deviceBackup";
 
 // "2026/12/29 17:45:05" in the device's local time
@@ -21,17 +21,21 @@ function ledgerNames(ids: string[], mainDefault: string): string {
   return ids.map((id) => list.find((l) => l.id === id)?.name || (id === "main" ? mainDefault : id)).join(", ");
 }
 
-type Confirm = { backup: DeviceBackup; action: "restore" | "delete" } | null;
+function ledgerName(id: string, mainDefault: string): string {
+  return ledgerNames([id], mainDefault);
+}
+
+type Confirm = { backup: BackupEntry; action: "restore" | "delete" } | null;
 
 export default function DeviceBackupCard() {
   const T = useT();
-  const [backups, setBackups] = useState<DeviceBackup[]>([]);
+  const [backups, setBackups] = useState<BackupEntry[]>([]);
   const [busy, setBusy] = useState<string | null>(null); // "create" | backup id
   const [confirm, setConfirm] = useState<Confirm>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const cloud = cloudEnabled();
 
-  const refresh = () => listBackups().then(setBackups).catch(() => setError(true));
+  const refresh = () => listBackups().then(setBackups).catch(() => setError("backup.failed"));
   useEffect(() => {
     refresh();
     // Upload sets that didn't make it to the server earlier (e.g. created offline)
@@ -40,11 +44,12 @@ export default function DeviceBackupCard() {
 
   const run = async (key: string, fn: () => Promise<unknown>) => {
     setBusy(key);
-    setError(false);
+    setError(null);
     try {
       await fn();
-    } catch {
-      setError(true);
+    } catch (e: any) {
+      const m = e?.message;
+      setError(m === "corrupt" || m === "verify" ? "backup.corrupt" : m === "not found" ? "backup.not_found" : "backup.failed");
     } finally {
       setBusy(null);
       setConfirm(null);
@@ -86,10 +91,10 @@ export default function DeviceBackupCard() {
                 {T("backup.item")} <span className="tabular-nums whitespace-nowrap">{formatStamp(b.createdAt)}</span>
               </p>
               <p className="text-[11px] text-slate-400 leading-snug flex items-center gap-1 mt-0.5">
-                {cloud && (b.uploaded
-                  ? <Cloud size={11} className="text-theme-500 flex-shrink-0" aria-label={T("backup.on_cloud")} />
-                  : <CloudOff size={11} className="flex-shrink-0" aria-label={T("backup.local_only")} />)}
-                <span className="truncate">{T("backup.ledgers")}: {ledgerNames(backupLedgerIds(b), T("ledger.main_name"))}</span>
+                {/* Where this set is kept: phone and/or Cloud (verified copy) */}
+                {b.onDevice && <Smartphone size={11} className="text-theme-500 flex-shrink-0" aria-label={T("backup.on_device")} />}
+                {b.onCloud && <Cloud size={11} className="text-theme-500 flex-shrink-0" aria-label={T("backup.on_cloud")} />}
+                <span className="truncate">{T("backup.ledgers")}: {ledgerNames(b.ledgerIds, T("ledger.main_name"))}</span>
               </p>
             </div>
             <button
@@ -120,7 +125,7 @@ export default function DeviceBackupCard() {
           </button>
         )}
 
-        {error && <p className="text-xs text-red-500 text-center">{T("backup.failed")}</p>}
+        {error && <p className="text-xs text-red-500 text-center">{T(error)}</p>}
       </div>
 
       {/* Confirm dialog for restore / delete */}
@@ -144,7 +149,30 @@ export default function DeviceBackupCard() {
               <p className="text-sm font-medium text-slate-700">
                 {T("backup.item")} <span className="tabular-nums">{formatStamp(confirm.backup.createdAt)}</span>
               </p>
-              <p className="text-xs text-slate-500">{T("backup.ledgers")}: {ledgerNames(backupLedgerIds(confirm.backup), T("ledger.main_name"))}</p>
+              <div className="mt-1 space-y-1">
+                {confirm.backup.ledgerIds.map((lid) => {
+                  const c = confirm.backup.counts[lid];
+                  return (
+                    <div key={lid} className="text-xs text-slate-500">
+                      <p className="font-medium text-slate-600">{ledgerName(lid, T("ledger.main_name"))}</p>
+                      {c && (
+                        <p>
+                          {/* each "n label" stays on one line; only the separators may wrap */}
+                          {T("backup.count_line", { t: c.t, a: c.a, c: c.c, r: c.r }).split(" · ").map((part, i) => (
+                            <span key={i}>{i > 0 && " · "}<span className="whitespace-nowrap">{part}</span></span>
+                          ))}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+                {confirm.backup.onDevice ? <Smartphone size={11} /> : <Cloud size={11} />}
+                {T(confirm.backup.onDevice
+                  ? (confirm.backup.onCloud ? "backup.where_both" : "backup.where_device")
+                  : "backup.where_cloud")}
+              </p>
             </div>
             <p className="text-sm text-slate-600 mb-4">
               {T(isDelete ? "backup.delete_confirm" : "backup.restore_confirm")}

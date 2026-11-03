@@ -202,6 +202,9 @@ export async function initDB() {
       data JSONB NOT NULL,
       PRIMARY KEY (id, user_id)
     )`).catch(() => {});
+  // checksum + per-ledger record counts, computed on the phone, so a copy can be verified complete
+  await pool.query(`ALTER TABLE device_backups ADD COLUMN IF NOT EXISTS checksum TEXT`).catch(() => {});
+  await pool.query(`ALTER TABLE device_backups ADD COLUMN IF NOT EXISTS counts JSONB`).catch(() => {});
 
   // Admin account: always premium, no expiry
   await pool.query(`

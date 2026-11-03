@@ -7,18 +7,21 @@ import { authMiddleware, premiumMiddleware } from "./sync";
 const router = Router();
 const MAX_PER_USER = 3;
 
-// POST /api/backups — upload (idempotent by id)
+// POST /api/backups — upload (re-upload of the same id replaces it; the phone verifies by GET)
 router.post("/", authMiddleware, premiumMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const { id, created_at, device = null, data } = req.body || {};
+  const { id, created_at, device = null, data, checksum = null, counts = null } = req.body || {};
   if (!id || !created_at || !data || typeof data !== "object") return res.status(400).json({ error: "Bad request" });
   const ledgerIds = Array.from(new Set(Object.keys(data).map((k) => (k.includes("__") ? k.split("__")[1] : "main"))));
   try {
     await pool.query(
-      `INSERT INTO device_backups (id, user_id, created_at, device, ledger_ids, data)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (id, user_id) DO NOTHING`,
-      [String(id), userId, created_at, device ? String(device).slice(0, 200) : null, ledgerIds, JSON.stringify(data)]
+      `INSERT INTO device_backups (id, user_id, created_at, device, ledger_ids, data, checksum, counts)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (id, user_id) DO UPDATE
+         SET data = EXCLUDED.data, checksum = EXCLUDED.checksum, counts = EXCLUDED.counts,
+             ledger_ids = EXCLUDED.ledger_ids, uploaded_at = NOW()`,
+      [String(id), userId, created_at, device ? String(device).slice(0, 200) : null, ledgerIds, JSON.stringify(data),
+       checksum ? String(checksum) : null, counts ? JSON.stringify(counts) : null]
     );
     // Keep the newest MAX_PER_USER only
     await pool.query(
@@ -38,7 +41,7 @@ router.get("/", authMiddleware, premiumMiddleware, async (req: Request, res: Res
   const userId = (req as any).userId;
   try {
     const r = await pool.query(
-      `SELECT id, created_at, uploaded_at, device, ledger_ids, pg_column_size(data) AS size
+      `SELECT id, created_at, uploaded_at, device, ledger_ids, checksum, counts, pg_column_size(data) AS size
        FROM device_backups WHERE user_id = $1 ORDER BY created_at`,
       [userId]
     );
