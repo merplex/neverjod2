@@ -15,6 +15,7 @@ import {
   Home, Car, Coffee, Briefcase, Star, Clock, Camera, Headphones,
   Wrench, Scissors, Flame, Leaf, Baby, Package, Truck, Train, Bike, Building2,
 } from "lucide-react";
+import { applyPercent } from "../utils/calcPercent";
 
 // ---- helpers ----
 
@@ -657,7 +658,7 @@ export default function TransactionDetail() {
                 {/* Section D: Calc toggle + Lock/= */}
                 <div className="flex flex-col gap-1.5 flex-1 min-h-0">
                   {isCalcMode ? (
-                    <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
+                    <div className="grid grid-cols-2 gap-1.5 flex-[2] min-h-0">
                       {(['+', '-', '*', '/'] as const).map((op) => (
                         <button
                           key={op}
@@ -677,6 +678,14 @@ export default function TransactionDetail() {
                         <Calculator size={24} />
                         <span className="text-xs">Calc</span>
                       </div>
+                    </button>
+                  )}
+                  {isCalcMode && (
+                    <button
+                      onClick={() => { if (isNumpadLocked) return; setNumpadDisplay(applyPercent(numpadDisplay)); }}
+                      className="rounded-lg shadow-sm flex items-center justify-center font-bold text-xl flex-1 min-h-0 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 active:opacity-70"
+                    >
+                      %
                     </button>
                   )}
                   {isCalcMode ? (

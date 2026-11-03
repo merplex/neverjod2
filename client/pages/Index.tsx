@@ -11,6 +11,7 @@ import { lk } from "../utils/ledgerStorage";
 import { LANG_LOCALE } from "../utils/i18n";
 import { Clipboard } from "@capacitor/clipboard";
 import { App } from "@capacitor/app";
+import { applyPercent } from "../utils/calcPercent";
 
 const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
@@ -1089,7 +1090,7 @@ export default function Index() {
                     {/* Section D: Calc toggle & Lock/= */}
                     <div className="flex flex-col gap-2 flex-1 min-h-0">
                       {isCalcMode ? (
-                        <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+                        <div className="grid grid-cols-2 gap-2 flex-[2] min-h-0">
                           {(['+', '-', '*', '/'] as const).map((op) => (
                             <button
                               key={op}
@@ -1109,6 +1110,14 @@ export default function Index() {
                             <Calculator size={24} />
                             <span className="text-xs">Calc</span>
                           </div>
+                        </button>
+                      )}
+                      {isCalcMode && (
+                        <button
+                          onClick={() => { setDisplay(applyPercent(display)); }}
+                          className="rounded-lg shadow-sm flex items-center justify-center font-bold text-xl flex-1 min-h-0 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 active:opacity-70"
+                        >
+                          %
                         </button>
                       )}
                       {isCalcMode ? (

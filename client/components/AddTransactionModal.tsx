@@ -18,6 +18,7 @@ import {
 import DatePicker from "./DatePicker";
 import TimePicker from "./TimePicker";
 import { useT } from "../hooks/useT";
+import { applyPercent } from "../utils/calcPercent";
 
 // ---- icon maps ----
 const allIconsMap: Record<string, React.ComponentType<any>> = {
@@ -717,7 +718,7 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
               {/* Section D: Calc toggle + Lock/= */}
               <div className="flex flex-col gap-1.5 flex-1 min-h-0">
                 {isCalcMode ? (
-                  <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
+                  <div className="grid grid-cols-2 gap-1.5 flex-[2] min-h-0">
                     {(['+', '-', '*', '/'] as const).map((op) => (
                       <button
                         key={op}
@@ -737,6 +738,14 @@ export default function AddTransactionModal({ onClose, onSaved, isRepeatMode = f
                       <Calculator size={24} />
                       <span className="text-xs">Calc</span>
                     </div>
+                  </button>
+                )}
+                {isCalcMode && (
+                  <button
+                    onClick={() => { setDisplay(applyPercent(display)); }}
+                    className="rounded-lg shadow-sm flex items-center justify-center font-bold text-xl flex-1 min-h-0 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 active:opacity-70"
+                  >
+                    %
                   </button>
                 )}
                 {isCalcMode ? (
