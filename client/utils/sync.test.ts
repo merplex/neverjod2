@@ -187,6 +187,35 @@ describe("auto push after an action", () => {
   });
 });
 
+describe("offline: unsent changes wait and go up with the next action", () => {
+  it("a push that fails keeps its changes pending; the next push sends old + new together", async () => {
+    deviceA.setItem("app_transactions", JSON.stringify([{ id: "t1", categoryId: "food", accountId: "a1", amount: 10, date: "2026-11-01T03:00:00.000Z" }]));
+    await svc.syncAll("tok");
+    await sleep(5);
+    // offline: edit t1 and add t2, push fails
+    const list = txns(deviceA); list[0] = { ...list[0], amount: 11 };
+    deviceA.setItem("app_transactions", JSON.stringify([...list, { id: "t2", categoryId: "food", accountId: "a1", amount: 20, date: "2026-11-02T03:00:00.000Z" }]));
+    svc.markDeleted("category", { id: "food", name: "Food", type: "expense" });
+    const editedAt = txns(deviceA)[0].updated_at;
+    (globalThis as any).fetch = vi.fn(async () => { throw new TypeError("Failed to fetch"); });
+    await expect(svc.syncPush("tok")).rejects.toThrow();
+    // still offline, another action — still nothing sent, nothing lost
+    deviceA.setItem("app_transactions", JSON.stringify([...txns(deviceA), { id: "t3", categoryId: "food", accountId: "a1", amount: 30, date: "2026-11-03T03:00:00.000Z" }]));
+    await expect(svc.syncPush("tok")).rejects.toThrow();
+    expect(rows.get("t:main:t1").amount).toBe(10);
+    // back online, next action's push carries everything that was waiting
+    (globalThis as any).fetch = vi.fn(fakeFetch);
+    pushLog = [];
+    await svc.syncPush("tok");
+    expect(pushLog).toHaveLength(1);
+    expect(pushLog[0].transactions.map((t: any) => t.id).sort()).toEqual(["t1", "t2", "t3"]);
+    expect(pushLog[0].categories.some((c: any) => c.id === "food" && c.deleted_at)).toBe(true);
+    // the offline edit keeps the time it was made, not the time it finally got sent
+    expect(pushLog[0].transactions.find((t: any) => t.id === "t1").updated_at).toBe(editedAt);
+    expect(rows.get("t:main:t1").amount).toBe(11);
+  });
+});
+
 describe("multi-device: every kind of change carries its own time and reaches the other device", () => {
   const ledger2 = (d: MemStorage, key: string) => JSON.parse(d.getItem(`${key}__L2`) || "[]");
 

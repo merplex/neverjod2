@@ -96,6 +96,9 @@ function run(ledgerId: string) {
   timers.delete(ledgerId);
   const token = localStorage.getItem("cloud_token");
   if (!token || !enabled()) return;
+  // No network → don't even try. Nothing is lost: every change stays "waiting to send" (it no
+  // longer matches its shadow, see syncShadow.ts) and goes up with the next action's push.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   const p = localStorage.getItem(lk("last_sync_at", ledgerId))
     // Never pulled this ledger yet → do a full sync first (push alone can't know what the
     // server already has; see the first-sync rule in syncPush).
