@@ -36,6 +36,9 @@ export default function DeviceBackupCard() {
     refresh();
     // Upload sets that didn't make it to the server earlier (e.g. created offline)
     syncBackupsToCloud().then(refresh).catch(() => {});
+    const onUpdated = () => refresh();
+    window.addEventListener("backups-updated", onUpdated);
+    return () => window.removeEventListener("backups-updated", onUpdated);
   }, []);
 
   const run = async (key: string, fn: () => Promise<unknown>) => {
@@ -84,7 +87,9 @@ export default function DeviceBackupCard() {
           <div key={b.id} className="flex items-center gap-2">
             {/* Wraps the timestamp onto a 2nd line when the buttons leave too little room (e.g. English) */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-slate-700 leading-snug">
+              {/* Italic = on the phone but not on the Cloud yet (offline / upload pending); it is
+                  uploaded automatically and turns upright once the server copy is verified */}
+              <p className={`text-sm text-slate-700 leading-snug ${cloud && !b.onCloud ? "italic" : ""}`}>
                 {T("backup.item")} <span className="tabular-nums whitespace-nowrap">{formatStamp(b.createdAt)}</span>
               </p>
               <p className="text-[11px] text-slate-400 leading-snug flex items-center gap-1 mt-0.5">

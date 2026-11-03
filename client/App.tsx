@@ -5,6 +5,7 @@ import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
 import { lk } from "./utils/ledgerStorage";
 import { syncAll, syncPush, apiVerifyPurchase } from "./utils/syncService";
 import { installAutoPush, flushAutoPush } from "./utils/autoPush";
+import { syncBackupsToCloud } from "./utils/deviceBackup";
 
 // Push to the cloud ~1s after every add/edit/delete (when Auto Sync is on).
 installAutoPush();
@@ -225,6 +226,8 @@ function AppContent() {
         navigate("/", { replace: true });
       }
       if (checkAndExecuteRepeats()) window.dispatchEvent(new CustomEvent("repeats-updated"));
+      // Backups not on the Cloud yet (created offline) — try again
+      syncBackupsToCloud().catch(() => {});
       const token = localStorage.getItem("cloud_token");
       if (token && localStorage.getItem("sync_auto_enabled") === "true") {
         syncAll(token).then(() => {
@@ -247,12 +250,16 @@ function AppContent() {
       else if (document.visibilityState === "visible") onResume();
     };
     document.addEventListener("visibilitychange", handleVisibility);
+    // Back online → upload backups that were created offline
+    const onOnline = () => { syncBackupsToCloud().catch(() => {}); };
+    window.addEventListener("online", onOnline);
     const appStateListener = CapacitorApp.addListener("appStateChange", ({ isActive }) => {
       if (isActive) onResume();
       else onHidden();
     });
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("online", onOnline);
       appStateListener.then((l) => l.remove());
     };
   }, []);

@@ -225,15 +225,30 @@ function setPendingServerDeletes(ids: string[]) {
 }
 
 // Upload sets the server doesn't have a verified copy of yet; finish deletes that failed earlier.
-export async function syncBackupsToCloud(): Promise<void> {
+let cloudSyncRunning: Promise<void> | null = null;
+export function syncBackupsToCloud(): Promise<void> {
+  // one run at a time (resume + back-online + Settings can all ask together)
+  if (!cloudSyncRunning) {
+    cloudSyncRunning = syncBackupsToCloudNow().finally(() => { cloudSyncRunning = null; });
+  }
+  return cloudSyncRunning;
+}
+
+async function syncBackupsToCloudNow(): Promise<void> {
   const token = cloudToken();
   if (!token) return;
+  let changed = false;
   const left: string[] = [];
   for (const id of pendingServerDeletes()) if (!(await deleteOnServer(id, token))) left.push(id);
   setPendingServerDeletes(left);
   for (const b of await getAllLocal()) {
-    if (!b.uploaded && isIntact(b) && (await uploadVerified(b, token))) await putLocal({ ...b, uploaded: true });
+    if (!b.uploaded && isIntact(b) && (await uploadVerified(b, token))) {
+      await putLocal({ ...b, uploaded: true });
+      changed = true;
+    }
   }
+  // Let an open backup box drop the italics
+  if (changed) window.dispatchEvent(new CustomEvent("backups-updated"));
 }
 
 // ---- public API -----------------------------------------------------------------------------
@@ -265,20 +280,19 @@ export async function listBackups(): Promise<BackupEntry[]> {
   return Array.from(byId.values()).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-// All-or-nothing: the set is only kept if it is complete everywhere it should be. Any failure
-// (sync before snapshot, phone write/read-back, or — when Cloud is on — upload/verify) removes
-// whatever was written and throws "incomplete", so the user simply creates it again.
+// The set exists once the PHONE copy is written and verified (read back, checksum matches);
+// otherwise nothing is kept and "incomplete" is thrown, so the user simply creates it again.
+// The server copy is separate: if it can't be uploaded and verified now (offline, server error,
+// server copy incomplete) the set stays "not on Cloud yet" — shown in italics — and is uploaded
+// again automatically (app resume, back online, opening Settings) until it verifies.
 export async function createBackup(): Promise<void> {
   if ((await listBackups()).length >= MAX_BACKUPS) throw new Error("max");
   const token = cloudToken();
   const id = `bk_${Date.now()}`;
-  const discard = async () => {
-    await idb("readwrite", (s) => s.delete(id)).catch(() => {});
-    if (token) await deleteOnServer(id, token);
-  };
+  let backup: StoredBackup;
   try {
-    // Cloud on → bring every ledger up to date first, so the snapshot isn't missing anything
-    if (token) await syncAll(token);
+    // Cloud on → bring every ledger up to date first (best effort: offline still backs up the phone)
+    if (token) { try { await syncAll(token); } catch {} }
 
     const data: Record<string, string> = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -288,22 +302,19 @@ export async function createBackup(): Promise<void> {
       if (v !== null) data[key] = v;
     }
     if (!data["app_transactions"] && !data["app_accounts"] && !data["app_categories"]) throw new Error("empty");
-    const backup: StoredBackup = {
+    backup = {
       id, createdAt: new Date().toISOString(),
       data, checksum: checksumOf(data), counts: countsOf(data), uploaded: false,
     };
     await putLocal(backup);
     const stored = await getLocal(id); // read back what the phone actually stored
     if (!stored || !isIntact(stored) || stored.checksum !== backup.checksum) throw new Error("verify");
-
-    if (token) {
-      if (!(await uploadVerified(backup, token))) throw new Error("upload");
-      await putLocal({ ...backup, uploaded: true });
-    }
   } catch {
-    await discard();
+    await idb("readwrite", (s) => s.delete(id)).catch(() => {});
     throw new Error("incomplete");
   }
+
+  if (token && (await uploadVerified(backup, token))) await putLocal({ ...backup, uploaded: true });
 }
 
 // Deleted on the phone AND on the server (server delete queued if offline).
