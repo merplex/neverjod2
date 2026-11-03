@@ -311,8 +311,10 @@ export default function Categories() {
   const confirmDelete = (catId: string) => {
     try {
       const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
+      // Stamp so the next pull (server copy still on the old id) doesn't revert the move
+      const stamp = new Date().toISOString();
       const updated = txns.map((t: any) =>
-        t.categoryId === catId ? { ...t, categoryId: "nocat" } : t
+        t.categoryId === catId ? { ...t, categoryId: "nocat", updated_at: stamp } : t
       );
       localStorage.setItem(lk("app_transactions"), JSON.stringify(updated));
     } catch {}
