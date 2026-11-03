@@ -116,9 +116,19 @@ export function markDeleted(type: "category" | "account" | "transaction", item: 
   }
 }
 
-function flushPendingDeletes(ledgerId?: string) {
-  localStorage.removeItem(lk("app_pending_deletes", ledgerId));
-  localStorage.removeItem(lk("app_pending_deletes_repeats", ledgerId));
+// Remove only the tombstones that were actually sent in the push that just succeeded. A delete
+// made while that request was in flight isn't on the server yet — wiping it too (as a blanket
+// removeItem did) dropped the delete for good, and the item came back from the server later.
+function flushPendingDeletes(ledgerId: string, sent: any[], sentRepeats: any[]) {
+  const sentKeys = new Set(sent.map((p) => `${p._type}:${p.id}`));
+  const key = lk("app_pending_deletes", ledgerId);
+  const left = (JSON.parse(localStorage.getItem(key) || "[]") as any[]).filter((p) => !sentKeys.has(`${p._type}:${p.id}`));
+  if (left.length) localStorage.setItem(key, JSON.stringify(left)); else localStorage.removeItem(key);
+
+  const sentRepeatIds = new Set(sentRepeats.map((p) => p.id));
+  const rKey = lk("app_pending_deletes_repeats", ledgerId);
+  const rLeft = (JSON.parse(localStorage.getItem(rKey) || "[]") as any[]).filter((p) => !sentRepeatIds.has(p.id));
+  if (rLeft.length) localStorage.setItem(rKey, JSON.stringify(rLeft)); else localStorage.removeItem(rKey);
 }
 
 function getPendingDeletes(ledgerId?: string): { categories: any[]; accounts: any[]; transactions: any[] } {
@@ -418,7 +428,7 @@ function updateTransactionRefs(
 // ledgerId: defaults to the currently active ledger; pass explicitly to flush a ledger the user
 // has already switched away from (its localStorage keys are untouched by the switch, so this
 // works regardless of which ledger is active now — see handleSwitchLedger).
-export async function syncPush(token: string, force = false, isFirstSync?: boolean, ledgerId?: string) {
+async function syncPushNow(token: string, force = false, isFirstSync?: boolean, ledgerId?: string) {
   if (localStorage.getItem("app_premium") !== "true") return false;
   const now = new Date().toISOString();
   ledgerId = ledgerId ?? getActiveLedgerId();
@@ -441,7 +451,7 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   const pinnedCatId = "nocat";
   const pinnedAccId = "account_deleted";
 
-  const promotedSnapshots: { storageKey: string; promoted: any[] }[] = [];
+  const promotedSnapshots: { storageKey: string; promoted: any[]; pushedIds: Set<string>; pinnedId: string }[] = [];
   for (const [key, pinnedId] of [["app_categories", pinnedCatId], ["app_accounts", pinnedAccId]] as const) {
     const storageKey = lk(key, ledgerId);
     const items: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -451,7 +461,7 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
       const sortOrder = i.id === pinnedId ? undefined : orderIdx++;
       return { ...isPromoted, sortOrder };
     });
-    promotedSnapshots.push({ storageKey, promoted });
+    promotedSnapshots.push({ storageKey, promoted, pushedIds: new Set(items.map((i) => i.id)), pinnedId });
   }
 
   const rawRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions", ledgerId)) || "[]");
@@ -467,6 +477,7 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
     });
 
   // Merge soft-delete tombstones
+  const pendingAll: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes", ledgerId)) || "[]");
   const pending = getPendingDeletes(ledgerId);
   const allCategories = mergeWithTombstones(categories, pending.categories, now);
   const allAccounts = mergeWithTombstones(accounts, pending.accounts, now);
@@ -497,12 +508,29 @@ export async function syncPush(token: string, force = false, isFirstSync?: boole
   });
   if (!res.ok) throw new Error(`push:${res.status}`);
 
-  // Push succeeded — now commit source promotions to localStorage
-  for (const { storageKey, promoted } of promotedSnapshots) {
+  // Push succeeded — commit source promotions to localStorage. Re-read the CURRENT lists rather
+  // than writing back the snapshots taken before the request: the user (or a repeat firing on a
+  // page switch) may have edited them while the push was in flight, and writing the old snapshot
+  // silently reverted that edit — e.g. a just-corrected start balance, or a repeat's nextDue (which
+  // then fired the same repeat again). Only items that were in this push get source:"server";
+  // anything added meanwhile stays "local" and goes up next time.
+  for (const { storageKey, pushedIds, pinnedId } of promotedSnapshots) {
+    const current: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    let orderIdx = 0;
+    const promoted = current.map((i) => {
+      const src = i.source === "local" && pushedIds.has(i.id) ? { ...i, source: "server" } : i;
+      const sortOrder = i.id === pinnedId ? undefined : orderIdx++;
+      return { ...src, sortOrder };
+    });
     localStorage.setItem(storageKey, JSON.stringify(promoted));
   }
-  localStorage.setItem(lk("app_repeat_transactions", ledgerId), JSON.stringify(promotedRepeats));
-  flushPendingDeletes(ledgerId);
+  const pushedRepeatIds = new Set(rawRepeats.map((r) => r.id));
+  const currentRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions", ledgerId)) || "[]");
+  localStorage.setItem(
+    lk("app_repeat_transactions", ledgerId),
+    JSON.stringify(currentRepeats.map((r) => r.source === "local" && pushedRepeatIds.has(r.id) ? { ...r, source: "server" } : r))
+  );
+  flushPendingDeletes(ledgerId, pendingAll, pendingRepeats);
   return true;
 }
 
@@ -518,7 +546,7 @@ function mergeWithTombstones(live: any[], tombstones: any[], now: string): any[]
 
 // ledgerId: defaults to the active ledger; pass explicitly to pull a ledger that isn't open
 // (its data lands in that ledger's own localStorage keys, the active ledger is untouched).
-export async function syncPull(token: string, ledgerId?: string) {
+async function syncPullNow(token: string, ledgerId?: string) {
   if (localStorage.getItem("app_premium") !== "true") return false;
   ledgerId = ledgerId ?? getActiveLedgerId();
   const lastSync = localStorage.getItem(lk("last_sync_at", ledgerId)) || null;
@@ -620,7 +648,7 @@ export async function apiDeleteLedger(token: string, id: string): Promise<void> 
 // Syncs EVERY ledger, not just the open one — e.g. the incoming leg of a cross-ledger transfer
 // is written straight into the other ledger's storage and must reach the server without the
 // user having to open that ledger. Active ledger goes first so its errors surface as before.
-export async function syncAll(token: string, force = false): Promise<void> {
+async function syncAllNow(token: string, force = false): Promise<void> {
   if (localStorage.getItem("app_premium") !== "true") return;
   const activeId = getActiveLedgerId();
   await syncLedger(token, force, activeId);
@@ -636,8 +664,46 @@ export async function syncAll(token: string, force = false): Promise<void> {
 
 async function syncLedger(token: string, force: boolean, ledgerId: string) {
   const isFirstSync = !localStorage.getItem(lk("last_sync_at", ledgerId));
-  await syncPull(token, ledgerId);
-  await syncPush(token, force, isFirstSync, ledgerId);
+  await syncPullNow(token, ledgerId);
+  await syncPushNow(token, force, isFirstSync, ledgerId);
+}
+
+// --- Serialization ---
+// Every sync entry point runs one at a time. Boot (ledger flush push + syncAll), app resume, and
+// the Settings button can all fire syncs that overlap; a pull and a push of the same ledger running
+// concurrently interleave their localStorage reads/writes, and the later writer silently reverts
+// what the other merged (account balances, deletes, repeat schedules).
+let syncChain: Promise<unknown> = Promise.resolve();
+let queuedSyncAll: { promise: Promise<void>; force: boolean } | null = null;
+
+function serialized<T>(fn: () => Promise<T>): Promise<T> {
+  const run = syncChain.then(fn, fn);
+  syncChain = run.catch(() => {});
+  return run;
+}
+
+export function syncPush(token: string, force = false, isFirstSync?: boolean, ledgerId?: string) {
+  // Resolve the ledger NOW (caller's intent), not when the queued job eventually runs.
+  const id = ledgerId ?? getActiveLedgerId();
+  return serialized(() => syncPushNow(token, force, isFirstSync, id));
+}
+
+export function syncPull(token: string, ledgerId?: string) {
+  const id = ledgerId ?? getActiveLedgerId();
+  return serialized(() => syncPullNow(token, id));
+}
+
+// A syncAll that is queued but hasn't started yet already covers any new request (it will read
+// the latest local state when it runs), so callers share it instead of stacking duplicates.
+export function syncAll(token: string, force = false): Promise<void> {
+  if (queuedSyncAll && (queuedSyncAll.force || !force)) return queuedSyncAll.promise;
+  const entry = { force, promise: null as unknown as Promise<void> };
+  entry.promise = serialized(() => {
+    if (queuedSyncAll === entry) queuedSyncAll = null;
+    return syncAllNow(token, force);
+  });
+  queuedSyncAll = entry;
+  return entry.promise;
 }
 
 // Server list is the source of truth (a fresh device may not have opened Settings yet to cache

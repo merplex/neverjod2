@@ -88,16 +88,30 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
       ),
     ]);
 
-    // Transactions: check fingerprints first (batch), then upsert (batch)
-    const txnsWithFingerprint = transactions.filter((tx: any) => tx.fingerprint);
+    // Transactions: fingerprint dedup (batch), then upsert (batch).
+    // Dedup only applies to a NEW live row whose content matches another LIVE row under a different
+    // id (same transaction created twice under different ids). It must never skip:
+    //  - an update or delete of a row that already exists here (an edit that happens to make it look
+    //    like another transaction would otherwise never reach the server, and a delete tombstone
+    //    would be dropped so the item came back later), or
+    //  - a row matching only a DELETED row (re-entering a transaction after deleting the wrong one).
+    const dedupCandidates = transactions.filter((tx: any) => tx.fingerprint && !tx.deleted_at);
     const fingerprintResults = await Promise.all(
-      txnsWithFingerprint.map((tx: any) =>
-        pool.query("SELECT id FROM sync_transactions WHERE fingerprint = $1 AND user_id = $2 AND ledger_id = $3", [tx.fingerprint, userId, ledger_id])
+      dedupCandidates.map((tx: any) =>
+        pool.query(
+          `SELECT id, deleted_at FROM sync_transactions
+           WHERE user_id = $2 AND ledger_id = $3 AND (id = $4 OR (fingerprint = $1 AND deleted_at IS NULL))`,
+          [tx.fingerprint, userId, ledger_id, tx.id]
+        )
       )
     );
     const dupIds = new Set(
-      txnsWithFingerprint
-        .filter((_: any, i: number) => fingerprintResults[i].rows.length > 0 && fingerprintResults[i].rows[0].id !== txnsWithFingerprint[i].id)
+      dedupCandidates
+        .filter((tx: any, i: number) => {
+          const rows = fingerprintResults[i].rows;
+          if (rows.some((r: any) => r.id === tx.id)) return false; // existing row → plain upsert
+          return rows.length > 0;
+        })
         .map((tx: any) => tx.id)
     );
     await Promise.all(
@@ -112,6 +126,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
                SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                    amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
                    date = EXCLUDED.date, time = EXCLUDED.time, ledger_id = EXCLUDED.ledger_id,
+                   fingerprint = EXCLUDED.fingerprint,
                    cross_ledger_ref = EXCLUDED.cross_ledger_ref,
                    is_repeat = EXCLUDED.is_repeat, repeat_id = EXCLUDED.repeat_id,
                    currency = EXCLUDED.currency, exchange_rate = EXCLUDED.exchange_rate,
