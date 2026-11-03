@@ -1,7 +1,7 @@
 import { getCurrencySymbol } from "../utils/currency";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Plus, Trash2, RefreshCw, Pencil, X } from "lucide-react";
+import { ChevronLeft, ChevronDown, Plus, Trash2, RefreshCw, Pencil, X } from "lucide-react";
 import { useSwipeBack } from "../hooks/useSwipeBack";
 import { useT } from "../hooks/useT";
 import {
@@ -10,6 +10,8 @@ import {
 } from "../utils/repeatTransactionService";
 import AddTransactionModal from "../components/AddTransactionModal";
 import TransferModal from "../components/TransferModal";
+import DatePicker from "../components/DatePicker";
+import TimePicker from "../components/TimePicker";
 import { getLang } from "../utils/i18n";
 
 function sortedRepeats(): RepeatTransaction[] {
@@ -38,6 +40,11 @@ function toDateInput(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function parseDateInput(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number);
+  return y && m && d ? new Date(y, m - 1, d) : new Date();
+}
+
 /** Build the new schedule anchor date from the edit form, based on the current nextDue. */
 function buildEditAnchor(
   rt: RepeatTransaction, option: RepeatOption, weekday: number, day: number, dateStr: string
@@ -61,6 +68,58 @@ function buildEditAnchor(
   return { date: base };
 }
 
+/** Dropdown styled like the language / currency pickers in Settings (instead of a native <select>).
+ *  Opens upward: it sits near the bottom of the edit sheet, where a list below would run off-screen. */
+function PickerSelect({ value, options, onChange }: {
+  value: number;
+  options: { value: number; label: string }[];
+  onChange: (v: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    // bring the current choice into view in a long list (e.g. day 25 of 31)
+    listRef.current?.querySelector<HTMLElement>("[data-selected='true']")?.scrollIntoView({ block: "nearest" });
+    const onDown = (e: Event) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
+  const current = options.find((o) => o.value === value);
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
+      >
+        <span className="font-semibold text-slate-800">{current?.label ?? value}</span>
+        <ChevronDown size={14} className={`text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div ref={listRef} className="absolute left-0 right-0 bottom-full mb-1 z-20 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg">
+          {options.map((opt) => {
+            const selected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                data-selected={selected}
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${selected ? "bg-theme-50" : ""}`}
+              >
+                <span className={`text-sm font-semibold flex-1 text-left ${selected ? "text-theme-700" : "text-slate-800"}`}>{opt.label}</span>
+                {selected && <span className="text-theme-600 text-sm">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RepeatTransactions() {
   const navigate = useNavigate();
   const T = useT();
@@ -80,6 +139,8 @@ export default function RepeatTransactions() {
   const [editWeekday, setEditWeekday] = useState(0);
   const [editDay, setEditDay] = useState(1);
   const [editDate, setEditDate] = useState("");
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
+  const [showEditTimePicker, setShowEditTimePicker] = useState(false);
 
   const openEdit = (rt: RepeatTransaction) => {
     const due = new Date(rt.nextDue);
@@ -296,50 +357,42 @@ export default function RepeatTransactions() {
               {(editRepeatOption === "weekly" || editRepeatOption === "biweekly") && (
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.weekday")}</label>
-                  <select
+                  <PickerSelect
                     value={editWeekday}
-                    onChange={(e) => setEditWeekday(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                      <option key={d} value={d}>{T(`day.full.${d}`)}</option>
-                    ))}
-                  </select>
+                    onChange={setEditWeekday}
+                    options={[1, 2, 3, 4, 5, 6, 0].map((d) => ({ value: d, label: T(`day.full.${d}`) }))}
+                  />
                 </div>
               )}
               {editRepeatOption === "monthly" && (
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.day_of_month")}</label>
-                  <select
+                  <PickerSelect
                     value={editDay}
-                    onChange={(e) => setEditDay(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
-                  >
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                    onChange={setEditDay}
+                    options={Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: String(i + 1) }))}
+                  />
                 </div>
               )}
               {MULTI_MONTH.includes(editRepeatOption) && (
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.next_date")}</label>
-                  <input
-                    type="date"
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
-                  />
+                  <button
+                    onClick={() => setShowEditDatePicker(true)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-left"
+                  >
+                    {formatNextDue(parseDateInput(editDate).toISOString()).split(" ")[0]}
+                  </button>
                 </div>
               )}
               <div className="flex-1">
                 <label className="text-xs font-semibold text-slate-500 mb-1 block">{T("repeat.time")}</label>
-                <input
-                  type="time"
-                  value={editTime}
-                  onChange={(e) => setEditTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
-                />
+                <button
+                  onClick={() => setShowEditTimePicker(true)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-left"
+                >
+                  {editTime}
+                </button>
               </div>
             </div>
             <button
@@ -350,6 +403,24 @@ export default function RepeatTransactions() {
             </button>
           </div>
         </div>
+      )}
+
+      {editId && showEditDatePicker && (
+        <DatePicker
+          value={parseDateInput(editDate)}
+          onChange={(d) => { setEditDate(toDateInput(d)); setShowEditDatePicker(false); }}
+          onClose={() => setShowEditDatePicker(false)}
+        />
+      )}
+      {editId && showEditTimePicker && (
+        <TimePicker
+          value={(() => { const [h, m] = editTime.split(":").map(Number); const d = new Date(); d.setHours(h || 0, m || 0, 0, 0); return d; })()}
+          onChange={(t) => {
+            setEditTime(`${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`);
+            setShowEditTimePicker(false);
+          }}
+          onClose={() => setShowEditTimePicker(false)}
+        />
       )}
 
       {/* Delete Confirm Bottom Sheet */}
