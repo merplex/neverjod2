@@ -8,6 +8,7 @@ import ledgersRouter from "./routes/ledgers";
 import subscriptionRouter from "./routes/subscription";
 import appleNotificationsRouter from "./routes/appleNotifications";
 import guideRouter from "./routes/guide";
+import backupsRouter from "./routes/backups";
 import { initDB } from "./db";
 
 export function createServer() {
@@ -36,6 +37,7 @@ export function createServer() {
   app.use("/api/subscription", subscriptionRouter);
   app.use("/api/apple-notifications", appleNotificationsRouter);
   app.use("/api/guide", guideRouter);
+  app.use("/api/backups", backupsRouter);
 
   return app;
 }

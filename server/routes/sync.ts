@@ -5,7 +5,7 @@ import { pool, JWT_SECRET } from "../db";
 const router = Router();
 
 // --- Auth middleware ---
-function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header) return res.status(401).json({ error: "No token" });
   const token = header.replace("Bearer ", "");
@@ -22,7 +22,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
 // Sync is a paid feature. Reject non-premium users at the API boundary so a
 // stolen/forged client can't bypass the frontend lock by hitting the endpoint
 // directly. Auto-expires stale subscriptions to stay consistent with /login.
-async function premiumMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function premiumMiddleware(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any).userId;
   try {
     const result = await pool.query(

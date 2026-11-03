@@ -189,6 +189,20 @@ export async function initDB() {
   await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS extra JSONB`).catch(() => {});
   await pool.query(`ALTER TABLE sync_repeat_transactions ADD COLUMN IF NOT EXISTS extra JSONB`).catch(() => {});
 
+  // Device backups: one row per backup set (the whole snapshot of every ledger as one JSON blob),
+  // kept apart from the sync tables. Lets support compare a user's data at a known point in time.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS device_backups (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL,
+      uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      device TEXT,
+      ledger_ids TEXT[],
+      data JSONB NOT NULL,
+      PRIMARY KEY (id, user_id)
+    )`).catch(() => {});
+
   // Admin account: always premium, no expiry
   await pool.query(`
     UPDATE users SET

@@ -8,7 +8,8 @@
 //  - records that exist now but not in the backup get delete tombstones, so the server (and
 //    other devices) drop them too instead of them coming back on the next pull.
 
-import { markDeleted } from "./syncService";
+import { markDeleted, API_BASE } from "./syncService";
+import { Capacitor } from "@capacitor/core";
 import { lk } from "./ledgerStorage";
 
 export const MAX_BACKUPS = 3;
@@ -17,6 +18,7 @@ export interface DeviceBackup {
   id: string;
   createdAt: string; // ISO
   data: Record<string, string>; // localStorage key → raw value
+  uploaded?: boolean; // copy is on the server (account is logged in + premium)
 }
 
 const DB_NAME = "neverjod_backups";
@@ -57,6 +59,73 @@ function parseKey(key: string): { base: string; ledgerId: string } | null {
   return { base, ledgerId: sep === -1 ? "main" : key.slice(sep + 2) };
 }
 
+// --- Cloud copy ------------------------------------------------------------------------------
+// Each backup set is also uploaded as ONE row (whole snapshot + its timestamp) to its own server
+// table — separate from the sync tables, so nothing is duplicated there. It's a fixed record of
+// what the data looked like at that moment, to compare against when something goes wrong.
+// Upload is best-effort: offline → retried the next time the backup box is shown.
+
+const PENDING_SERVER_DELETES = "backup_pending_server_deletes";
+
+function cloudToken(): string | null {
+  if (localStorage.getItem("app_premium") !== "true") return null;
+  return localStorage.getItem("cloud_token");
+}
+
+export function cloudEnabled(): boolean {
+  return !!cloudToken();
+}
+
+// What the data looks like on the server: each list/settings value as real JSON, not a string
+function toServerData(data: Record<string, string>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(data)) {
+    try { out[k] = JSON.parse(v); } catch { out[k] = v; }
+  }
+  return out;
+}
+
+async function upload(b: DeviceBackup, token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/backups`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: b.id, created_at: b.createdAt, device: Capacitor.getPlatform(), data: toServerData(b.data) }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function deleteOnServer(id: string, token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/backups/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+function pendingServerDeletes(): string[] {
+  try { return JSON.parse(localStorage.getItem(PENDING_SERVER_DELETES) || "[]"); } catch { return []; }
+}
+function setPendingServerDeletes(ids: string[]) {
+  if (ids.length) localStorage.setItem(PENDING_SERVER_DELETES, JSON.stringify(ids));
+  else localStorage.removeItem(PENDING_SERVER_DELETES);
+}
+
+// Upload any set not on the server yet and finish deletes that failed earlier.
+export async function syncBackupsToCloud(): Promise<void> {
+  const token = cloudToken();
+  if (!token) return;
+  const left: string[] = [];
+  for (const id of pendingServerDeletes()) if (!(await deleteOnServer(id, token))) left.push(id);
+  setPendingServerDeletes(left);
+  for (const b of await listBackups()) {
+    if (!b.uploaded && (await upload(b, token))) await tx("readwrite", (s) => s.put({ ...b, uploaded: true }));
+  }
+}
+
 export async function listBackups(): Promise<DeviceBackup[]> {
   const all = await tx<DeviceBackup[]>("readonly", (s) => s.getAll() as IDBRequest<DeviceBackup[]>);
   return all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -72,13 +141,33 @@ export async function createBackup(): Promise<DeviceBackup> {
     const v = localStorage.getItem(key);
     if (v !== null) data[key] = v;
   }
-  const backup: DeviceBackup = { id: `bk_${Date.now()}`, createdAt: new Date().toISOString(), data };
+  const backup: DeviceBackup = { id: `bk_${Date.now()}`, createdAt: new Date().toISOString(), data, uploaded: false };
   await tx("readwrite", (s) => s.put(backup));
+  const token = cloudToken();
+  if (token && (await upload(backup, token))) {
+    backup.uploaded = true;
+    await tx("readwrite", (s) => s.put(backup));
+  }
   return backup;
 }
 
+// Deleted here AND on the server (queued if offline).
 export async function deleteBackup(id: string): Promise<void> {
   await tx("readwrite", (s) => s.delete(id));
+  const token = cloudToken();
+  if (!token || !(await deleteOnServer(id, token))) {
+    setPendingServerDeletes(Array.from(new Set([...pendingServerDeletes(), id])));
+  }
+}
+
+// Ledger ids a backup covers (main + every other ledger that had data on this device)
+export function backupLedgerIds(b: DeviceBackup): string[] {
+  const ids = new Set<string>();
+  for (const key of Object.keys(b.data)) {
+    const p = parseKey(key);
+    if (p) ids.add(p.ledgerId);
+  }
+  return Array.from(ids).sort((a, c) => (a === "main" ? -1 : c === "main" ? 1 : 0));
 }
 
 function sameRecord(a: any, b: any): boolean {
