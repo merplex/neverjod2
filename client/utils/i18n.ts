@@ -254,7 +254,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "ledger.name_placeholder": "ชื่อสมุดบัญชี",
     "ledger.rename": "เปลี่ยนชื่อ",
     "ledger.switch_reload": "สลับสมุดบัญชีและโหลดใหม่",
-    "ledger.main_name": "สมุดหลัก",
+    "ledger.main_name": "Main",
     "ledger.premium_required": "ต้องการ Premium เพื่อสร้างสมุดบัญชีใหม่",
 
     // Tabs / Buttons
@@ -950,7 +950,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "ledger.name_placeholder": "账本名称",
     "ledger.rename": "重命名",
     "ledger.switch_reload": "切换账本并刷新",
-    "ledger.main_name": "主账本",
+    "ledger.main_name": "Main",
     "ledger.premium_required": "需要 Premium 才能创建新账本",
 
     // Tabs / Buttons

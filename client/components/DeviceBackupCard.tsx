@@ -14,7 +14,7 @@ function formatStamp(iso: string): string {
 }
 
 // The ledgers' real names, exactly as the ledger list in Settings shows them (whatever language
-// the user named them in). Main falls back to the same localized default Settings uses.
+// the user named them in). Main falls back to the same default Settings uses ("Main").
 function ledgerNames(ids: string[], mainDefault: string): string {
   let list: { id: string; name: string }[] = [];
   try { list = JSON.parse(localStorage.getItem("app_ledgers") || "[]"); } catch {}
