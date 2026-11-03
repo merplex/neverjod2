@@ -73,6 +73,7 @@ beforeEach(async () => {
   (globalThis as any).fetch = vi.fn(fakeFetch);
   seed(deviceA); seed(deviceB); use(deviceA);
   svc = await import("./syncService");
+  (await import("./autoPush")).installAutoPush(); // stamping hook on, like in the app
 });
 
 describe("sync with action timestamps", () => {
@@ -182,5 +183,84 @@ describe("auto push after an action", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("multi-device: every kind of change carries its own time and reaches the other device", () => {
+  const ledger2 = (d: MemStorage, key: string) => JSON.parse(d.getItem(`${key}__L2`) || "[]");
+
+  it("category rename / keyword edit made by a plain write is stamped and synced", async () => {
+    await svc.syncAll("tok");
+    use(deviceB); await svc.syncAll("tok");
+    await sleep(5);
+    use(deviceA);
+    const before = Date.now();
+    deviceA.setItem("app_categories", JSON.stringify([{ id: "food", name: "Food & Drink", type: "expense", keywords: ["ข้าว"] }]));
+    const cat = JSON.parse(deviceA.getItem("app_categories")!)[0];
+    expect(new Date(cat.updated_at).getTime()).toBeGreaterThanOrEqual(before);
+    await svc.syncPush("tok");
+    await sleep(5);
+    use(deviceB); await svc.syncAll("tok");
+    const bCat = JSON.parse(deviceB.getItem("app_categories")!).find((c: any) => c.id === "food");
+    expect(bCat.name).toBe("Food & Drink");
+    expect(bCat.keywords).toEqual(["ข้าว"]);
+  });
+
+  it("account edits on two devices: the later one wins on both", async () => {
+    await svc.syncAll("tok");
+    use(deviceB); await svc.syncAll("tok");
+    use(deviceA);
+    deviceA.setItem("app_accounts", JSON.stringify([{ ...JSON.parse(deviceA.getItem("app_accounts")!)[0], balance: 300 }]));
+    await sleep(5);
+    use(deviceB);
+    deviceB.setItem("app_accounts", JSON.stringify([{ ...JSON.parse(deviceB.getItem("app_accounts")!)[0], balance: 400 }]));
+    await svc.syncAll("tok");         // B (later edit) reaches the server first
+    await sleep(5);
+    use(deviceA); await svc.syncAll("tok");   // A (earlier edit) arrives late → loses
+    use(deviceB); await svc.syncAll("tok");
+    expect(JSON.parse(deviceA.getItem("app_accounts")!)[0].balance).toBe(400);
+    expect(JSON.parse(deviceB.getItem("app_accounts")!)[0].balance).toBe(400);
+  });
+
+  it("a repeat transfer keeps its from/to accounts and target ledger on the other device", async () => {
+    deviceA.setItem("app_repeat_transactions", JSON.stringify([{
+      id: "rt1", categoryId: "transfer", accountId: "a1", categoryName: "Bank", accountName: "Cash", amount: 500,
+      repeatOption: "monthly", dayOfMonth: 1, weekday: 0, monthOfYear: 0, time: "09:00",
+      startDate: "2026-12-01T02:00:00.000Z", nextDue: "2026-12-01T02:00:00.000Z",
+      isTransfer: true, fromAccountId: "a1", fromAccountName: "Cash", toAccountId: "b1", toAccountName: "Bank", toLedgerId: "L2", toLedgerName: "Book 2",
+    }]));
+    await svc.syncAll("tok");
+    use(deviceB); await svc.syncAll("tok");
+    const r = JSON.parse(deviceB.getItem("app_repeat_transactions")!)[0];
+    expect(r).toMatchObject({ isTransfer: true, fromAccountId: "a1", toAccountId: "b1", toLedgerId: "L2", toLedgerName: "Book 2" });
+  });
+
+  it("a cross-ledger transfer leg written into ledger 2 syncs to ledger 2 with its pair info", async () => {
+    deviceA.setItem("app_transactions__L2", JSON.stringify([{ id: "tr_in", categoryId: "transfer_in", accountId: "b1", amount: 500,
+      date: "2026-11-01T03:00:00.000Z", isTransfer: true, transferRef: "transfer_1", pairLedgerId: "main", ledgerName: "Main" }]));
+    await svc.syncPush("tok", false, false, "L2");
+    expect(rows.get("t:L2:tr_in")).toBeTruthy();
+    expect(rows.get("t:main:tr_in")).toBeUndefined();
+    use(deviceB); await svc.syncPull("tok", "L2");
+    expect(ledger2(deviceB, "app_transactions")[0]).toMatchObject({ id: "tr_in", transferRef: "transfer_1", pairLedgerId: "main", isTransfer: true });
+    expect(txns(deviceB)).toEqual([]); // nothing leaked into the main ledger
+  });
+
+  it("the same repeat occurrence generated on two devices stays one transaction, and an edit to it survives", async () => {
+    const { checkAndExecuteRepeats } = await import("./repeatTransactionService");
+    const rt = { id: "r9", categoryId: "food", accountId: "a1", amount: 10, repeatOption: "monthly", dayOfMonth: 1, weekday: 0, monthOfYear: 0, time: "09:00", startDate: "2026-10-01T02:00:00.000Z", nextDue: "2026-10-01T02:00:00.000Z" };
+    deviceA.setItem("app_repeat_transactions", JSON.stringify([rt]));
+    deviceB.setItem("app_repeat_transactions", JSON.stringify([rt]));
+    checkAndExecuteRepeats();
+    // user corrects the generated amount on A and syncs
+    const list = txns(deviceA); list[0] = { ...list[0], amount: 12, updated_at: new Date().toISOString() };
+    deviceA.setItem("app_transactions", JSON.stringify(list));
+    await svc.syncAll("tok");
+    await sleep(5);
+    // B was offline: generates the same occurrence late, then syncs
+    use(deviceB); checkAndExecuteRepeats(); await svc.syncAll("tok");
+    expect(txns(deviceB).filter((t: any) => t.repeatId === "r9")).toHaveLength(2); // Oct + Nov
+    expect(txns(deviceB).find((t: any) => t.id === list[0].id).amount).toBe(12);
+    expect(rows.get(`t:main:${list[0].id}`).amount).toBe(12);
   });
 });

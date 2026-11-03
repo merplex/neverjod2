@@ -184,6 +184,11 @@ export async function initDB() {
     await pool.query(`ALTER TABLE ${t} ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ`).catch(() => {});
   }
 
+  // Migration: extra = transfer details with no column of their own (isTransfer, transferRef,
+  // pairLedgerId, from/to account + ledger of a repeat transfer) so other devices get them too.
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS extra JSONB`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_repeat_transactions ADD COLUMN IF NOT EXISTS extra JSONB`).catch(() => {});
+
   // Admin account: always premium, no expiry
   await pool.query(`
     UPDATE users SET

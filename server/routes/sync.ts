@@ -120,8 +120,8 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
         .map((tx: any) =>
           pool.query(
             `INSERT INTO sync_transactions
-               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, is_repeat, repeat_id, currency, exchange_rate, currency_amount, updated_at, deleted_at, synced_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW())
+               (id, user_id, category_id, account_id, amount, type, description, date, time, fingerprint, ledger_id, cross_ledger_ref, is_repeat, repeat_id, currency, exchange_rate, currency_amount, updated_at, deleted_at, extra, synced_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NOW())
              ON CONFLICT (id, user_id, ledger_id) DO UPDATE
                SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                    amount = EXCLUDED.amount, type = EXCLUDED.type, description = EXCLUDED.description,
@@ -131,6 +131,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
                    is_repeat = EXCLUDED.is_repeat, repeat_id = EXCLUDED.repeat_id,
                    currency = EXCLUDED.currency, exchange_rate = EXCLUDED.exchange_rate,
                    currency_amount = EXCLUDED.currency_amount,
+                   extra = COALESCE(EXCLUDED.extra, sync_transactions.extra),
                    updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at, synced_at = NOW()
                WHERE sync_transactions.updated_at < EXCLUDED.updated_at`,
             [tx.id, userId, tx.categoryId || null, tx.accountId || null,
@@ -139,7 +140,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
              ledger_id, tx.crossLedgerRef || null,
              tx.isRepeat || false, tx.repeatId || null,
              tx.currency || null, tx.exchangeRate || null, tx.currencyAmount || null,
-             tx.updated_at, tx.deleted_at || null]
+             tx.updated_at, tx.deleted_at || null, tx.extra ? JSON.stringify(tx.extra) : null]
           )
         )
     );
@@ -151,8 +152,8 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
           `INSERT INTO sync_repeat_transactions
              (id, user_id, category_id, account_id, category_name, account_name, amount, description,
               category_type, repeat_option, day_of_month, weekday, month_of_year, time,
-              start_date, next_due, last_executed, ledger_id, updated_at, deleted_at, synced_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NOW())
+              start_date, next_due, last_executed, ledger_id, updated_at, deleted_at, extra, synced_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,NOW())
            ON CONFLICT (id, user_id, ledger_id) DO UPDATE
              SET category_id = EXCLUDED.category_id, account_id = EXCLUDED.account_id,
                  category_name = EXCLUDED.category_name, account_name = EXCLUDED.account_name,
@@ -162,6 +163,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
                  month_of_year = EXCLUDED.month_of_year, time = EXCLUDED.time,
                  start_date = EXCLUDED.start_date, next_due = EXCLUDED.next_due,
                  last_executed = EXCLUDED.last_executed, ledger_id = EXCLUDED.ledger_id,
+                 extra = COALESCE(EXCLUDED.extra, sync_repeat_transactions.extra),
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at, synced_at = NOW()
              WHERE sync_repeat_transactions.updated_at < EXCLUDED.updated_at`,
           [
@@ -171,7 +173,7 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
             rt.repeatOption, rt.dayOfMonth ?? null, rt.weekday ?? null,
             rt.monthOfYear ?? null, rt.time || null,
             rt.startDate || null, rt.nextDue, rt.lastExecuted || null,
-            ledger_id, rt.updated_at, rt.deleted_at || null,
+            ledger_id, rt.updated_at, rt.deleted_at || null, rt.extra ? JSON.stringify(rt.extra) : null,
           ]
         )
       )

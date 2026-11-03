@@ -299,6 +299,7 @@ export function checkAndExecuteRepeats(): boolean {
           isRepeat: true,
           repeatId: rt.id,
           transferRef,
+          updated_at: nextDue.toISOString(),
           ...(rt.toLedgerName ? { ledgerName: rt.toLedgerName } : {}),
           ...(rt.toLedgerId ? { pairLedgerId: rt.toLedgerId } : {}),
         });
@@ -325,6 +326,7 @@ export function checkAndExecuteRepeats(): boolean {
             isRepeat: true,
             repeatId: rt.id,
             transferRef,
+            updated_at: nextDue.toISOString(),
             ...(rt.toLedgerId ? { ledgerName: fromLedgerName, pairLedgerId: srcLedgerId } : {}),
           });
           localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
@@ -340,6 +342,10 @@ export function checkAndExecuteRepeats(): boolean {
           time: rt.time,
           repeatId: rt.id,
           isRepeat: true,
+          // Stamped with the occurrence time, not "now": every device generates this same record
+          // (same id), and a copy generated late on a stale device must not overwrite an edit the
+          // user already made to it elsewhere.
+          updated_at: nextDue.toISOString(),
         });
         localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
       }

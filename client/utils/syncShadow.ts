@@ -47,6 +47,18 @@ function fnv(str: string): string {
   return (h >>> 0).toString(36);
 }
 
+// Fields the server keeps in its `extra` JSONB column — transfer details that have no column of
+// their own but that another device needs (without them a repeat transfer runs as a plain
+// expense there, and a transfer leg can't find its pair to edit/delete).
+export const TX_EXTRA_FIELDS = ["isTransfer", "transferRef", "pairLedgerId", "ledgerName"] as const;
+export const REPEAT_EXTRA_FIELDS = ["isTransfer", "fromAccountId", "fromAccountName", "toAccountId", "toAccountName", "toLedgerId", "toLedgerName"] as const;
+
+export function pickExtra(r: any, fields: readonly string[]): Record<string, any> | null {
+  const out: Record<string, any> = {};
+  for (const f of fields) if (r[f] !== undefined && r[f] !== null && r[f] !== "" && r[f] !== false) out[f] = r[f];
+  return Object.keys(out).length ? out : null;
+}
+
 const num = (v: any) => (v === null || v === undefined || v === "" ? null : Number(v) || 0);
 const str = (v: any) => (v === null || v === undefined || v === "" ? null : String(v));
 const iso = (v: any) => {
@@ -55,8 +67,8 @@ const iso = (v: any) => {
   return isNaN(d.getTime()) ? String(v) : d.toISOString();
 };
 
-// Only the fields the server stores — local-only fields (isTransfer, transferRef, pairLedgerId,
-// source…) never round-trip, so they must not make a record look changed.
+// Only the fields the server stores (incl. `extra`) — purely local fields (source…) never
+// round-trip, so they must not make a record look changed.
 // Accepts both the local (camelCase) shape and a normalized server item.
 export function recordHash(kind: Kind, r: any): string {
   let f: any[];
@@ -64,7 +76,8 @@ export function recordHash(kind: Kind, r: any): string {
     case "t":
       f = [str(r.categoryId), str(r.accountId), num(r.amount), str(r.description), iso(r.date), str(r.time),
         str(r.crossLedgerRef ?? r.cross_ledger_ref), !!r.isRepeat, str(r.repeatId),
-        str(r.currency), num(r.exchangeRate) || null, num(r.currencyAmount) || null];
+        str(r.currency), num(r.exchangeRate) || null, num(r.currencyAmount) || null,
+        JSON.stringify(pickExtra(r, TX_EXTRA_FIELDS))];
       break;
     case "a":
       f = [str(r.name), str(r.type), num(r.startBalance || r.balance || 0), str(r.iconId),
@@ -76,7 +89,8 @@ export function recordHash(kind: Kind, r: any): string {
     case "r":
       f = [str(r.categoryId), str(r.accountId), str(r.categoryName), str(r.accountName), num(r.amount),
         str(r.description), str(r.categoryType), str(r.repeatOption), num(r.dayOfMonth), num(r.weekday),
-        num(r.monthOfYear), str(r.time), iso(r.startDate), iso(r.nextDue), iso(r.lastExecuted)];
+        num(r.monthOfYear), str(r.time), iso(r.startDate), iso(r.nextDue), iso(r.lastExecuted),
+        JSON.stringify(pickExtra(r, REPEAT_EXTRA_FIELDS))];
       break;
   }
   return fnv(JSON.stringify(f));

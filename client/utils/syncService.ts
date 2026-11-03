@@ -2,7 +2,7 @@ export const API_BASE = (import.meta.env.VITE_API_URL ?? "") + "/api";
 
 import { Capacitor } from "@capacitor/core";
 import { getActiveLedgerId, lk } from "./ledgerStorage";
-import { loadShadow, saveShadow, emptyShadow, recordHash, isDirty, actionTime, serverWins, type Shadow, type Kind } from "./syncShadow";
+import { loadShadow, saveShadow, emptyShadow, recordHash, isDirty, actionTime, serverWins, pickExtra, TX_EXTRA_FIELDS, REPEAT_EXTRA_FIELDS, type Shadow, type Kind } from "./syncShadow";
 import { quietly } from "./syncQuiet";
 
 // --- Auth ---
@@ -166,6 +166,8 @@ function normalizeServerItem(item: any): any {
   if ("is_repeat"  in out) { out.isRepeat  = out.is_repeat  || false; delete out.is_repeat; }
   if ("repeat_id"  in out) { out.repeatId  = out.repeat_id  || null;    delete out.repeat_id; }
   if ("amount" in out && typeof out.amount === "string") { out.amount = parseFloat(out.amount) || 0; }
+  if ("extra" in out) { if (out.extra && typeof out.extra === "object") Object.assign(out, out.extra); delete out.extra; }
+  if ("cross_ledger_ref" in out) { if (out.cross_ledger_ref) out.crossLedgerRef = out.cross_ledger_ref; delete out.cross_ledger_ref; }
   if ("exchange_rate" in out) { out.exchangeRate = out.exchange_rate != null ? parseFloat(out.exchange_rate) : undefined; delete out.exchange_rate; }
   if ("currency_amount" in out) { out.currencyAmount = out.currency_amount != null ? parseFloat(out.currency_amount) : undefined; delete out.currency_amount; }
   // keywords comes as JSONB array from PG; ensure it's an array
@@ -190,6 +192,7 @@ function normalizeRepeatItem(raw: any): any {
   if ("next_due"      in out) { out.nextDue      = out.next_due;      delete out.next_due; }
   if ("last_executed" in out) { out.lastExecuted = out.last_executed; delete out.last_executed; }
   if ("amount" in out && typeof out.amount === "string") { out.amount = parseFloat(out.amount) || 0; }
+  if ("extra" in out) { if (out.extra && typeof out.extra === "object") Object.assign(out, out.extra); delete out.extra; }
   delete out.user_id;
   return out;
 }
@@ -497,11 +500,11 @@ async function syncPushNow(token: string, force = false, isFirstSync?: boolean, 
   };
   const categories = pick("c", rawCategories, catAccStamp);
   const accounts = pick("a", rawAccounts, catAccStamp);
-  const repeats = pick("r", rawRepeats, catAccStamp);
+  const repeats = pick("r", rawRepeats, catAccStamp).map((r) => ({ ...r, extra: pickExtra(r, REPEAT_EXTRA_FIELDS) }));
   const transactions = pick("t", rawTransactions, now).map((tx) => {
     const cat = rawCategories.find((c) => c.id === tx.categoryId);
     const type = tx.type || cat?.type || "expense";
-    return { ...tx, type, fingerprint: makeFingerprint(tx) };
+    return { ...tx, type, fingerprint: makeFingerprint(tx), extra: pickExtra(tx, TX_EXTRA_FIELDS) };
   });
 
   // Soft-delete tombstones
