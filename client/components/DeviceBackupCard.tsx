@@ -13,10 +13,12 @@ function formatStamp(iso: string): string {
   return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-function ledgerNames(ids: string[]): string {
+// The ledgers' real names, exactly as the ledger list in Settings shows them (whatever language
+// the user named them in). Main falls back to the same localized default Settings uses.
+function ledgerNames(ids: string[], mainDefault: string): string {
   let list: { id: string; name: string }[] = [];
   try { list = JSON.parse(localStorage.getItem("app_ledgers") || "[]"); } catch {}
-  return ids.map((id) => list.find((l) => l.id === id)?.name || (id === "main" ? "Main" : id)).join(", ");
+  return ids.map((id) => list.find((l) => l.id === id)?.name || (id === "main" ? mainDefault : id)).join(", ");
 }
 
 type Confirm = { backup: DeviceBackup; action: "restore" | "delete" } | null;
@@ -87,7 +89,7 @@ export default function DeviceBackupCard() {
                 {cloud && (b.uploaded
                   ? <Cloud size={11} className="text-theme-500 flex-shrink-0" aria-label={T("backup.on_cloud")} />
                   : <CloudOff size={11} className="flex-shrink-0" aria-label={T("backup.local_only")} />)}
-                <span className="truncate">{T("backup.ledgers")}: {ledgerNames(backupLedgerIds(b))}</span>
+                <span className="truncate">{T("backup.ledgers")}: {ledgerNames(backupLedgerIds(b), T("ledger.main_name"))}</span>
               </p>
             </div>
             <button
@@ -142,7 +144,7 @@ export default function DeviceBackupCard() {
               <p className="text-sm font-medium text-slate-700">
                 {T("backup.item")} <span className="tabular-nums">{formatStamp(confirm.backup.createdAt)}</span>
               </p>
-              <p className="text-xs text-slate-500">{T("backup.ledgers")}: {ledgerNames(backupLedgerIds(confirm.backup))}</p>
+              <p className="text-xs text-slate-500">{T("backup.ledgers")}: {ledgerNames(backupLedgerIds(confirm.backup), T("ledger.main_name"))}</p>
             </div>
             <p className="text-sm text-slate-600 mb-4">
               {T(isDelete ? "backup.delete_confirm" : "backup.restore_confirm")}
