@@ -156,8 +156,14 @@ function cloudToken(): string | null {
   return localStorage.getItem("cloud_token");
 }
 
+// Backups go to the Cloud automatically only while Auto Sync is on. With it off they stay on the
+// phone until the Sync button is pressed (or Auto Sync is turned on), like the rest of the data.
+function autoCloudToken(): string | null {
+  return localStorage.getItem("sync_auto_enabled") === "true" ? cloudToken() : null;
+}
+
 export function cloudEnabled(): boolean {
-  return !!cloudToken();
+  return !!autoCloudToken();
 }
 
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -226,16 +232,18 @@ function setPendingServerDeletes(ids: string[]) {
 
 // Upload sets the server doesn't have a verified copy of yet; finish deletes that failed earlier.
 let cloudSyncRunning: Promise<void> | null = null;
-export function syncBackupsToCloud(): Promise<void> {
+// manual = the Sync button / turning Auto Sync on; otherwise only runs while Auto Sync is on.
+export function syncBackupsToCloud(manual = false): Promise<void> {
+  const token = manual ? cloudToken() : autoCloudToken();
+  if (!token) return Promise.resolve();
   // one run at a time (resume + back-online + Settings can all ask together)
   if (!cloudSyncRunning) {
-    cloudSyncRunning = syncBackupsToCloudNow().finally(() => { cloudSyncRunning = null; });
+    cloudSyncRunning = syncBackupsToCloudNow(token).finally(() => { cloudSyncRunning = null; });
   }
   return cloudSyncRunning;
 }
 
-async function syncBackupsToCloudNow(): Promise<void> {
-  const token = cloudToken();
+async function syncBackupsToCloudNow(token: string): Promise<void> {
   if (!token) return;
   let changed = false;
   const left: string[] = [];
@@ -287,7 +295,7 @@ export async function listBackups(): Promise<BackupEntry[]> {
 // again automatically (app resume, back online, opening Settings) until it verifies.
 export async function createBackup(): Promise<void> {
   if ((await listBackups()).length >= MAX_BACKUPS) throw new Error("max");
-  const token = cloudToken();
+  const token = autoCloudToken(); // Auto Sync off → phone only, no sync first
   const id = `bk_${Date.now()}`;
   let backup: StoredBackup;
   try {
@@ -320,7 +328,7 @@ export async function createBackup(): Promise<void> {
 // Deleted on the phone AND on the server (server delete queued if offline).
 export async function deleteBackup(id: string): Promise<void> {
   await idb("readwrite", (s) => s.delete(id));
-  const token = cloudToken();
+  const token = autoCloudToken(); // off → queued, done by the next Sync
   if (!token || !(await deleteOnServer(id, token))) {
     setPendingServerDeletes(Array.from(new Set([...pendingServerDeletes(), id])));
   }

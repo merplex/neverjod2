@@ -9,6 +9,7 @@ import { lk, getActiveLedgerId, setActiveLedgerId } from "../utils/ledgerStorage
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
 import DeviceBackupCard from "../components/DeviceBackupCard";
+import { syncBackupsToCloud } from "../utils/deviceBackup";
 import { purchaseProduct, restorePurchases } from "../utils/iap";
 import { useT } from "../hooks/useT";
 import { getLang, LANG_LOCALE } from "../utils/i18n";
@@ -246,6 +247,8 @@ export default function Settings() {
     setSyncStatus("syncing");
     try {
       await syncAll(cloudToken, true);
+      // The Sync button also sends backups made while Auto Sync was off
+      syncBackupsToCloud(true).catch(() => {});
       const now = new Date().toISOString();
       localStorage.setItem("last_client_sync_at", now);
       localStorage.setItem("sync_direction", "client");
@@ -347,7 +350,9 @@ export default function Settings() {
 
   const handleSwitchLedger = (id: string) => {
     if (id === activeLedger) return;
-    if (cloudToken && isPremium) {
+    // Auto Sync off → switching never touches the cloud; only the Sync button does.
+    const autoSync = localStorage.getItem("sync_auto_enabled") === "true";
+    if (cloudToken && isPremium && autoSync) {
       // Flag the ledger we're LEAVING for a background push after reload — e.g. a transaction
       // just added seconds ago that no auto-sync has run for yet. Its localStorage keys are
       // untouched by switching (each ledger has its own key namespace, see lk()), so App.tsx can
@@ -358,10 +363,9 @@ export default function Settings() {
     setActiveLedgerId(id);
     // Reload immediately with whatever this ledger already has in local storage — feels instant.
     // Pulling from cloud before reload used to block for 2-3s; instead we flag a pending sync that
-    // App.tsx runs in the background right after boot (bypassing the "sync อัตโนมัติ" toggle, since
-    // a fresh device switching into a ledger for the first time still needs one guaranteed pull to
-    // avoid showing empty seed defaults) and refreshes the UI in place once it lands.
-    if (cloudToken && isPremium) {
+    // App.tsx runs in the background right after boot and refreshes the UI in place once it lands.
+    // Only with Auto Sync on — off means the cloud is touched only by the Sync button.
+    if (cloudToken && isPremium && autoSync) {
       sessionStorage.setItem("ledger_switch_sync_pending", "1");
     }
     window.location.reload();
@@ -862,6 +866,8 @@ export default function Settings() {
                 const next = !syncAuto;
                 setSyncAuto(next);
                 localStorage.setItem("sync_auto_enabled", next ? "true" : "false");
+                // Turning it on syncs right away (data + backups waiting for the Cloud)
+                if (next && cloudToken) handleSync();
               }}
               className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 ${
                 isPremium && syncAuto ? "bg-sky-500" : "bg-slate-300"

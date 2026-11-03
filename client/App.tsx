@@ -172,9 +172,10 @@ function AppContent() {
       // switch (each ledger has its own key namespace), so this pushes correctly by explicit ID
       // regardless of which ledger is active now.
       const ledgerToFlush = sessionStorage.getItem("ledger_flush_pending");
+      const autoSync = localStorage.getItem("sync_auto_enabled") === "true";
       if (ledgerToFlush) {
         sessionStorage.removeItem("ledger_flush_pending");
-        if (localStorage.getItem("app_premium") === "true") {
+        if (localStorage.getItem("app_premium") === "true" && autoSync) {
           syncPush(token, false, undefined, ledgerToFlush).catch(() => {});
         }
       }
@@ -183,7 +184,8 @@ function AppContent() {
       // instead of blocking the switch for 2-3s.
       const ledgerJustSwitched = sessionStorage.getItem("ledger_switch_sync_pending") === "1";
       if (ledgerJustSwitched) sessionStorage.removeItem("ledger_switch_sync_pending");
-      if (ledgerJustSwitched || localStorage.getItem("sync_auto_enabled") === "true") {
+      // Auto Sync off → no sync at all here (not even after a ledger switch); only the Sync button.
+      if (autoSync) {
         syncAll(token).then(() => {
           if (localStorage.getItem("app_premium") !== "true") return;
           // Refresh data in-place once synced (no reload — avoids resetting app state/mic).
