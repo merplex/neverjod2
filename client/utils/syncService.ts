@@ -4,6 +4,8 @@ import { Capacitor } from "@capacitor/core";
 import { getActiveLedgerId, lk } from "./ledgerStorage";
 import { loadShadow, saveShadow, emptyShadow, recordHash, isDirty, actionTime, serverWins, pickExtra, TX_EXTRA_FIELDS, REPEAT_EXTRA_FIELDS, type Shadow, type Kind } from "./syncShadow";
 import { quietly } from "./syncQuiet";
+import { dedupeRepeatOccurrences } from "./repeatTransactionService";
+import { repairTransferLinks } from "./transferLinks";
 
 // --- Auth ---
 
@@ -601,6 +603,9 @@ async function syncPullNow(token: string, ledgerId?: string) {
 
   const data = await res.json();
   quietly(() => applyPull(data, ledgerId!));
+  // Outside quietly(): the tombstones it writes must be pushed like any user delete.
+  const serverIds = new Set<string>((data.transactions || []).filter((t: any) => !t.deleted_at).map((t: any) => t.id));
+  if (dedupeRepeatOccurrences(ledgerId, serverIds)) window.dispatchEvent(new CustomEvent("repeats-updated"));
   return true;
 }
 
@@ -714,6 +719,9 @@ async function syncAllNow(token: string, force = false): Promise<void> {
 async function syncLedger(token: string, force: boolean, ledgerId: string) {
   const isFirstSync = !localStorage.getItem(lk("last_sync_at", ledgerId));
   await syncPullNow(token, ledgerId);
+  // Legs pulled without their pair info (servers before the `extra` column never stored it) get
+  // it back from their ids, so the push right after sends it up for every other device.
+  repairTransferLinks();
   await syncPushNow(token, force, isFirstSync, ledgerId);
 }
 

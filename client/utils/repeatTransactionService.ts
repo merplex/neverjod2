@@ -54,6 +54,11 @@ export interface RepeatTransaction {
 
 import { lk, getActiveLedgerId } from "./ledgerStorage";
 
+/** Local calendar day — one repeat never fires twice on the same day. */
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
 export function getRepeatTransactions(): RepeatTransaction[] {
   try { return JSON.parse(localStorage.getItem(lk("app_repeat_transactions")) || "[]"); } catch { return []; }
 }
@@ -274,7 +279,13 @@ export function checkAndExecuteRepeats(): boolean {
       const id = `rep_${rt.id}_${nextDue.getTime()}`;
       // Also count a user-deleted occurrence (tombstone still pending) as done — don't resurrect it.
       const pendingDel: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes")) || "[]");
-      const alreadyRan = [...txns, ...pendingDel].some((t: any) => t.id === id || t.id === `${id}_out`);
+      // Match by (repeatId, occurrence day) too: occurrences created by older app versions have
+      // random ids, and may carry an older time of day (the schedule's time edited since), so a
+      // device with a stale nextDue must still see them as done.
+      const occDay = dayKey(nextDue);
+      const alreadyRan = [...txns, ...pendingDel].some((t: any) =>
+        t.id === id || t.id === `${id}_out`
+        || (t.repeatId === rt.id && t.date && dayKey(new Date(t.date)) === occDay && t.categoryId !== "transfer_in"));
 
       if (alreadyRan) {
         // occurrence already recorded — just advance the schedule
@@ -359,4 +370,57 @@ export function checkAndExecuteRepeats(): boolean {
 
   if (changed) saveRepeatTransactions(repeats);
   return changed;
+}
+
+/**
+ * Remove duplicate repeat occurrences in one ledger: the same repeat firing on the same day
+ * more than once (e.g. a device with a stale nextDue ran it before its pull
+ * brought in the copy another device had already made with an older, random id).
+ * Keeps one copy per (repeatId, day, leg) — see rank below — and tombstones the rest so the
+ * server and other devices drop them too.
+ * Returns true if anything was removed.
+ */
+export function dedupeRepeatOccurrences(ledgerId?: string, serverIds?: Set<string>): boolean {
+  const key = lk("app_transactions", ledgerId);
+  let txns: any[];
+  try { txns = JSON.parse(localStorage.getItem(key) || "[]"); } catch { return false; }
+  if (!Array.isArray(txns)) return false;
+
+  const groups = new Map<string, any[]>();
+  for (const t of txns) {
+    if (!t?.repeatId || !t.date) continue;
+    const d = new Date(t.date);
+    if (isNaN(d.getTime())) continue;
+    const leg = t.categoryId === "transfer_in" ? "in" : t.categoryId === "transfer_out" ? "out" : "x";
+    const g = `${t.repeatId}|${dayKey(d)}|${leg}`;
+    const list = groups.get(g);
+    if (list) list.push(t); else groups.set(g, [t]);
+  }
+
+  const drop = new Set<string>();
+  const ts = (v: any) => (v ? new Date(v).getTime() || 0 : 0);
+  // Keep the copy the server is known to have. A duplicate only arises when an occurrence
+  // already existed elsewhere, and that earlier copy is the old-format (random id) one; the late
+  // `rep_` copy may never have reached the server (its fingerprint dedup silently skips a row
+  // matching a live one — and the client still believes it was sent), so it must not be kept.
+  const rank = (t: any) => (serverIds?.has(t.id) ? 2 : 0) + (String(t.id).startsWith("rep_") ? 0 : 1);
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const keep = list.reduce((a, b) =>
+      rank(b) > rank(a) || (rank(b) === rank(a) && ts(b.updated_at) > ts(a.updated_at)) ? b : a);
+    for (const t of list) if (t !== keep) drop.add(t.id);
+  }
+  if (!drop.size) return false;
+
+  const pKey = lk("app_pending_deletes", ledgerId);
+  const pending: any[] = JSON.parse(localStorage.getItem(pKey) || "[]");
+  const now = new Date().toISOString();
+  for (const t of txns) {
+    if (drop.has(t.id) && !pending.some((p) => p._type === "transaction" && p.id === t.id)) {
+      pending.push({ ...t, _type: "transaction", deleted_at: now });
+    }
+  }
+  localStorage.setItem(pKey, JSON.stringify(pending));
+  localStorage.setItem(key, JSON.stringify(txns.filter((t) => !drop.has(t?.id))));
+  return true;
 }

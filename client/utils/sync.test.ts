@@ -296,4 +296,42 @@ describe("multi-device: every kind of change carries its own time and reaches th
     expect(txns(deviceB).find((t: any) => t.id === list[0].id).amount).toBe(12);
     expect(rows.get(`t:main:${list[0].id}`).amount).toBe(12);
   });
+  it("a stale device re-firing an occurrence an older app version made (random id) ends with one copy", async () => {
+    const { checkAndExecuteRepeats } = await import("./repeatTransactionService");
+    const base = { id: "r7", categoryId: "food", accountId: "a1", amount: 22664, repeatOption: "monthly", dayOfMonth: 1, weekday: 0, monthOfYear: 0, time: "09:00", startDate: "2026-10-01T02:00:00.000Z" };
+    // Device A (old app version) already made the Nov occurrence with a random id and synced
+    deviceA.setItem("app_repeat_transactions", JSON.stringify([{ ...base, nextDue: "2026-12-01T02:00:00.000Z", lastExecuted: "2026-11-01T02:00:00.000Z" }]));
+    deviceA.setItem("app_transactions", JSON.stringify([{ id: "1730000000000_ab12c", categoryId: "food", accountId: "a1", amount: 22664, date: "2026-11-01T00:15:00.000Z", time: "07:15", isRepeat: true, repeatId: "r7" }])); // time of day edited since
+    await svc.syncAll("tok");
+    // Device B still has data up to Oct 31: nextDue = Nov 1 → fires on launch before its pull
+    use(deviceB);
+    deviceB.setItem("app_repeat_transactions", JSON.stringify([{ ...base, nextDue: "2026-11-01T02:00:00.000Z" }]));
+    checkAndExecuteRepeats();
+    expect(txns(deviceB)).toHaveLength(1);
+    await svc.syncAll("tok");
+    expect(txns(deviceB).filter((t: any) => t.repeatId === "r7").map((t: any) => t.id)).toEqual(["1730000000000_ab12c"]); // the server's copy is kept
+    await svc.syncPush("tok");
+    const live = Array.from(rows.values()).filter((r: any) => r.kind === "t" && r.repeatId === "r7" && !r.deleted_at);
+    expect(live).toHaveLength(1);
+    // and A pulls the cleanup too
+    use(deviceA); await svc.syncAll("tok");
+    expect(txns(deviceA).filter((t: any) => t.repeatId === "r7")).toHaveLength(1);
+  });
+  it("transfer legs that lost their pair info (old server) get it back from their ids and sync it up", async () => {
+    const { repairTransferLinks } = await import("./transferLinks");
+    deviceA.setItem("app_ledgers", JSON.stringify([{ id: "L2", name: "Book 2" }]));
+    // as pulled from a server that never stored isTransfer/transferRef/pairLedgerId
+    deviceA.setItem("app_transactions", JSON.stringify([{ id: "1793689223189_transfer_out", categoryId: "transfer_out", accountId: "a1", amount: 200000, date: "2026-11-03T07:00:00.000Z" }]));
+    deviceA.setItem("app_transactions__L2", JSON.stringify([{ id: "1793689223190_transfer_in", categoryId: "transfer_in", accountId: "b1", amount: 200000, date: "2026-11-03T07:00:00.000Z" },
+      { id: "999_transfer_in", categoryId: "transfer_in", accountId: "b1", amount: 5, date: "2026-11-03T07:00:00.000Z" }])); // no pair → untouched
+    expect(repairTransferLinks()).toBe(true);
+    expect(txns(deviceA)[0]).toMatchObject({ isTransfer: true, transferRef: "transfer_1793689223189", pairLedgerId: "L2", ledgerName: "Book 2" });
+    expect(ledger2(deviceA, "app_transactions")[0]).toMatchObject({ isTransfer: true, transferRef: "transfer_1793689223189", pairLedgerId: "main", ledgerName: "Main" });
+    expect(ledger2(deviceA, "app_transactions")[1].transferRef).toBeUndefined();
+    expect(repairTransferLinks()).toBe(false); // idempotent
+    await svc.syncPush("tok", false, false, "main");
+    await svc.syncPush("tok", false, false, "L2");
+    expect(rows.get("t:main:1793689223189_transfer_out").extra).toMatchObject({ transferRef: "transfer_1793689223189", pairLedgerId: "L2" });
+    expect(rows.get("t:L2:1793689223190_transfer_in").extra).toMatchObject({ transferRef: "transfer_1793689223189", pairLedgerId: "main" });
+  });
 });

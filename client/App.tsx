@@ -6,6 +6,7 @@ import { lk } from "./utils/ledgerStorage";
 import { syncAll, syncPush, apiVerifyPurchase } from "./utils/syncService";
 import { installAutoPush, flushAutoPush } from "./utils/autoPush";
 import { syncBackupsToCloud } from "./utils/deviceBackup";
+import { repairTransferLinks } from "./utils/transferLinks";
 
 // Push to the cloud ~1s after every add/edit/delete (when Auto Sync is on).
 installAutoPush();
@@ -202,6 +203,11 @@ function AppContent() {
         }).catch(() => {});
       }
     }
+  }, []);
+
+  // Transfer legs that lost the link to their pair (data from the cloud before it stored it)
+  useEffect(() => {
+    if (repairTransferLinks()) window.dispatchEvent(new CustomEvent("app-data-updated"));
   }, []);
 
   // Run due repeat transactions on launch and every page switch
