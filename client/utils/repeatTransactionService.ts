@@ -267,9 +267,18 @@ export function checkAndExecuteRepeats(): boolean {
 
       // create the transaction(s)
       const txns = JSON.parse(localStorage.getItem(lk("app_transactions")) || "[]");
-      const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      // Deterministic ID per (repeat, occurrence): if this occurrence ever runs twice — a sync
+      // write-back racing the nextDue update, or a second device with a stale nextDue firing it
+      // before its pull lands — it produces the SAME id, so it's skipped locally and upserted
+      // (not duplicated) on the server. A random id here doubled the amount in the balance.
+      const id = `rep_${rt.id}_${nextDue.getTime()}`;
+      // Also count a user-deleted occurrence (tombstone still pending) as done — don't resurrect it.
+      const pendingDel: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes")) || "[]");
+      const alreadyRan = [...txns, ...pendingDel].some((t: any) => t.id === id || t.id === `${id}_out`);
 
-      if (rt.isTransfer) {
+      if (alreadyRan) {
+        // occurrence already recorded — just advance the schedule
+      } else if (rt.isTransfer) {
         const transferRef = `transfer_${id}`;
         // rt.amount is in the from-account's units; convert via main currency for the to-leg
         const fromCur = accountCurrency(rt.fromAccountId || rt.accountId);
@@ -290,6 +299,7 @@ export function checkAndExecuteRepeats(): boolean {
           isRepeat: true,
           repeatId: rt.id,
           transferRef,
+          updated_at: nextDue.toISOString(),
           ...(rt.toLedgerName ? { ledgerName: rt.toLedgerName } : {}),
           ...(rt.toLedgerId ? { pairLedgerId: rt.toLedgerId } : {}),
         });
@@ -297,27 +307,30 @@ export function checkAndExecuteRepeats(): boolean {
         // transfer_in → destination ledger (same or cross)
         const srcLedgerId = getActiveLedgerId();
         const toTxnsKey = rt.toLedgerId ? lk("app_transactions", rt.toLedgerId) : lk("app_transactions");
-        const txnsIn = toTxnsKey !== lk("app_transactions")
+        const txnsIn: any[] = toTxnsKey !== lk("app_transactions")
           ? JSON.parse(localStorage.getItem(toTxnsKey) || "[]")
           : txns;
-        const fromLedgerList = JSON.parse(localStorage.getItem("app_ledgers") || "null") || [{ id: "main", name: "Main" }];
-        const fromLedgerName = fromLedgerList.find((l: any) => l.id === srcLedgerId)?.name || "";
-        txnsIn.unshift({
-          id: `${id}_in`,
-          categoryId: "transfer_in",
-          accountId: rt.toAccountId || "",
-          amount: inAmount,
-          ...(toCur.currency ? { currency: toCur.currency, exchangeRate: toCur.rate, currencyAmount: parseFloat((inAmount * toCur.rate).toFixed(2)) } : {}),
-          description: `← ${rt.fromAccountName || rt.accountName}`,
-          date: nextDue.toISOString(),
-          time: rt.time,
-          isTransfer: true,
-          isRepeat: true,
-          repeatId: rt.id,
-          transferRef,
-          ...(rt.toLedgerId ? { ledgerName: fromLedgerName, pairLedgerId: srcLedgerId } : {}),
-        });
-        localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
+        if (!txnsIn.some((t: any) => t.id === `${id}_in`)) {
+          const fromLedgerList = JSON.parse(localStorage.getItem("app_ledgers") || "null") || [{ id: "main", name: "Main" }];
+          const fromLedgerName = fromLedgerList.find((l: any) => l.id === srcLedgerId)?.name || "";
+          txnsIn.unshift({
+            id: `${id}_in`,
+            categoryId: "transfer_in",
+            accountId: rt.toAccountId || "",
+            amount: inAmount,
+            ...(toCur.currency ? { currency: toCur.currency, exchangeRate: toCur.rate, currencyAmount: parseFloat((inAmount * toCur.rate).toFixed(2)) } : {}),
+            description: `← ${rt.fromAccountName || rt.accountName}`,
+            date: nextDue.toISOString(),
+            time: rt.time,
+            isTransfer: true,
+            isRepeat: true,
+            repeatId: rt.id,
+            transferRef,
+            updated_at: nextDue.toISOString(),
+            ...(rt.toLedgerId ? { ledgerName: fromLedgerName, pairLedgerId: srcLedgerId } : {}),
+          });
+          localStorage.setItem(toTxnsKey, JSON.stringify(txnsIn));
+        }
       } else {
         txns.unshift({
           id,
@@ -329,6 +342,10 @@ export function checkAndExecuteRepeats(): boolean {
           time: rt.time,
           repeatId: rt.id,
           isRepeat: true,
+          // Stamped with the occurrence time, not "now": every device generates this same record
+          // (same id), and a copy generated late on a stale device must not overwrite an edit the
+          // user already made to it elsewhere.
+          updated_at: nextDue.toISOString(),
         });
         localStorage.setItem(lk("app_transactions"), JSON.stringify(txns));
       }

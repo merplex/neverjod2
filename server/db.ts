@@ -176,6 +176,36 @@ export async function initDB() {
   await pool.query(`ALTER TABLE ledgers ADD COLUMN IF NOT EXISTS settings JSONB`).catch(() => {});
   await pool.query(`ALTER TABLE ledgers ADD COLUMN IF NOT EXISTS settings_updated_at TIMESTAMPTZ`).catch(() => {});
 
+  // Migration: synced_at = server time a row was last written. Rows now carry the time the user
+  // actually changed them (updated_at, client clock — can be older than another device's last
+  // pull, e.g. an edit made offline), so pulls filter on synced_at instead. NULL on rows written
+  // before this → pull falls back to updated_at for them.
+  for (const t of ["sync_categories", "sync_accounts", "sync_transactions", "sync_repeat_transactions"]) {
+    await pool.query(`ALTER TABLE ${t} ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ`).catch(() => {});
+  }
+
+  // Migration: extra = transfer details with no column of their own (isTransfer, transferRef,
+  // pairLedgerId, from/to account + ledger of a repeat transfer) so other devices get them too.
+  await pool.query(`ALTER TABLE sync_transactions ADD COLUMN IF NOT EXISTS extra JSONB`).catch(() => {});
+  await pool.query(`ALTER TABLE sync_repeat_transactions ADD COLUMN IF NOT EXISTS extra JSONB`).catch(() => {});
+
+  // Device backups: one row per backup set (the whole snapshot of every ledger as one JSON blob),
+  // kept apart from the sync tables. Lets support compare a user's data at a known point in time.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS device_backups (
+      id TEXT NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL,
+      uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      device TEXT,
+      ledger_ids TEXT[],
+      data JSONB NOT NULL,
+      PRIMARY KEY (id, user_id)
+    )`).catch(() => {});
+  // checksum + per-ledger record counts, computed on the phone, so a copy can be verified complete
+  await pool.query(`ALTER TABLE device_backups ADD COLUMN IF NOT EXISTS checksum TEXT`).catch(() => {});
+  await pool.query(`ALTER TABLE device_backups ADD COLUMN IF NOT EXISTS counts JSONB`).catch(() => {});
+
   // Admin account: always premium, no expiry
   await pool.query(`
     UPDATE users SET

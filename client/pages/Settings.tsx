@@ -8,6 +8,7 @@ import { syncAll, syncPush, apiListLedgers, apiCreateLedger, apiRenameLedger, ap
 import { lk, getActiveLedgerId, setActiveLedgerId } from "../utils/ledgerStorage";
 import PremiumModal from "../components/PremiumModal";
 import CloudAuthModal from "../components/CloudAuthModal";
+import DeviceBackupCard from "../components/DeviceBackupCard";
 import { purchaseProduct, restorePurchases } from "../utils/iap";
 import { useT } from "../hooks/useT";
 import { getLang, LANG_LOCALE } from "../utils/i18n";
@@ -940,6 +941,9 @@ export default function Settings() {
             </button>
           )}
         </div>
+
+        {/* Device backup (on this phone) */}
+        <DeviceBackupCard />
 
         {/* Premium Subscription */}
         <div ref={premiumRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
