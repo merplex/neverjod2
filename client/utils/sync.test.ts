@@ -149,11 +149,14 @@ describe("sync with action timestamps", () => {
     await svc.syncAll("tok");
     use(deviceB); await svc.syncAll("tok");
     expect(txns(deviceB)[0].amount).toBe(10);
-    // A edits at 10:00 (offline), B edits at 10:05 and syncs first
+    // A edits first (offline), B edits 5 min later and syncs first.
+    // Times are relative to now: an edit stamp must be later than the last sync, so a fixed
+    // date would make this test fail once the real clock passes it.
+    const base = Date.now() + 60_000;
     use(deviceA);
-    deviceA.setItem("app_transactions", JSON.stringify([{ ...txns(deviceA)[0], amount: 11, updated_at: "2026-11-03T10:00:00.000Z" }]));
+    deviceA.setItem("app_transactions", JSON.stringify([{ ...txns(deviceA)[0], amount: 11, updated_at: new Date(base).toISOString() }]));
     use(deviceB);
-    deviceB.setItem("app_transactions", JSON.stringify([{ ...txns(deviceB)[0], amount: 12, updated_at: "2026-11-03T10:05:00.000Z" }]));
+    deviceB.setItem("app_transactions", JSON.stringify([{ ...txns(deviceB)[0], amount: 12, updated_at: new Date(base + 5 * 60_000).toISOString() }]));
     await svc.syncAll("tok");
     await sleep(5);
     use(deviceA); await svc.syncAll("tok");
