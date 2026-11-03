@@ -265,31 +265,45 @@ export async function listBackups(): Promise<BackupEntry[]> {
   return Array.from(byId.values()).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+// All-or-nothing: the set is only kept if it is complete everywhere it should be. Any failure
+// (sync before snapshot, phone write/read-back, or — when Cloud is on — upload/verify) removes
+// whatever was written and throws "incomplete", so the user simply creates it again.
 export async function createBackup(): Promise<void> {
   if ((await listBackups()).length >= MAX_BACKUPS) throw new Error("max");
-  // Snapshot the latest of every ledger: pull/push first when Cloud is on (best effort)
   const token = cloudToken();
-  if (token) { try { await syncAll(token); } catch {} }
-
-  const data: Record<string, string> = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key || !parseKey(key)) continue;
-    const v = localStorage.getItem(key);
-    if (v !== null) data[key] = v;
-  }
-  const backup: StoredBackup = {
-    id: `bk_${Date.now()}`, createdAt: new Date().toISOString(),
-    data, checksum: checksumOf(data), counts: countsOf(data), uploaded: false,
+  const id = `bk_${Date.now()}`;
+  const discard = async () => {
+    await idb("readwrite", (s) => s.delete(id)).catch(() => {});
+    if (token) await deleteOnServer(id, token);
   };
-  await putLocal(backup);
-  // Read back what the phone actually stored
-  const stored = await getLocal(backup.id);
-  if (!stored || !isIntact(stored) || stored.checksum !== backup.checksum) {
-    await idb("readwrite", (s) => s.delete(backup.id)).catch(() => {});
-    throw new Error("verify");
+  try {
+    // Cloud on → bring every ledger up to date first, so the snapshot isn't missing anything
+    if (token) await syncAll(token);
+
+    const data: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !parseKey(key)) continue;
+      const v = localStorage.getItem(key);
+      if (v !== null) data[key] = v;
+    }
+    if (!data["app_transactions"] && !data["app_accounts"] && !data["app_categories"]) throw new Error("empty");
+    const backup: StoredBackup = {
+      id, createdAt: new Date().toISOString(),
+      data, checksum: checksumOf(data), counts: countsOf(data), uploaded: false,
+    };
+    await putLocal(backup);
+    const stored = await getLocal(id); // read back what the phone actually stored
+    if (!stored || !isIntact(stored) || stored.checksum !== backup.checksum) throw new Error("verify");
+
+    if (token) {
+      if (!(await uploadVerified(backup, token))) throw new Error("upload");
+      await putLocal({ ...backup, uploaded: true });
+    }
+  } catch {
+    await discard();
+    throw new Error("incomplete");
   }
-  if (token && (await uploadVerified(backup, token))) await putLocal({ ...backup, uploaded: true });
 }
 
 // Deleted on the phone AND on the server (server delete queued if offline).

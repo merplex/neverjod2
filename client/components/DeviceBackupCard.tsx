@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { HardDrive, Loader2, Cloud, Smartphone, RotateCcw, Trash2 } from "lucide-react";
+import { HardDrive, Loader2, Cloud, Smartphone, RotateCcw, Trash2, AlertTriangle } from "lucide-react";
 import { useT } from "../hooks/useT";
 import {
   listBackups, createBackup, deleteBackup, restoreBackup, syncBackupsToCloud, cloudEnabled,
@@ -19,10 +19,6 @@ function ledgerNames(ids: string[], mainDefault: string): string {
   let list: { id: string; name: string }[] = [];
   try { list = JSON.parse(localStorage.getItem("app_ledgers") || "[]"); } catch {}
   return ids.map((id) => list.find((l) => l.id === id)?.name || (id === "main" ? mainDefault : id)).join(", ");
-}
-
-function ledgerName(id: string, mainDefault: string): string {
-  return ledgerNames([id], mainDefault);
 }
 
 type Confirm = { backup: BackupEntry; action: "restore" | "delete" } | null;
@@ -49,7 +45,8 @@ export default function DeviceBackupCard() {
       await fn();
     } catch (e: any) {
       const m = e?.message;
-      setError(m === "corrupt" || m === "verify" ? "backup.corrupt" : m === "not found" ? "backup.not_found" : "backup.failed");
+      setError(key === "create" ? "backup.create_failed"
+        : m === "corrupt" ? "backup.corrupt" : m === "not found" ? "backup.not_found" : "backup.failed");
     } finally {
       setBusy(null);
       setConfirm(null);
@@ -125,8 +122,25 @@ export default function DeviceBackupCard() {
           </button>
         )}
 
-        {error && <p className="text-xs text-red-500 text-center">{T(error)}</p>}
       </div>
+
+      {/* Failure popup — short, no details; the user just tries again */}
+      {error && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 px-6" onClick={() => setError(null)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5 text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
+              <AlertTriangle size={22} className="text-red-500" />
+            </div>
+            <p className="text-sm font-medium text-slate-700 mb-4">{T(error)}</p>
+            <button
+              onClick={() => setError(null)}
+              className="w-full py-2.5 rounded-xl text-sm text-white font-semibold bg-theme-600 hover:bg-theme-700 transition-colors"
+            >
+              {T("backup.ok")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Confirm dialog for restore / delete */}
       {confirm && (
@@ -149,30 +163,7 @@ export default function DeviceBackupCard() {
               <p className="text-sm font-medium text-slate-700">
                 {T("backup.item")} <span className="tabular-nums">{formatStamp(confirm.backup.createdAt)}</span>
               </p>
-              <div className="mt-1 space-y-1">
-                {confirm.backup.ledgerIds.map((lid) => {
-                  const c = confirm.backup.counts[lid];
-                  return (
-                    <div key={lid} className="text-xs text-slate-500">
-                      <p className="font-medium text-slate-600">{ledgerName(lid, T("ledger.main_name"))}</p>
-                      {c && (
-                        <p>
-                          {/* each "n label" stays on one line; only the separators may wrap */}
-                          {T("backup.count_line", { t: c.t, a: c.a, c: c.c, r: c.r }).split(" · ").map((part, i) => (
-                            <span key={i}>{i > 0 && " · "}<span className="whitespace-nowrap">{part}</span></span>
-                          ))}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
-                {confirm.backup.onDevice ? <Smartphone size={11} /> : <Cloud size={11} />}
-                {T(confirm.backup.onDevice
-                  ? (confirm.backup.onCloud ? "backup.where_both" : "backup.where_device")
-                  : "backup.where_cloud")}
-              </p>
+              <p className="text-xs text-slate-500">{T("backup.ledgers")}: {ledgerNames(confirm.backup.ledgerIds, T("ledger.main_name"))}</p>
             </div>
             <p className="text-sm text-slate-600 mb-4">
               {T(isDelete ? "backup.delete_confirm" : "backup.restore_confirm")}
