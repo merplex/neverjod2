@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { checkAndExecuteRepeats } from "./utils/repeatTransactionService";
 import { lk } from "./utils/ledgerStorage";
 import { syncAll, syncPush, apiVerifyPurchase } from "./utils/syncService";
+import { installAutoPush, flushAutoPush } from "./utils/autoPush";
+
+// Push to the cloud ~1s after every add/edit/delete (when Auto Sync is on).
+installAutoPush();
 import { restorePurchases } from "./utils/iap";
 import { App as CapacitorApp } from "@capacitor/app";
 import { CURRENCY_OPTIONS } from "./utils/currency";
@@ -210,6 +214,8 @@ function AppContent() {
       // Save current page and hide timestamp for restore logic
       sessionStorage.setItem("last_path", window.location.pathname);
       sessionStorage.setItem("last_hide_at", Date.now().toString());
+      // Don't let a just-made change sit in the debounce while the app is backgrounded
+      flushAutoPush();
     };
     const onResume = () => {
       const lastHideAt = sessionStorage.getItem("last_hide_at");

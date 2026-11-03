@@ -2,6 +2,8 @@ export const API_BASE = (import.meta.env.VITE_API_URL ?? "") + "/api";
 
 import { Capacitor } from "@capacitor/core";
 import { getActiveLedgerId, lk } from "./ledgerStorage";
+import { loadShadow, saveShadow, emptyShadow, recordHash, isDirty, actionTime, serverWins, type Shadow, type Kind } from "./syncShadow";
+import { quietly } from "./syncQuiet";
 
 // --- Auth ---
 
@@ -195,7 +197,7 @@ function normalizeRepeatItem(raw: any): any {
 // Merge repeat transactions (ID-based; server wins on conflict; local-only items preserved)
 // Same ID-collision rule as cat/acc: if a source="local" item clashes with a server item,
 // reassign the local item a new unique ID so BOTH coexist — nothing is silently dropped.
-function mergeRepeatTransIntoLocal(serverItems: any[], ledgerId?: string) {
+function mergeRepeatTransIntoLocal(serverItems: any[], ledgerId?: string, shadow?: Shadow | null) {
   const local: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions", ledgerId)) || "[]");
   // Don't restore items the user has locally deleted but not yet pushed
   const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats", ledgerId)) || "[]");
@@ -207,6 +209,7 @@ function mergeRepeatTransIntoLocal(serverItems: any[], ledgerId?: string) {
     const item = normalizeRepeatItem(raw);
     if (raw.deleted_at) {
       deletedIds.add(item.id);
+      if (shadow) delete shadow.r[item.id];
     } else {
       serverById.set(item.id, { ...item, source: "server" });
     }
@@ -238,7 +241,11 @@ function mergeRepeatTransIntoLocal(serverItems: any[], ledgerId?: string) {
       // last-write-wins for editable fields (description, amount, etc.)
       const localUpdated = new Date(localItem.updated_at || 0).getTime();
       const serverUpdated = new Date(serverItem.updated_at || 0).getTime();
-      const base = localUpdated > serverUpdated ? localItem : serverItem;
+      const takeServer = shadow
+        ? serverWins(shadow, "r", localItem, serverItem.updated_at)
+        : !(localUpdated > serverUpdated);
+      const base = takeServer ? serverItem : localItem;
+      if (takeServer && shadow) shadow.r[serverItem.id] = [recordHash("r", serverItem), serverItem.updated_at];
       // always use the further nextDue — prevents re-execution if repeat already fired locally
       const localNextDue = new Date(localItem.nextDue || 0).getTime();
       const serverNextDue = new Date(serverItem.nextDue || 0).getTime();
@@ -254,14 +261,17 @@ function mergeRepeatTransIntoLocal(serverItems: any[], ledgerId?: string) {
   }
   // Append new server items not yet present locally (skip pending-delete items)
   for (const [id, item] of serverById) {
-    if (!seenIds.has(id) && !pendingDeleteIds.has(id)) result.push(item);
+    if (!seenIds.has(id) && !pendingDeleteIds.has(id)) {
+      result.push(item);
+      if (shadow) shadow.r[id] = [recordHash("r", item), item.updated_at];
+    }
   }
 
   localStorage.setItem(lk("app_repeat_transactions", ledgerId), JSON.stringify(result));
 }
 
 // Merge transactions (ID-based, server wins on conflict)
-function mergeIntoLocal(storageKey: string, serverItems: any[], ledgerId?: string) {
+function mergeIntoLocal(storageKey: string, serverItems: any[], ledgerId?: string, shadow?: Shadow | null) {
   const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey, ledgerId)) || "[]");
   const localMap = new Map(local.map((item) => [item.id, item]));
 
@@ -275,10 +285,17 @@ function mergeIntoLocal(storageKey: string, serverItems: any[], ledgerId?: strin
     const serverItem = normalizeServerItem(raw);
     if (serverItem.deleted_at) {
       localMap.delete(serverItem.id);
+      if (shadow) delete shadow.t[serverItem.id];
     } else {
       if (pendingDeleteIds.has(serverItem.id)) continue;
       const existing = localMap.get(serverItem.id);
-      if (!existing || !existing.updated_at || existing.updated_at < serverItem.updated_at) {
+      // With a shadow: compare against the local edit's own action time (an unsynced local edit
+      // is never overwritten by an older server copy). Legacy ledgers keep the old rule.
+      const takeServer = shadow
+        ? serverWins(shadow, "t", existing, serverItem.updated_at)
+        : (!existing || !existing.updated_at || existing.updated_at < serverItem.updated_at);
+      if (takeServer) {
+        if (shadow) shadow.t[serverItem.id] = [recordHash("t", serverItem), serverItem.updated_at];
         // Preserve local-only fields (isRepeat, repeatId) that server doesn't store
         const preserve: any = {};
         if (existing?.isRepeat)  preserve.isRepeat  = existing.isRepeat;
@@ -306,8 +323,10 @@ function mergeIntoLocal(storageKey: string, serverItems: any[], ledgerId?: strin
 function mergeCategOrAccIntoLocal(
   storageKey: string,
   serverItems: any[],
-  ledgerId?: string
+  ledgerId?: string,
+  shadow?: Shadow | null
 ): Map<string, string> {
+  const kind: Kind = storageKey === "app_accounts" ? "a" : "c";
   const local: any[] = JSON.parse(localStorage.getItem(lk(storageKey, ledgerId)) || "[]");
   const normalized = serverItems.map(normalizeServerItem);
   const serverLive = normalized.filter((i) => !i.deleted_at);
@@ -352,12 +371,23 @@ function mergeCategOrAccIntoLocal(
       // Last-write-wins: if local is newer, keep local (will be pushed right after pull)
       const serverTime = new Date(serverById.get(localItem.id).updated_at || 0).getTime();
       const localTime  = new Date(localItem.updated_at || 0).getTime();
-      if (localTime > serverTime) resultMap.set(localItem.id, localItem);
+      const keepLocal = shadow
+        ? !serverWins(shadow, kind, localItem, serverById.get(localItem.id).updated_at)
+        : localTime > serverTime;
+      if (keepLocal) resultMap.set(localItem.id, localItem);
       continue;
     }
 
     // Server-owned item absent from server response → unchanged since last sync, keep it
     resultMap.set(localItem.id, localItem);
+  }
+
+  // Shadow: server copies that ended up in the result are now "in sync"; server deletes drop out.
+  if (shadow) {
+    for (const id of deletedIds) delete shadow[kind][id];
+    for (const s of serverLive) {
+      if (resultMap.get(s.id) === s) shadow[kind][s.id] = [recordHash(kind, s), s.updated_at];
+    }
   }
 
   // Preserve local-only fields (currency, exchangeRate) for accounts where server returned null.
@@ -422,115 +452,124 @@ function updateTransactionRefs(
 
 // --- Push local data to server ---
 
-// force=true: stamp everything with now (manual sync — user asserts their data is truth)
-// force=false: use existing timestamp or epoch (auto sync — server data wins if newer)
+// Push only what changed since the last sync (see syncShadow.ts), each record carrying the time
+// the user actually changed it, so the server's last-write-wins compares real action times.
+// force=true (manual Sync button) or a ledger with no shadow yet (synced by an older version):
+// send everything, stamped like before, and build the shadow from it.
 // isFirstSync: passed in from syncAll so pull (which sets last_sync_at) doesn't flip the flag
 // ledgerId: defaults to the currently active ledger; pass explicitly to flush a ledger the user
-// has already switched away from (its localStorage keys are untouched by the switch, so this
-// works regardless of which ledger is active now — see handleSwitchLedger).
+// has already switched away from (its localStorage keys are untouched by the switch).
 async function syncPushNow(token: string, force = false, isFirstSync?: boolean, ledgerId?: string) {
   if (localStorage.getItem("app_premium") !== "true") return false;
   const now = new Date().toISOString();
   ledgerId = ledgerId ?? getActiveLedgerId();
 
-  // On the very first sync (no last_sync_at), we do NOT know which local
-  // categories/accounts are genuinely user-created vs. fresh-install defaults.
-  // To avoid overwriting the server's existing data with local defaults,
-  // stamp them with epoch (1970-01-01) so the server's ON CONFLICT rule
-  // ("WHERE updated_at < EXCLUDED.updated_at") will always keep the server copy.
-  // Transactions are still stamped with `now` since they are always new data.
-  // NOTE: caller (syncAll) captures this flag BEFORE pull runs, so pull setting
-  // last_sync_at doesn't accidentally flip first-sync detection.
+  // On the very first sync (no last_sync_at) we can't tell user-created categories/accounts from
+  // fresh-install defaults, so they're stamped with epoch and the server's copy always wins.
+  // NOTE: caller (syncAll) captures this flag BEFORE pull runs.
   if (isFirstSync === undefined) isFirstSync = !localStorage.getItem(lk("last_sync_at", ledgerId));
   const catAccStamp = isFirstSync ? new Date(0).toISOString() : now;
 
-  // Build promoted payloads in memory only — do NOT write to localStorage yet.
-  // Source promotion is applied to localStorage only after a successful push so that a
-  // failed push (server down) does not permanently flip source:"local" → "server" for
-  // items the server never received.
-  const pinnedCatId = "nocat";
-  const pinnedAccId = "account_deleted";
+  const prevShadow = loadShadow(ledgerId);
+  const sendAll = force || !prevShadow;
+  const shadow: Shadow = prevShadow || emptyShadow();
 
-  const promotedSnapshots: { storageKey: string; promoted: any[]; pushedIds: Set<string>; pinnedId: string }[] = [];
-  for (const [key, pinnedId] of [["app_categories", pinnedCatId], ["app_accounts", pinnedAccId]] as const) {
-    const storageKey = lk(key, ledgerId);
-    const items: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    let orderIdx = 0;
-    const promoted = items.map((i) => {
-      const isPromoted = i.source === "local" ? { ...i, source: "server" } : i;
-      const sortOrder = i.id === pinnedId ? undefined : orderIdx++;
-      return { ...isPromoted, sortOrder };
-    });
-    promotedSnapshots.push({ storageKey, promoted, pushedIds: new Set(items.map((i) => i.id)), pinnedId });
-  }
+  const read = (key: string): any[] => { try { return JSON.parse(localStorage.getItem(lk(key, ledgerId)) || "[]"); } catch { return []; } };
+  const withOrder = (items: any[], pinnedId: string) => {
+    let idx = 0;
+    return items.map((i) => ({ ...i, sortOrder: i.id === pinnedId ? undefined : idx++ }));
+  };
+  const rawCategories = withOrder(read("app_categories"), "nocat");
+  const rawAccounts = withOrder(read("app_accounts"), "account_deleted");
+  const rawRepeats = read("app_repeat_transactions");
+  const rawTransactions = read("app_transactions");
 
-  const rawRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions", ledgerId)) || "[]");
-  const promotedRepeats = rawRepeats.map((r) => r.source === "local" ? { ...r, source: "server" } : r);
+  // What gets sent, with its stamp. Records are sent with source:"server" (they will be once
+  // this succeeds) — the local copy is only promoted after a successful push.
+  const pick = (kind: Kind, items: any[], legacyStamp: string) => {
+    const out: any[] = [];
+    for (const i of items) {
+      if (!sendAll && !isDirty(shadow, kind, i)) continue;
+      const updated_at = sendAll ? legacyStamp : actionTime(shadow, kind, i, now);
+      out.push({ ...i, ...(i.source === "local" ? { source: "server" } : {}), updated_at });
+    }
+    return out;
+  };
+  const categories = pick("c", rawCategories, catAccStamp);
+  const accounts = pick("a", rawAccounts, catAccStamp);
+  const repeats = pick("r", rawRepeats, catAccStamp);
+  const transactions = pick("t", rawTransactions, now).map((tx) => {
+    const cat = rawCategories.find((c) => c.id === tx.categoryId);
+    const type = tx.type || cat?.type || "expense";
+    return { ...tx, type, fingerprint: makeFingerprint(tx) };
+  });
 
-  const categories = promotedSnapshots[0].promoted.map((c) => ({ ...c, updated_at: catAccStamp }));
-  const accounts   = promotedSnapshots[1].promoted.map((a) => ({ ...a, updated_at: catAccStamp }));
-  const transactions = (JSON.parse(localStorage.getItem(lk("app_transactions", ledgerId)) || "[]") as any[])
-    .map((tx) => {
-      const cat = categories.find((c) => c.id === tx.categoryId);
-      const type = tx.type || cat?.type || "expense";
-      return { ...tx, type, fingerprint: tx.fingerprint || makeFingerprint(tx), updated_at: now };
-    });
-
-  // Merge soft-delete tombstones
+  // Soft-delete tombstones
   const pendingAll: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes", ledgerId)) || "[]");
   const pending = getPendingDeletes(ledgerId);
+  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats", ledgerId)) || "[]");
   const allCategories = mergeWithTombstones(categories, pending.categories, now);
   const allAccounts = mergeWithTombstones(accounts, pending.accounts, now);
   const allTransactions = mergeWithTombstones(transactions, pending.transactions, now);
+  const allRepeatTransactions = mergeWithTombstones(repeats, pendingRepeats, now);
 
-  const pendingRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_pending_deletes_repeats", ledgerId)) || "[]");
-  const allRepeatTransactions = mergeWithTombstones(
-    promotedRepeats.map((r) => ({ ...r, updated_at: catAccStamp })),
-    pendingRepeats,
-    now
-  );
-
-  // Settings (theme/language/currency/etc.) are a single per-ledger blob, not a list — same
-  // first-sync epoch-stamp trick as categories/accounts so a freshly-installed device's
-  // still-default settings never clobber a real settings blob already on the server.
+  // Settings: single per-ledger blob, same first-sync epoch trick. Only sent when it changed
+  // since it was last pushed.
   let settings: any = null;
   try { settings = JSON.parse(localStorage.getItem(lk("app_settings", ledgerId)) || "null"); } catch {}
   const settingsUpdatedAt = isFirstSync ? new Date(0).toISOString() : (settings?.updatedAt || now);
+  const settingsSig = settings ? JSON.stringify(settings) : "";
+  const sendSettings = !!settings && (sendAll || localStorage.getItem(lk("settings_pushed_sig", ledgerId)) !== settingsSig);
+
+  const nothingToSend = !sendSettings && !allCategories.length && !allAccounts.length
+    && !allTransactions.length && !allRepeatTransactions.length;
+  if (nothingToSend) return true;
 
   const res = await fetch(`${API_BASE}/sync/push`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({
       categories: allCategories, accounts: allAccounts, transactions: allTransactions, repeatTransactions: allRepeatTransactions,
-      settings, settings_updated_at: settingsUpdatedAt,
+      settings: sendSettings ? settings : null, settings_updated_at: settingsUpdatedAt,
       ledger_id: ledgerId,
     }),
   });
   if (!res.ok) throw new Error(`push:${res.status}`);
 
-  // Push succeeded — commit source promotions to localStorage. Re-read the CURRENT lists rather
-  // than writing back the snapshots taken before the request: the user (or a repeat firing on a
-  // page switch) may have edited them while the push was in flight, and writing the old snapshot
-  // silently reverted that edit — e.g. a just-corrected start balance, or a repeat's nextDue (which
-  // then fired the same repeat again). Only items that were in this push get source:"server";
-  // anything added meanwhile stays "local" and goes up next time.
-  for (const { storageKey, pushedIds, pinnedId } of promotedSnapshots) {
-    const current: any[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    let orderIdx = 0;
-    const promoted = current.map((i) => {
-      const src = i.source === "local" && pushedIds.has(i.id) ? { ...i, source: "server" } : i;
-      const sortOrder = i.id === pinnedId ? undefined : orderIdx++;
-      return { ...src, sortOrder };
-    });
-    localStorage.setItem(storageKey, JSON.stringify(promoted));
-  }
-  const pushedRepeatIds = new Set(rawRepeats.map((r) => r.id));
-  const currentRepeats: any[] = JSON.parse(localStorage.getItem(lk("app_repeat_transactions", ledgerId)) || "[]");
-  localStorage.setItem(
-    lk("app_repeat_transactions", ledgerId),
-    JSON.stringify(currentRepeats.map((r) => r.source === "local" && pushedRepeatIds.has(r.id) ? { ...r, source: "server" } : r))
-  );
-  flushPendingDeletes(ledgerId, pendingAll, pendingRepeats);
+  // Push succeeded. Re-read CURRENT storage (never write back the pre-request snapshot — an edit
+  // made while the request was in flight would be reverted), promote sent items to
+  // source:"server", and record what was sent in the shadow. Anything changed meanwhile no
+  // longer matches the shadow hash, so it stays dirty and goes up next time.
+  quietly(() => {
+    const sentIds = (list: any[]) => new Set(list.map((i) => i.id));
+    for (const [key, pinnedId, sent] of [
+      ["app_categories", "nocat", sentIds(categories)],
+      ["app_accounts", "account_deleted", sentIds(accounts)],
+    ] as const) {
+      const current = withOrder(read(key), pinnedId).map((i) =>
+        i.source === "local" && sent.has(i.id) ? { ...i, source: "server" } : i);
+      localStorage.setItem(lk(key, ledgerId), JSON.stringify(current));
+    }
+    const sentRepeatIds = sentIds(repeats);
+    localStorage.setItem(
+      lk("app_repeat_transactions", ledgerId),
+      JSON.stringify(read("app_repeat_transactions").map((r) =>
+        r.source === "local" && sentRepeatIds.has(r.id) ? { ...r, source: "server" } : r))
+    );
+
+    const next: Shadow = sendAll ? emptyShadow() : shadow;
+    for (const [kind, list] of [["c", categories], ["a", accounts], ["r", repeats], ["t", transactions]] as const) {
+      for (const i of list) next[kind][i.id] = [recordHash(kind, i), i.updated_at];
+    }
+    for (const p of pending.categories) delete next.c[p.id];
+    for (const p of pending.accounts) delete next.a[p.id];
+    for (const p of pending.transactions) delete next.t[p.id];
+    for (const p of pendingRepeats) delete next.r[p.id];
+    saveShadow(ledgerId!, next);
+    if (sendSettings) localStorage.setItem(lk("settings_pushed_sig", ledgerId), settingsSig);
+
+    flushPendingDeletes(ledgerId!, pendingAll, pendingRepeats);
+  });
   return true;
 }
 
@@ -558,19 +597,27 @@ async function syncPullNow(token: string, ledgerId?: string) {
   if (!res.ok) throw new Error(`pull:${res.status}`);
 
   const data = await res.json();
+  quietly(() => applyPull(data, ledgerId!));
+  return true;
+}
+
+// Synchronous (no awaits) so no user action can interleave with the merge.
+function applyPull(data: any, ledgerId: string) {
+  const shadow = loadShadow(ledgerId); // null = legacy ledger (not yet pushed with tracking)
   // Categories and accounts: name-based merge so server wins even when IDs differ
   const catIdMap = data.categories?.length
-    ? mergeCategOrAccIntoLocal("app_categories", data.categories, ledgerId)
+    ? mergeCategOrAccIntoLocal("app_categories", data.categories, ledgerId, shadow)
     : new Map<string, string>();
   const accIdMap = data.accounts?.length
-    ? mergeCategOrAccIntoLocal("app_accounts", data.accounts, ledgerId)
+    ? mergeCategOrAccIntoLocal("app_accounts", data.accounts, ledgerId, shadow)
     : new Map<string, string>();
   // If any local IDs were replaced by server IDs, update transaction references first
   updateTransactionRefs(catIdMap, accIdMap, ledgerId);
   // Transactions: ID-based merge (fingerprint dedup handled server-side)
-  if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions, ledgerId);
+  if (data.transactions?.length) mergeIntoLocal("app_transactions", data.transactions, ledgerId, shadow);
   // Repeat transactions: ID-based merge (server wins; local-only items preserved)
-  if (data.repeatTransactions?.length) mergeRepeatTransIntoLocal(data.repeatTransactions, ledgerId);
+  if (data.repeatTransactions?.length) mergeRepeatTransIntoLocal(data.repeatTransactions, ledgerId, shadow);
+  if (shadow) saveShadow(ledgerId, shadow);
   // Settings: single blob, last-write-wins by timestamp (server never clobbers a newer local edit)
   if (data.settings) {
     let local: any = null;
@@ -594,7 +641,6 @@ async function syncPullNow(token: string, ledgerId?: string) {
   }
   localStorage.setItem(lk("last_sync_at", ledgerId), data.server_time);
   if (data.last_push_at) localStorage.setItem(lk("last_push_at", ledgerId), data.last_push_at);
-  return true;
 }
 
 // --- Ledger API ---

@@ -176,6 +176,14 @@ export async function initDB() {
   await pool.query(`ALTER TABLE ledgers ADD COLUMN IF NOT EXISTS settings JSONB`).catch(() => {});
   await pool.query(`ALTER TABLE ledgers ADD COLUMN IF NOT EXISTS settings_updated_at TIMESTAMPTZ`).catch(() => {});
 
+  // Migration: synced_at = server time a row was last written. Rows now carry the time the user
+  // actually changed them (updated_at, client clock — can be older than another device's last
+  // pull, e.g. an edit made offline), so pulls filter on synced_at instead. NULL on rows written
+  // before this → pull falls back to updated_at for them.
+  for (const t of ["sync_categories", "sync_accounts", "sync_transactions", "sync_repeat_transactions"]) {
+    await pool.query(`ALTER TABLE ${t} ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ`).catch(() => {});
+  }
+
   // Admin account: always premium, no expiry
   await pool.query(`
     UPDATE users SET
