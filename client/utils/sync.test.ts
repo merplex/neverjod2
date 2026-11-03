@@ -34,7 +34,8 @@ function fakeFetch(url: string, init: any) {
         for (const item of list || []) {
           const key = `${kind}:${body.ledger_id}:${item.id}`;
           const cur = rows.get(key);
-          if (!cur || new Date(cur.updated_at) < new Date(item.updated_at)) {
+          const tCur = cur && new Date(cur.updated_at).getTime(), tNew = new Date(item.updated_at).getTime();
+          if (!cur || tCur! < tNew || (item.deleted_at && !cur.deleted_at && tCur! <= tNew)) {
             rows.set(key, { ...item, kind, ledger: body.ledger_id, deleted_at: item.deleted_at || null, synced_at: Date.now() });
           }
         }

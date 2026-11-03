@@ -49,6 +49,9 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
   const { categories = [], accounts = [], transactions = [], repeatTransactions = [], settings = null, settings_updated_at = null, ledger_id = "main" } = req.body;
 
   try {
+    // Last-write-wins on updated_at (the time the user made the change). On an exact tie a delete
+    // wins — otherwise a delete stamped in the same millisecond as the record's last edit was
+    // dropped and the item came back on the next pull.
     // Categories + Accounts in parallel
     await Promise.all([
       ...(settings ? [pool.query(
@@ -65,7 +68,8 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
                  icon_id = EXCLUDED.icon_id, keywords = EXCLUDED.keywords,
                  sort_order = EXCLUDED.sort_order, ledger_id = EXCLUDED.ledger_id,
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at, synced_at = NOW()
-             WHERE sync_categories.updated_at < EXCLUDED.updated_at`,
+             WHERE sync_categories.updated_at < EXCLUDED.updated_at
+                OR (EXCLUDED.deleted_at IS NOT NULL AND sync_categories.deleted_at IS NULL AND sync_categories.updated_at <= EXCLUDED.updated_at)`,
           [cat.id, userId, cat.name, cat.type, null, cat.iconId || null,
            JSON.stringify(cat.keywords || []), cat.sortOrder ?? null, ledger_id, cat.updated_at, cat.deleted_at || null]
         )
@@ -80,7 +84,8 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
                  sort_order = EXCLUDED.sort_order, ledger_id = EXCLUDED.ledger_id,
                  currency = EXCLUDED.currency, exchange_rate = EXCLUDED.exchange_rate,
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at, synced_at = NOW()
-             WHERE sync_accounts.updated_at < EXCLUDED.updated_at`,
+             WHERE sync_accounts.updated_at < EXCLUDED.updated_at
+                OR (EXCLUDED.deleted_at IS NOT NULL AND sync_accounts.deleted_at IS NULL AND sync_accounts.updated_at <= EXCLUDED.updated_at)`,
           [acc.id, userId, acc.name, acc.type || null, acc.startBalance || acc.balance || 0,
            null, acc.iconId || null, JSON.stringify(acc.keywords || []), acc.sortOrder ?? null, ledger_id,
            acc.currency || null, acc.exchangeRate || null, acc.updated_at, acc.deleted_at || null]
@@ -133,7 +138,8 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
                    currency_amount = EXCLUDED.currency_amount,
                    extra = COALESCE(EXCLUDED.extra, sync_transactions.extra),
                    updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at, synced_at = NOW()
-               WHERE sync_transactions.updated_at < EXCLUDED.updated_at`,
+               WHERE sync_transactions.updated_at < EXCLUDED.updated_at
+                OR (EXCLUDED.deleted_at IS NOT NULL AND sync_transactions.deleted_at IS NULL AND sync_transactions.updated_at <= EXCLUDED.updated_at)`,
             [tx.id, userId, tx.categoryId || null, tx.accountId || null,
              tx.amount, tx.type, tx.description || null,
              tx.date, tx.time || null, tx.fingerprint || null,
@@ -165,7 +171,8 @@ router.post("/push", authMiddleware, premiumMiddleware, async (req: Request, res
                  last_executed = EXCLUDED.last_executed, ledger_id = EXCLUDED.ledger_id,
                  extra = COALESCE(EXCLUDED.extra, sync_repeat_transactions.extra),
                  updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at, synced_at = NOW()
-             WHERE sync_repeat_transactions.updated_at < EXCLUDED.updated_at`,
+             WHERE sync_repeat_transactions.updated_at < EXCLUDED.updated_at
+                OR (EXCLUDED.deleted_at IS NOT NULL AND sync_repeat_transactions.deleted_at IS NULL AND sync_repeat_transactions.updated_at <= EXCLUDED.updated_at)`,
           [
             rt.id, userId, rt.categoryId || null, rt.accountId || null,
             rt.categoryName || null, rt.accountName || null,
