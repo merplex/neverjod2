@@ -15,23 +15,46 @@ interface Props {
 
 const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url);
 
+const CACHE_KEY = "guide_slides_cache";
+
+function readCachedSlides(): string[] | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    return Array.isArray(v) && v.length > 0 ? v : null;
+  } catch { return null; }
+}
+
 export default function OnboardingGuide({ onClose }: Props) {
-  const [slides, setSlides] = useState<string[]>(FALLBACK_SLIDES);
+  // null = still loading: show nothing instead of flashing the bundled fallback slides
+  const [slides, setSlides] = useState<string[] | null>(readCachedSlides);
   const [index, setIndex] = useState(0);
-  const isLast = index === slides.length - 1;
+  const list = slides ?? [];
+  const isLast = list.length > 0 && index >= list.length - 1;
+  const cur: string | undefined = list[Math.min(index, list.length - 1)];
 
   useEffect(() => {
     const controller = new AbortController();
+    // Offline / slow server: fall back to the bundled slides after a short wait
+    const timer = setTimeout(() => setSlides((s) => s ?? FALLBACK_SLIDES), 4000);
     fetch(`${API_BASE}/guide/slides`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data.slides) && data.slides.length > 0) {
           setSlides(data.slides);
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(data.slides)); } catch {}
+        } else {
+          setSlides((s) => s ?? FALLBACK_SLIDES);
         }
       })
-      .catch((err) => { if (err.name !== "AbortError") {/* keep fallback */} });
-    return () => controller.abort();
+      .catch((err) => { if (err.name !== "AbortError") setSlides((s) => s ?? FALLBACK_SLIDES); })
+      .finally(() => clearTimeout(timer));
+    return () => { controller.abort(); clearTimeout(timer); };
   }, []);
+
+  // Preload every slide so swiping to the next one doesn't show a blank frame
+  useEffect(() => {
+    slides?.forEach((src) => { if (!isVideo(src)) new Image().src = src; });
+  }, [slides]);
 
   const finish = () => {
     try { localStorage.setItem("app_onboarding_done", "1"); } catch {}
@@ -51,10 +74,12 @@ export default function OnboardingGuide({ onClose }: Props) {
 
         {/* Image / Video */}
         <div className="flex-1 flex items-center justify-center px-4 pb-2 min-h-0">
-          {isVideo(slides[index]) ? (
+          {!cur ? (
+            <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-theme-600 animate-spin" />
+          ) : isVideo(cur) ? (
             <video
               key={index}
-              src={slides[index]}
+              src={cur}
               className="w-full h-full object-contain rounded-xl"
               autoPlay
               muted
@@ -64,7 +89,7 @@ export default function OnboardingGuide({ onClose }: Props) {
           ) : (
             <img
               key={index}
-              src={slides[index]}
+              src={cur}
               alt={`guide-${index + 1}`}
               className="w-full h-full object-contain rounded-xl"
             />
@@ -73,7 +98,7 @@ export default function OnboardingGuide({ onClose }: Props) {
 
         {/* Dots */}
         <div className="flex justify-center gap-1.5 py-3 flex-shrink-0">
-          {slides.map((_, i) => (
+          {list.map((_, i) => (
             <div
               key={i}
               className={`rounded-full transition-all ${
@@ -95,6 +120,7 @@ export default function OnboardingGuide({ onClose }: Props) {
           )}
           <button
             onClick={() => isLast ? finish() : setIndex(index + 1)}
+            disabled={!slides}
             className="flex-1 h-11 rounded-xl bg-theme-600 text-white font-semibold text-sm hover:bg-theme-700 transition-colors flex items-center justify-center gap-1"
           >
             {isLast ? "เริ่มใช้งาน" : (
